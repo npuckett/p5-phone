@@ -1,5 +1,6 @@
 # p5-phone
-![P5Phone.png](P5Phone.png)
+![P5Phone.png](p5-phone.png)
+*Illustration by [Angela Torchio](https://angelatorchio.com/)*
 
 ##  [Link for Interactive Examples](https://npuckett.github.io/p5-phone/examples/homepage)
 
