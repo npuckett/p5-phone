@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - name: Install dependencies
+      run: npm install --only=dev 2>/dev/null || echo "No dependencies to install"
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Validate package.json
+      run: npm run validate --if-present || echo "No validation script found"
+    
+    - name: Check files exist
+      run: |
+        echo "Checking required files..."
+        ls -la src/
+        test -f src/permissionsAll.js
+        test -f src/permissionsGyro.js
+        test -f src/permissionMic.js
+        test -f src/permissionsGesture.js
+        echo "All required files exist ✓"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+    
+    - name: Check JavaScript syntax
+      run: |
+        echo "Checking JavaScript syntax..."
+        for file in src/*.js; do
+          echo "Checking $file"
+          node -c "$file"
+        done
+        echo "All JavaScript files have valid syntax ✓"

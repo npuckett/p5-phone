@@ -1,0 +1,27 @@
+# Development files
+.github/
+.git/
+*.log
+node_modules/
+
+# Documentation (keep README.md)
+CONTRIBUTING.md
+CHANGELOG.md
+docs/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Keep these files in package
+# src/
+# examples/
+# README.md
+# LICENSE
+# package.json

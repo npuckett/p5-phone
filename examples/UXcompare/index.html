@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile p5.js Permission Examples</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            color: #1a1a1a;
+            background: #ffffff;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            padding: 60px 30px 40px 30px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 400;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            color: #6b7280;
+            font-weight: 300;
+        }
+        
+        .content {
+            padding: 50px 30px;
+        }
+        
+        .section {
+            margin-bottom: 60px;
+        }
+        
+        .section h2 {
+            font-size: 1.8rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+        
+        .section > p {
+            color: #6b7280;
+            margin-bottom: 40px;
+            font-size: 1rem;
+        }
+        
+        .section h3 {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin: 40px 0 25px 0;
+            letter-spacing: -0.01em;
+        }
+        
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .example-card {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 24px;
+            transition: border-color 0.2s ease;
+        }
+        
+        .example-card:hover {
+            border-color: #d1d5db;
+        }
+        
+        .example-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+        
+        .example-description {
+            color: #6b7280;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        
+        .example-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .link-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .demo-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #1a1a1a;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 400;
+            font-size: 0.9rem;
+            transition: background 0.2s ease;
+            flex: 1;
+            text-align: center;
+            touch-action: manipulation;
+        }
+        
+        .demo-link:hover {
+            background: #374151;
+        }
+        
+        .qr-code {
+            width: 80px;
+            height: 80px;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        
+        .footer {
+            border-top: 1px solid #e5e5e5;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .footer p {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .footer a {
+            color: #1a1a1a;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+            @media (max-width: 768px) {
+            .header {
+                padding: 40px 20px 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .content {
+                padding: 40px 20px;
+            }
+            
+            .section h2 {
+                font-size: 1.5rem;
+            }
+            
+            .examples-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .link-row {
+                flex-direction: row;
+                align-items: center;
+                gap: 16px;
+            }
+            
+            .demo-link {
+                padding: 10px 14px;
+                font-size: 0.85rem;
+            }
+            
+            .qr-code {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .footer {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mobile p5.js Permission Examples</h1>
+            <p>Interactive examples demonstrating mobile device capabilities vs traditional UI patterns</p>
+        </div>
+        
+        <div class="content">
+            <!-- UX Comparison Section -->
+            <div class="section">
+                <h2>UX Comparison</h2>
+                <p>These examples demonstrate the difference between traditional UI interactions and mobile device capabilities.</p>
+                
+                <!-- Button Examples -->
+                <h3>Button Examples</h3>
+                <div class="examples-grid">
+                    <div class="example-card">
+                        <div class="example-title">Button vs Shake Detection</div>
+                        <div class="example-description">Compare clicking a button vs shaking your device to trigger actions.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/button-vs-shake/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/button-vs-shake/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-card">
+                        <div class="example-title">Button vs Movement Detection</div>
+                        <div class="example-description">Compare button clicks vs device movement for interaction control.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/button-vs-movement/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/button-vs-movement/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-card">
+                        <div class="example-title">Button vs Orientation</div>
+                        <div class="example-description">Compare button interface vs device orientation for control.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/button-vs-orientation/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/button-vs-orientation/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Slider Examples -->
+                <h3>Slider Examples</h3>
+                <div class="examples-grid">
+                    <div class="example-card">
+                        <div class="example-title">Sliders vs Device Rotation</div>
+                        <div class="example-description">RGB color control: traditional sliders vs device rotation.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/sliders-vs-rotation/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/sliders-vs-rotation/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-card">
+                        <div class="example-title">Sliders vs Device Acceleration</div>
+                        <div class="example-description">RGB color control: traditional sliders vs device acceleration.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/sliders-vs-acceleration/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/sliders-vs-acceleration/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-card">
+                        <div class="example-title">Slider vs Microphone</div>
+                        <div class="example-description">Volume control: traditional slider vs microphone input level.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/slider-vs-microphone/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/slider-vs-microphone/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-card">
+                        <div class="example-title">Slider vs Multi-Touch</div>
+                        <div class="example-description">Value control: single slider vs multiple finger touches.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/slider-vs-touches/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/slider-vs-touches/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-card">
+                        <div class="example-title">Slider vs Distance</div>
+                        <div class="example-description">Value control: traditional slider vs finger distance measurement.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/slider-vs-distance/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/slider-vs-distance/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-card">
+                        <div class="example-title">Slider vs Angle Control</div>
+                        <div class="example-description">Value control: linear slider vs multi-touch angle detection.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/slider-vs-angle/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/slider-vs-angle/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Other Demos Section -->
+            <div class="section">
+                <h2>Other Demos</h2>
+                <p>Additional examples showcasing mobile device capabilities.</p>
+                
+                <div class="examples-grid">
+                    <div class="example-card">
+                        <div class="example-title">Multi-Touch Drawing</div>
+                        <div class="example-description">Draw with multiple fingers simultaneously - each finger gets its own color trail.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/basic-touch/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/basic-touch/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-card">
+                        <div class="example-title">Microphone Demo</div>
+                        <div class="example-description">Interactive audio visualization using device microphone input.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/microphone-demo/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/microphone-demo/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-card">
+                        <div class="example-title">Gyroscope Demo</div>
+                        <div class="example-description">Tilt-based game using device orientation and motion sensors.</div>
+                        <div class="example-links">
+                            <div class="link-row">
+                                <a href="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/gyroscope-demo/" class="demo-link" target="_blank">Try Demo</a>
+                                <canvas class="qr-code" data-url="https://digitalfuturesocadu.github.io/mobile-p5-permissions/examples/gyroscope-demo/"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Built with <a href="https://p5js.org/" target="_blank">p5.js</a> • 
+            <a href="https://github.com/DigitalFuturesOCADU/mobile-p5-permissions" target="_blank">View Source on GitHub</a></p>
+        </div>
+    </div>
+    
+    <script>
+        // Generate QR codes for all demo links
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if QRious library is available
+            if (typeof QRious === 'undefined') {
+                console.error('QRious library failed to load');
+                // Hide QR code elements if library didn't load
+                const qrElements = document.querySelectorAll('.qr-code');
+                qrElements.forEach(canvas => {
+                    canvas.style.display = 'none';
+                });
+                return;
+            }
+            
+            const qrElements = document.querySelectorAll('.qr-code');
+            
+            qrElements.forEach(canvas => {
+                const url = canvas.getAttribute('data-url');
+                try {
+                    new QRious({
+                        element: canvas,
+                        value: url,
+                        size: 80,
+                        foreground: '#1a1a1a',
+                        background: '#ffffff'
+                    });
+                } catch(error) {
+                    console.error('QR Code generation error:', error);
+                    canvas.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

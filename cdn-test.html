@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5-phone CDN Test</title>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    #status {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+  </style>
+  
+  <!-- Load p5.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
+  
+  <!-- Load p5-phone from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.min.js"></script>
+</head>
+<body>
+  <div id="status">Loading...</div>
+  
+  <script>
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      
+      // Test that p5-phone functions are available
+      const status = document.getElementById('status');
+      
+      if (typeof lockGestures === 'function' &&
+          typeof enableGyroTap === 'function' &&
+          typeof enableMicTap === 'function' &&
+          typeof showDebug === 'function') {
+        
+        status.innerHTML = `
+          <div class="success">✅ p5-phone v1.4.4 loaded successfully!</div>
+          <div>Functions available:</div>
+          <ul>
+            <li>lockGestures()</li>
+            <li>enableGyroTap()</li>
+            <li>enableMicTap()</li>
+            <li>showDebug()</li>
+          </ul>
+        `;
+        
+        // Enable debug panel
+        showDebug();
+        
+        // Lock gestures
+        lockGestures();
+        
+        console.log('✅ p5-phone loaded from CDN successfully!');
+        console.log('CDN URL: https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.min.js');
+      } else {
+        status.innerHTML = '❌ Error: p5-phone functions not found';
+        status.style.color = 'red';
+      }
+    }
+    
+    function draw() {
+      background(220);
+      
+      // Draw a simple animation to show it's working
+      fill(100, 150, 255);
+      circle(width/2 + sin(frameCount * 0.05) * 100, height/2, 50);
+      
+      // Show frame rate
+      fill(0);
+      textAlign(CENTER);
+      text('Tap anywhere to test', width/2, height - 50);
+    }
+    
+    function touchStarted() {
+      // Change background color on touch
+      background(random(255), random(255), random(255));
+      return false;
+    }
+  </script>
+</body>
+</html>
