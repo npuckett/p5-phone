@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>p5-phone - Mobile Hardware Access Library</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
@@ -31,7 +31,7 @@
             max-width: 100%;
             height: auto;
             display: block;
-            margin-bottom: 1rem;
+            margin-bottom: 2rem;
             border: 2px solid #000;
         }
 
@@ -45,7 +45,7 @@
         .subtitle {
             font-size: 1.2rem;
             color: #666;
-            margin-bottom: 1rem;
+            margin-bottom: 2rem;
             font-weight: 400;
         }
 
@@ -69,7 +69,6 @@
         /* Tab Navigation */
         .tab-nav {
             display: flex;
-            flex-wrap: wrap;
             border-bottom: 2px solid #000;
             margin-bottom: 2rem;
             gap: 0;
@@ -111,46 +110,6 @@
             margin-bottom: 3rem;
         }
 
-        /* Table of Contents */
-        .toc {
-            background: #f5f5f5;
-            border: 2px solid #000;
-            padding: 1.5rem;
-            margin-bottom: 3rem;
-        }
-
-        .toc h3 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            margin-top: 0;
-        }
-
-        .toc ul {
-            list-style: none;
-            margin-left: 0;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem 2rem;
-        }
-
-        .toc ul li {
-            margin-bottom: 0.5rem;
-        }
-
-        .toc a {
-            color: #000;
-            text-decoration: none;
-            font-weight: 500;
-            transition: padding-left 0.2s;
-            display: inline-block;
-        }
-
-        .toc a:hover {
-            text-decoration: underline;
-            padding-left: 0.5rem;
-        }
-
         .method-section h2 {
             font-size: 1.8rem;
             font-weight: 600;
@@ -186,31 +145,6 @@
             margin-bottom: 0.5rem;
         }
 
-        .method-section a {
-            color: #000;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .method-section a:hover {
-            text-decoration: underline;
-        }
-
-        .method-section a code {
-            background: #f5f5f5;
-            padding: 0.2rem 0.4rem;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            transition: background 0.2s, border-color 0.2s;
-        }
-
-        .method-section a:hover code {
-            background: #e0e0e0;
-            border-color: #000;
-        }
-
         .method-section code {
             background: #f5f5f5;
             padding: 0.2rem 0.4rem;
@@ -242,8 +176,6 @@
             border-collapse: collapse;
             margin-bottom: 1.5rem;
             border: 2px solid #000;
-            overflow-x: auto;
-            display: block;
         }
 
         table th,
@@ -280,7 +212,7 @@
 
         .examples-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 2rem;
         }
 
@@ -383,369 +315,14 @@
         footer a:hover {
             text-decoration: underline;
         }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
-
-            .tab-button {
-                padding: 0.75rem 1rem;
-                font-size: 1rem;
-            }
-
-            .examples-grid {
-                grid-template-columns: 1fr;
-            }
-
-            pre {
-                font-size: 0.8rem;
-                padding: 1rem;
-            }
-
-            table {
-                font-size: 0.85rem;
-            }
-
-            table th,
-            table td {
-                padding: 0.5rem;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <img src="../../p5-phone.png" alt="p5-phone library illustration" class="header-image">
-        <p class="credit">Illustration by <a href="https://angelatorchio.com/" target="_blank">Angela Torchio</a></p>
+        <h1>P5.js Mobile Interaction Examples</h1>
+        <p class="subtitle">Interactive examples demonstrating mobile device capabilities with p5.js</p>
 
-        <h1>p5-phone</h1>
-        <p class="subtitle">Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease</p>
-        
-
-        <!-- Tab Navigation -->
-        <div class="tab-nav">
-            <button class="tab-button active" onclick="openTab('methods')">Guide</button>
-            <button class="tab-button" onclick="openTab('examples')">Examples</button>
-        </div>
-
-        <!-- Guide Tab Content -->
-        <div id="methods" class="tab-content active">
-            <!-- Table of Contents -->
-            <div class="toc">
-                <ul>
-                    <li><a href="#cdn">Linking to the Library</a></li>
-                    <li><a href="#lock-gestures">lockGestures()</a></li>
-                    <li><a href="#debug-system">Debug System</a></li>
-                    <li><a href="#basic-setup">Basic Setup</a></li>
-                    <li><a href="#motion-sensor">Motion Sensor Activation</a></li>
-                    <li></li>
-                    <li></li>
-                    <li><a href="#microphone">Microphone Activation</a></li>
-                    <li></li>
-                </ul>
-            </div>
-
-            <div class="method-section" id="overview">
-                <h2>Overview</h2>
-                <p>P5.js on mobile provides unique opportunities and challenges. The main P5 framework does an excellent job of making it easy to read data from various phone inputs and sensors, however it doesn't deal with the realities of contemporary browser's built in gestures and security protocols.</p>
-                <p>That's where this library comes in:</p>
-                <ul>
-                    <li>Simplifies accessing phone hardware from the browser (accelerometers, gyroscopes, microphone)</li>
-                    <li>Simplifies disabling default phone gestures (Zoom, refresh, back, etc)</li>
-                    <li>Simplifies enabling audio output</li>
-                    <li>Simplifies using an on-screen console to display errors and debug info</li>
-                </ul>
-            </div>
-
-            <div class="method-section" id="p5js-commands">
-                <h2>p5.js Commands Simplified</h2>
-                <p>This library simplifies access to the following p5.js mobile sensor and audio commands:</p>
-                
-                <h3>Touch Events</h3>
-                <ul>
-                    <li><a href="https://p5js.org/reference/p5/touchStarted/" target="_blank"><code>touchStarted()</code></a> - Called when a touch begins</li>
-                    <li><a href="https://p5js.org/reference/p5/touchEnded/" target="_blank"><code>touchEnded()</code></a> - Called when a touch ends</li>
-                </ul>
-
-                <h3>Device Motion & Orientation</h3>
-                <ul>
-                    <li><a href="https://p5js.org/reference/p5/rotationX/" target="_blank"><code>rotationX</code></a> - Device tilt forward/backward</li>
-                    <li><a href="https://p5js.org/reference/p5/rotationY/" target="_blank"><code>rotationY</code></a> - Device tilt left/right</li>
-                    <li><a href="https://p5js.org/reference/p5/rotationZ/" target="_blank"><code>rotationZ</code></a> - Device rotation around screen</li>
-                    <li><a href="https://p5js.org/reference/p5/accelerationX/" target="_blank"><code>accelerationX</code></a> - Acceleration left/right</li>
-                    <li><a href="https://p5js.org/reference/p5/accelerationY/" target="_blank"><code>accelerationY</code></a> - Acceleration up/down</li>
-                    <li><a href="https://p5js.org/reference/p5/accelerationZ/" target="_blank"><code>accelerationZ</code></a> - Acceleration forward/back</li>
-                    <li><a href="https://p5js.org/reference/p5/deviceShaken/" target="_blank"><code>deviceShaken()</code></a> - Shake detection event</li>
-                    <li><a href="https://p5js.org/reference/p5/deviceMoved/" target="_blank"><code>deviceMoved()</code></a> - Movement detection event</li>
-                    <li><a href="https://p5js.org/reference/p5/setShakeThreshold/" target="_blank"><code>setShakeThreshold()</code></a> - Set shake detection sensitivity</li>
-                    <li><a href="https://p5js.org/reference/p5/setMoveThreshold/" target="_blank"><code>setMoveThreshold()</code></a> - Set movement detection sensitivity</li>
-                </ul>
-
-                <h3>Audio Input (requires p5.sound)</h3>
-                <ul>
-                    <li><a href="https://p5js.org/reference/p5.sound/p5.AudioIn/" target="_blank"><code>p5.AudioIn()</code></a> - Audio input object</li>
-                    <li><a href="https://p5js.org/reference/p5.sound/p5.AudioIn/getLevel/" target="_blank"><code>getLevel()</code></a> - Current audio input level</li>
-                </ul>
-            </div>
-
-            <div class="method-section" id="browser-compatibility">
-                <h2>Browser Compatibility</h2>
-                <ul>
-                    <li>iOS 13+ (Safari)</li>
-                    <li>Android 7+ (Chrome)</li>
-                    <li>Chrome 80+</li>
-                    <li>Safari 13+</li>
-                    <li>Firefox 75+</li>
-                </ul>
-            </div>
-
-            <div class="method-section" id="cdn">
-                <h2>Linking to the Library</h2>
-                <pre><code>&lt;!-- Minified version (recommended) --&gt;
-&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.min.js"&gt;&lt;/script&gt;
-
-&lt;!-- Development version (larger, with comments) --&gt;
-&lt;!-- &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.js"&gt;&lt;/script&gt; --&gt;</code></pre>
-            </div>
-
-            <div class="method-section" id="basic-setup">
-                <h2>Basic Setup</h2>
-                
-                <h3>Index HTML</h3>
-                <pre><code>&lt;!DOCTYPE html&gt;
-&lt;html lang="en"&gt;
-&lt;head&gt;
-  &lt;meta charset="UTF-8"&gt;
-  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
-  &lt;title&gt;Mobile p5.js App&lt;/title&gt;
-  
-  &lt;style&gt;
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-  &lt;/style&gt;
-  
-  &lt;script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"&gt;&lt;/script&gt;
-  &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.min.js"&gt;&lt;/script&gt;
-&lt;/head&gt;
-&lt;body&gt;
-  &lt;script src="sketch.js"&gt;&lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;</code></pre>
-
-                <h3>sketch.js</h3>
-                <pre><code>let mic;
-
-function setup() {
-  // Show debug panel FIRST to catch setup errors
-  showDebug();
-  
-  createCanvas(windowWidth, windowHeight);
-  
-  // Lock mobile gestures to prevent browser interference
-  lockGestures();
-  
-  // Enable motion sensors with tap-to-start
-  enableGyroTap('Tap to enable motion sensors');
-  
-  // Enable microphone with tap-to-start
-  mic = new p5.AudioIn();
-  enableMicTap('Tap to enable microphone');
-}
-
-function draw() {
-  background(220);
-  
-  // Always check status before using hardware features
-  if (window.sensorsEnabled) {
-    // Use device rotation and acceleration
-    fill(255, 0, 0);
-    circle(width/2 + rotationY * 5, height/2 + rotationX * 5, 50);
-  }
-  
-  if (window.micEnabled) {
-    // Use microphone input
-    let level = mic.getLevel();
-    fill(0, 255, 0);
-    rect(10, 10, level * 200, 20);
-  }
-}
-
-// Prevent default touch behavior
-function touchStarted() {
-  return false;
-}</code></pre>
-            </div>
-
-            <div class="method-section" id="api-reference">
-                <h2>API Reference</h2>
-                
-                <h3>Core Functions</h3>
-                <pre><code>// Essential mobile setup
-lockGestures()  // Prevent browser gestures (call in setup())
-
-// Motion sensor activation  
-enableGyroTap(message)    // Tap anywhere to enable sensors
-enableGyroButton(text)    // Button-based sensor activation
-
-// Microphone activation
-enableMicTap(message)     // Tap anywhere to enable microphone  
-enableMicButton(text)     // Button-based microphone activation
-
-// Sound output activation (no microphone input)
-enableSoundTap(message)   // Tap anywhere to enable sound playback
-enableSoundButton(text)   // Button-based sound activation
-
-// Status variables (check these in your code)
-window.sensorsEnabled     // Boolean: true when motion sensors are active
-window.micEnabled         // Boolean: true when microphone is active
-window.soundEnabled       // Boolean: true when sound output is active
-
-// Debug system
-showDebug()       // Show on-screen debug panel
-hideDebug()       // Hide debug panel
-toggleDebug()     // Toggle panel visibility
-debug(...args)    // Console.log with on-screen display
-debugError(...args) // Display errors with red styling
-debugWarn(...args)  // Display warnings with yellow styling</code></pre>
-
-                <h3 id="lock-gestures">lockGestures()</h3>
-                <p><strong>Purpose:</strong> Prevents unwanted mobile browser gestures that can interfere with your p5.js app.</p>
-                <p><strong>What it blocks:</strong></p>
-                <ul>
-                    <li>Pinch-to-zoom</li>
-                    <li>Pull-to-refresh</li>
-                    <li>Swipe navigation</li>
-                    <li>Long-press context menus</li>
-                    <li>Text selection</li>
-                    <li>Double-tap zoom</li>
-                </ul>
-                <pre><code>function setup() {
-  createCanvas(windowWidth, windowHeight);
-  lockGestures(); // Essential for smooth mobile interaction
-}</code></pre>
-
-                <h3 id="motion-sensor">Motion Sensor Activation</h3>
-                <p><strong>Purpose:</strong> Enable device motion and orientation sensors with user permission handling.</p>
-                <pre><code>// Tap-to-enable (recommended)
-enableGyroTap('Tap to enable motion sensors');
-
-// Button-based activation
-enableGyroButton('Enable Motion');</code></pre>
-
-                <p><strong>Available Variables (when window.sensorsEnabled is true):</strong></p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Variable</th>
-                            <th>Description</th>
-                            <th>Range/Units</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/rotationX/" target="_blank"><code>rotationX</code></a></td>
-                            <td>Device tilt forward/backward</td>
-                            <td>-180° to 180°</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/rotationY/" target="_blank"><code>rotationY</code></a></td>
-                            <td>Device tilt left/right</td>
-                            <td>-180° to 180°</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/rotationZ/" target="_blank"><code>rotationZ</code></a></td>
-                            <td>Device rotation around screen</td>
-                            <td>-180° to 180°</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/accelerationX/" target="_blank"><code>accelerationX</code></a></td>
-                            <td>Acceleration left/right</td>
-                            <td>m/s²</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/accelerationY/" target="_blank"><code>accelerationY</code></a></td>
-                            <td>Acceleration up/down</td>
-                            <td>m/s²</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/accelerationZ/" target="_blank"><code>accelerationZ</code></a></td>
-                            <td>Acceleration forward/back</td>
-                            <td>m/s²</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/deviceShaken/" target="_blank"><code>deviceShaken</code></a></td>
-                            <td>Shake detection event</td>
-                            <td>true when shaken</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/deviceMoved/" target="_blank"><code>deviceMoved</code></a></td>
-                            <td>Movement detection event</td>
-                            <td>true when moved</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3 id="microphone">Microphone Activation</h3>
-                <p><strong>Important:</strong> Requires the p5.sound library.</p>
-                <pre><code>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.0/addons/p5.sound.min.js"&gt;&lt;/script&gt;</code></pre>
-                <pre><code>let mic;
-
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  mic = new p5.AudioIn();
-  enableMicTap();
-}
-
-function draw() {
-  if (window.micEnabled) {
-    let level = mic.getLevel();
-    let size = map(level, 0, 1, 10, 200);
-    circle(width/2, height/2, size);
-  }
-}</code></pre>
-
-                <h3 id="debug-system">Debug System</h3>
-                <p><strong>Purpose:</strong> On-screen debugging for mobile development where browser dev tools aren't accessible.</p>
-                <p><strong>Key Features:</strong></p>
-                <ul>
-                    <li>Automatic error catching with timestamps</li>
-                    <li>Color-coded messages (errors=red, warnings=yellow)</li>
-                    <li>Touch-friendly mobile interface</li>
-                    <li>Keyboard shortcuts: 'D' to toggle, 'C' to clear</li>
-                </ul>
-                <pre><code>function setup() {
-  // IMPORTANT: Call showDebug() FIRST to catch setup errors
-  showDebug();
-  createCanvas(windowWidth, windowHeight);
-}
-
-function draw() {
-  debug("Touch at:", mouseX, mouseY);
-  debugError("Failed to load image");
-  debugWarn("Frame rate dropping:", frameRate());
-}</code></pre>
-            </div>
-        </div>
-
-        <!-- Examples Tab Content -->
-        <div id="examples" class="tab-content">
-            <!-- Blank Template -->
-            <div class="section">
-                <h2 class="section-title">Getting Started</h2>
-                <div class="examples-grid">
-                    <div class="example-card">
-                        <div class="example-title">Blank Template</div>
-                        <p class="example-description">Basic setup from the README - a starting point for your own projects</p>
-                        <a href="https://editor.p5js.org/creationcomputation/sketches/R-c_HpeUg" target="_blank" class="example-link">Web Editor →</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/blankTemplate" target="_blank" class="github-link">View Code</a>
-                    </div>
-                </div>
-            </div>
+        <!-- Blank Template -->
         <div class="section">
             <h2 class="section-title">Getting Started</h2>
             <div class="examples-grid">
@@ -1038,25 +615,6 @@ function draw() {
     </div>
 
     <script>
-        // Tab switching function
-        function openTab(tabName) {
-            // Hide all tab content
-            const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove('active');
-            }
-            
-            // Remove active class from all tab buttons
-            const tabButtons = document.getElementsByClassName('tab-button');
-            for (let i = 0; i < tabButtons.length; i++) {
-                tabButtons[i].classList.remove('active');
-            }
-            
-            // Show the selected tab and mark button as active
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
-
         // Wait for QRCode library to load
         window.addEventListener('load', function() {
             // Generate QR codes for all examples
@@ -1089,19 +647,17 @@ function draw() {
             ];
 
             examples.forEach(example => {
+                const fullURL = baseURL + example.url;
                 const container = document.getElementById(example.id);
-                if (container) {
-                    const fullURL = baseURL + example.url;
-                    container.innerHTML = ''; // Clear any existing content
-                    new QRCode(container, {
-                        text: fullURL,
-                        width: 150,
-                        height: 150,
-                        colorDark: '#000000',
-                        colorLight: '#ffffff',
-                        correctLevel: QRCode.CorrectLevel.M
-                    });
-                }
+                container.innerHTML = ''; // Clear any existing content
+                new QRCode(container, {
+                    text: fullURL,
+                    width: 150,
+                    height: 150,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
             });
         });
     </script>
