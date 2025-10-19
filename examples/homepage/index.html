@@ -447,6 +447,10 @@
                 </ul>
             </div>
 
+            <div class="method-section">
+                <p style="margin-bottom: 2rem;"><strong>GitHub Repository:</strong> <a href="https://github.com/npuckett/p5-phone" target="_blank">https://github.com/npuckett/p5-phone</a></p>
+            </div>
+
             <div class="method-section" id="overview">
                 <h2>Overview</h2>
                 <p>P5.js on mobile provides unique opportunities and challenges. The main P5 framework does an excellent job of making it easy to read data from various phone inputs and sensors, however it doesn't deal with the realities of contemporary browser's built in gestures and security protocols.</p>
@@ -585,33 +589,142 @@ function touchStarted() {
                 <h2>API Reference</h2>
                 
                 <h3>Core Functions</h3>
-                <pre><code>// Essential mobile setup
-lockGestures()  // Prevent browser gestures (call in setup())
+                
+                <h4>Block Default Gestures</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>lockGestures()</code></td>
+                            <td>Prevent browser gestures (call in setup())</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-// Motion sensor activation  
-enableGyroTap(message)    // Tap anywhere to enable sensors
-enableGyroButton(text)    // Button-based sensor activation
+                <h4>Motion Sensor Activation</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>enableGyroTap(message)</code></td>
+                            <td>Tap anywhere to enable motion sensors</td>
+                        </tr>
+                        <tr>
+                            <td><code>enableGyroButton(text)</code></td>
+                            <td>Button-based sensor activation</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-// Microphone activation
-enableMicTap(message)     // Tap anywhere to enable microphone  
-enableMicButton(text)     // Button-based microphone activation
+                <h4>Microphone Activation</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>enableMicTap(message)</code></td>
+                            <td>Tap anywhere to enable microphone</td>
+                        </tr>
+                        <tr>
+                            <td><code>enableMicButton(text)</code></td>
+                            <td>Button-based microphone activation</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-// Sound output activation (no microphone input)
-enableSoundTap(message)   // Tap anywhere to enable sound playback
-enableSoundButton(text)   // Button-based sound activation
+                <h4>Sound Output Activation</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>enableSoundTap(message)</code></td>
+                            <td>Tap anywhere to enable sound playback (no microphone input)</td>
+                        </tr>
+                        <tr>
+                            <td><code>enableSoundButton(text)</code></td>
+                            <td>Button-based sound activation (no microphone input)</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-// Status variables (check these in your code)
-window.sensorsEnabled     // Boolean: true when motion sensors are active
-window.micEnabled         // Boolean: true when microphone is active
-window.soundEnabled       // Boolean: true when sound output is active
+                <h4>Status Variables</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>window.sensorsEnabled</code></td>
+                            <td>Boolean: true when motion sensors are active</td>
+                        </tr>
+                        <tr>
+                            <td><code>window.micEnabled</code></td>
+                            <td>Boolean: true when microphone is active</td>
+                        </tr>
+                        <tr>
+                            <td><code>window.soundEnabled</code></td>
+                            <td>Boolean: true when sound output is active</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-// Debug system
-showDebug()       // Show on-screen debug panel
-hideDebug()       // Hide debug panel
-toggleDebug()     // Toggle panel visibility
-debug(...args)    // Console.log with on-screen display
-debugError(...args) // Display errors with red styling
-debugWarn(...args)  // Display warnings with yellow styling</code></pre>
+                <h4>Debug System</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>showDebug()</code></td>
+                            <td>Show on-screen debug panel</td>
+                        </tr>
+                        <tr>
+                            <td><code>hideDebug()</code></td>
+                            <td>Hide debug panel</td>
+                        </tr>
+                        <tr>
+                            <td><code>toggleDebug()</code></td>
+                            <td>Toggle panel visibility</td>
+                        </tr>
+                        <tr>
+                            <td><code>debug(...args)</code></td>
+                            <td>Console.log with on-screen display</td>
+                        </tr>
+                        <tr>
+                            <td><code>debugError(...args)</code></td>
+                            <td>Display errors with red styling</td>
+                        </tr>
+                        <tr>
+                            <td><code>debugWarn(...args)</code></td>
+                            <td>Display warnings with yellow styling</td>
+                        </tr>
+                    </tbody>
+                </table>
 
                 <h3 id="lock-gestures">lockGestures()</h3>
                 <p><strong>Purpose:</strong> Prevents unwanted mobile browser gestures that can interfere with your p5.js app.</p>
