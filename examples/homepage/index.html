@@ -126,12 +126,35 @@
             margin-top: 0;
         }
 
-        .toc ul {
-            list-style: none;
-            margin-left: 0;
+        .toc h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            margin-top: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+        }
+
+        .toc h4:first-of-type {
+            margin-top: 0;
+        }
+
+        .toc-section {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 0.5rem 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .toc-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+            display: contents;
         }
 
         .toc ul li {
@@ -430,17 +453,24 @@
         <div id="methods" class="tab-content active">
             <!-- Table of Contents -->
             <div class="toc">
-                <ul>
-                    <li><a href="#cdn">Linking to the Library</a></li>
-                    <li><a href="#lock-gestures">lockGestures()</a></li>
-                    <li><a href="#debug-system">Debug System</a></li>
-                    <li><a href="#basic-setup">Basic Setup</a></li>
-                    <li><a href="#motion-sensor">Motion Sensor Activation</a></li>
-                    <li></li>
-                    <li></li>
-                    <li><a href="#microphone">Microphone Activation</a></li>
-                    <li></li>
-                </ul>
+                <h4>Getting Started</h4>
+                <div class="toc-section">
+                    <ul>
+                        <li><a href="#cdn">Linking to the Library</a></li>
+                        <li><a href="#basic-setup">Basic Setup</a></li>
+                    </ul>
+                </div>
+
+                <h4>API</h4>
+                <div class="toc-section">
+                    <ul>
+                        <li><a href="#lock-gestures">lockGestures()</a></li>
+                        <li><a href="#motion-sensor">Motion Sensor Activation</a></li>
+                        <li><a href="#microphone">Microphone Activation</a></li>
+                        <li><a href="#sound-activation">Sound Activation</a></li>
+                        <li><a href="#debug-system">Debug System</a></li>
+                    </ul>
+                </div>
             </div>
 
             <div class="method-section">
@@ -460,8 +490,8 @@
             </div>
 
             <div class="method-section" id="p5js-commands">
-                <h2>p5.js Commands Simplified</h2>
-                <p>This library simplifies access to the following p5.js mobile sensor and audio commands:</p>
+                <h2>Accessing Phone Hardware in p5.js</h2>
+                <p>p5.js has several existing commands that are specific to phone hardware. However, it requires extra steps to use them effectively. To use the Touch based commands, you need to disable the default gestures on your phone browser. For Motion and Microphone date you need to provide specific permissions for your browser to read the data.</p>
                 
                 <h3>Touch Events</h3>
                 <ul>
@@ -642,7 +672,7 @@ function touchStarted() {
                     </tbody>
                 </table>
 
-                <h4>Sound Output Activation</h4>
+                <h4 id="sound-activation">Sound Output Activation</h4>
                 <table>
                     <thead>
                         <tr>
@@ -855,17 +885,6 @@ function draw() {
                     </div>
                 </div>
             </div>
-        <div class="section">
-            <h2 class="section-title">Getting Started</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">Blank Template</div>
-                    <p class="example-description">Basic setup from the README - a starting point for your own projects</p>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/R-c_HpeUg" target="_blank" class="example-link">Web Editor →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/blankTemplate" target="_blank" class="github-link">View Code</a>
-                </div>
-            </div>
-        </div>
 
         <!-- Touch Examples -->
         <div class="section">
