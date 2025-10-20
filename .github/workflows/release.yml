@@ -26,10 +26,7 @@ jobs:
       run: |
         echo "Validating release files..."
         ls -la src/
-        test -f src/permissionsAll.js
-        test -f src/permissionsGyro.js
-        test -f src/permissionMic.js
-        test -f src/permissionsGesture.js
+        test -f src/p5-phone.js
         echo "All required files exist ✓"
 
   create-release:
