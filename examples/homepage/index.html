@@ -674,7 +674,7 @@ function touchStarted() {
                     <tbody>
                         <tr>
                             <td><code>lockGestures()</code></td>
-                            <td>Prevent browser gestures (call in setup())</td>
+                            <td>Prevent browser gestures (call in setup()). Blocks: pinch-to-zoom, pull-to-refresh, swipe navigation, long-press context menus, text selection, double-tap zoom</td>
                         </tr>
                     </tbody>
                 </table>
@@ -690,11 +690,11 @@ function touchStarted() {
                     <tbody>
                         <tr>
                             <td><code>enableGyroTap(message)</code></td>
-                            <td>Tap anywhere to enable motion sensors</td>
+                            <td>Tap anywhere to enable motion sensors. Once enabled (when window.sensorsEnabled is true), provides access to: <code>rotationX</code>, <code>rotationY</code>, <code>rotationZ</code>, <code>accelerationX</code>, <code>accelerationY</code>, <code>accelerationZ</code>, <code>deviceShaken</code>, <code>deviceMoved</code></td>
                         </tr>
                         <tr>
                             <td><code>enableGyroButton(text)</code></td>
-                            <td>Button-based sensor activation</td>
+                            <td>Button-based sensor activation. Once enabled (when window.sensorsEnabled is true), provides access to: <code>rotationX</code>, <code>rotationY</code>, <code>rotationZ</code>, <code>accelerationX</code>, <code>accelerationY</code>, <code>accelerationZ</code>, <code>deviceShaken</code>, <code>deviceMoved</code></td>
                         </tr>
                     </tbody>
                 </table>
@@ -710,11 +710,11 @@ function touchStarted() {
                     <tbody>
                         <tr>
                             <td><code>enableMicTap(message)</code></td>
-                            <td>Tap anywhere to enable microphone</td>
+                            <td>Tap anywhere to enable microphone (requires p5.sound library). Once enabled (when window.micEnabled is true), use with <code>mic.getLevel()</code> and other p5.AudioIn methods</td>
                         </tr>
                         <tr>
                             <td><code>enableMicButton(text)</code></td>
-                            <td>Button-based microphone activation</td>
+                            <td>Button-based microphone activation (requires p5.sound library). Once enabled (when window.micEnabled is true), use with <code>mic.getLevel()</code> and other p5.AudioIn methods</td>
                         </tr>
                     </tbody>
                 </table>
@@ -798,123 +798,6 @@ function touchStarted() {
                         </tr>
                     </tbody>
                 </table>
-
-                <h3 id="lock-gestures">lockGestures()</h3>
-                <p><strong>Purpose:</strong> Prevents unwanted mobile browser gestures that can interfere with your p5.js app.</p>
-                <p><strong>What it blocks:</strong></p>
-                <ul>
-                    <li>Pinch-to-zoom</li>
-                    <li>Pull-to-refresh</li>
-                    <li>Swipe navigation</li>
-                    <li>Long-press context menus</li>
-                    <li>Text selection</li>
-                    <li>Double-tap zoom</li>
-                </ul>
-                <pre><code>function setup() {
-  createCanvas(windowWidth, windowHeight);
-  lockGestures(); // Essential for smooth mobile interaction
-}</code></pre>
-
-                <h3 id="motion-sensor">Motion Sensor Activation</h3>
-                <p><strong>Purpose:</strong> Enable device motion and orientation sensors with user permission handling.</p>
-                <pre><code>// Tap-to-enable (recommended)
-enableGyroTap('Tap to enable motion sensors');
-
-// Button-based activation
-enableGyroButton('Enable Motion');</code></pre>
-
-                <p><strong>Available Variables (when window.sensorsEnabled is true):</strong></p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Variable</th>
-                            <th>Description</th>
-                            <th>Range/Units</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/rotationX/" target="_blank"><code>rotationX</code></a></td>
-                            <td>Device tilt forward/backward</td>
-                            <td>-180° to 180°</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/rotationY/" target="_blank"><code>rotationY</code></a></td>
-                            <td>Device tilt left/right</td>
-                            <td>-180° to 180°</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/rotationZ/" target="_blank"><code>rotationZ</code></a></td>
-                            <td>Device rotation around screen</td>
-                            <td>-180° to 180°</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/accelerationX/" target="_blank"><code>accelerationX</code></a></td>
-                            <td>Acceleration left/right</td>
-                            <td>m/s²</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/accelerationY/" target="_blank"><code>accelerationY</code></a></td>
-                            <td>Acceleration up/down</td>
-                            <td>m/s²</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/accelerationZ/" target="_blank"><code>accelerationZ</code></a></td>
-                            <td>Acceleration forward/back</td>
-                            <td>m/s²</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/deviceShaken/" target="_blank"><code>deviceShaken</code></a></td>
-                            <td>Shake detection event</td>
-                            <td>true when shaken</td>
-                        </tr>
-                        <tr>
-                            <td><a href="https://p5js.org/reference/p5/deviceMoved/" target="_blank"><code>deviceMoved</code></a></td>
-                            <td>Movement detection event</td>
-                            <td>true when moved</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3 id="microphone">Microphone Activation</h3>
-                <p><strong>Important:</strong> Requires the p5.sound library.</p>
-                <pre><code>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.0/addons/p5.sound.min.js"&gt;&lt;/script&gt;</code></pre>
-                <pre><code>let mic;
-
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  mic = new p5.AudioIn();
-  enableMicTap();
-}
-
-function draw() {
-  if (window.micEnabled) {
-    let level = mic.getLevel();
-    let size = map(level, 0, 1, 10, 200);
-    circle(width/2, height/2, size);
-  }
-}</code></pre>
-
-                <h3 id="debug-system">Debug System</h3>
-                <p><strong>Purpose:</strong> On-screen debugging for mobile development where browser dev tools aren't accessible.</p>
-                <p><strong>Key Features:</strong></p>
-                <ul>
-                    <li>Automatic error catching with timestamps</li>
-                    <li>Color-coded messages (errors=red, warnings=yellow)</li>
-                    <li>Touch-friendly mobile interface</li>
-                    <li>Keyboard shortcuts: 'D' to toggle, 'C' to clear</li>
-                </ul>
-                <pre><code>function setup() {
-  // IMPORTANT: Call showDebug() FIRST to catch setup errors
-  showDebug();
-  createCanvas(windowWidth, windowHeight);
-}
-
-function draw() {
-  debug("Touch at:", mouseX, mouseY);
-  debugError("Failed to load image");
-  debugWarn("Frame rate dropping:", frameRate());
-}</code></pre>
             </div>
         </div>
 
