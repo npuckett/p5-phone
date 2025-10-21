@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.4.4
+ * p5-phone v1.5.0
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -85,6 +85,7 @@ window.sensorsEnabled = false;
 window.micEnabled = false;
 window.soundEnabled = false;
 window.gesturesLocked = false;
+window.vibrationEnabled = false;
 
 // Internal state
 let _permissionsInitialized = false;
@@ -177,6 +178,30 @@ function enableSoundTap(message = 'Tap screen to enable sound') {
 }
 
 /**
+ * Enable vibration motor with a button interface
+ * Creates a start button that user must click
+ * Note: Vibration API is supported on Android, but not iOS
+ */
+function enableVibrationButton(buttonText = 'ENABLE VIBRATION', statusText = 'Enabling vibration...') {
+  _createPermissionButton(buttonText, statusText, async () => {
+    await _requestVibrationPermission();
+    console.log('✅ Vibration enabled via button');
+  });
+}
+
+/**
+ * Enable vibration motor with tap-to-start
+ * User taps anywhere on screen to enable
+ * Note: Vibration API is supported on Android, but not iOS
+ */
+function enableVibrationTap(message = 'Tap screen to enable vibration') {
+  _createTapToEnable(message, async () => {
+    await _requestVibrationPermission();
+    console.log('✅ Vibration enabled via tap');
+  });
+}
+
+/**
  * Enable both motion sensors and microphone with a button interface
  * Creates a start button that user must click to enable both
  */
@@ -198,6 +223,39 @@ function enableAllTap(message = 'Tap screen to enable motion sensors & microphon
     await _requestMicrophonePermissions();
     console.log('✅ Motion sensors and microphone enabled via tap');
   });
+}
+
+/**
+ * Trigger vibration on device
+ * @param {number|number[]} pattern - Duration in ms or pattern array [vibrate, pause, vibrate, ...]
+ * 
+ * Examples:
+ *   vibrate(200);              // Single 200ms vibration
+ *   vibrate([100, 50, 100]);   // Pattern: vibrate 100ms, pause 50ms, vibrate 100ms
+ * 
+ * Note: Only works if vibrationEnabled is true and device supports vibration
+ */
+function vibrate(pattern) {
+  if (!window.vibrationEnabled) {
+    console.warn('⚠️ Vibration not enabled. Call enableVibrationTap() or enableVibrationButton() first.');
+    return false;
+  }
+  
+  if (!navigator.vibrate) {
+    console.warn('⚠️ Vibration API not supported on this device');
+    return false;
+  }
+  
+  return navigator.vibrate(pattern);
+}
+
+/**
+ * Stop any ongoing vibration
+ */
+function stopVibration() {
+  if (navigator.vibrate) {
+    navigator.vibrate(0);
+  }
 }
 
 // =========================================
@@ -281,6 +339,42 @@ async function _requestSoundOutput() {
   }
 }
 
+async function _requestVibrationPermission() {
+  try {
+    // Check if Vibration API is supported
+    if (!navigator.vibrate) {
+      console.warn('⚠️ Vibration API not supported on this device (likely iOS)');
+      if (_debugVisible) {
+        debugWarn('Vibration API not supported on this device');
+      }
+      window.vibrationEnabled = false;
+      _notifySketchReady();
+      return;
+    }
+    
+    // Test vibration with a short pulse
+    const vibrateSuccess = navigator.vibrate(1);
+    
+    if (vibrateSuccess) {
+      window.vibrationEnabled = true;
+      console.log('✅ Vibration enabled');
+    } else {
+      console.warn('⚠️ Vibration API available but vibration failed');
+      window.vibrationEnabled = false;
+    }
+    
+    _notifySketchReady();
+    
+  } catch (error) {
+    console.error('Vibration permission error:', error);
+    if (_debugVisible) {
+      debugError('Vibration permission error:', error);
+    }
+    window.vibrationEnabled = false;
+    _notifySketchReady();
+  }
+}
+
 function _notifySketchReady() {
   // Call userSetupComplete if it exists
   if (typeof userSetupComplete === 'function') {
@@ -293,6 +387,7 @@ function _notifySketchReady() {
       sensors: window.sensorsEnabled,
       microphone: window.micEnabled,
       sound: window.soundEnabled,
+      vibration: window.vibrationEnabled,
       gestures: window.gesturesLocked
     }
   }));
@@ -835,6 +930,10 @@ window.enableMicTap = enableMicTap;
 window.enableMicButton = enableMicButton;
 window.enableSoundTap = enableSoundTap;
 window.enableSoundButton = enableSoundButton;
+window.enableVibrationTap = enableVibrationTap;
+window.enableVibrationButton = enableVibrationButton;
+window.vibrate = vibrate;
+window.stopVibration = stopVibration;
 window.enableAllTap = enableAllTap;
 window.enableAllButton = enableAllButton;
 
@@ -1047,6 +1146,10 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.enableMicButton = enableMicButton;
   p5.prototype.enableSoundTap = enableSoundTap;
   p5.prototype.enableSoundButton = enableSoundButton;
+  p5.prototype.enableVibrationTap = enableVibrationTap;
+  p5.prototype.enableVibrationButton = enableVibrationButton;
+  p5.prototype.vibrate = vibrate;
+  p5.prototype.stopVibration = stopVibration;
   p5.prototype.enableAllTap = enableAllTap;
   p5.prototype.enableAllButton = enableAllButton;
   

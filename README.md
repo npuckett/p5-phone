@@ -8,7 +8,7 @@
 P5.js on mobile provides unique opportunities and challenges. The main P5 framework does an excellent job of making it easy to read data from various phone inputs and sensors, however it doesn't deal with the realities of contemporary browser's built in gestures and security protocols.
 That's where this library comes in:
 
-- Simplifies accessing phone hardware from the browser (accelerometers, gyroscopes, microphone)
+- Simplifies accessing phone hardware from the browser (accelerometers, gyroscopes, microphone, vibration motor)
 - Simplifies disabling default phone gestures (Zoom, refresh, back, etc)
 - Simplifies enabling audio output
 - Simplifies using an on-screen console to display errors and debug info
@@ -60,6 +60,7 @@ This library simplifies access to the following p5.js mobile sensor and audio co
   - [Motion Sensor Activation](#motion-sensor-activation)
   - [Microphone Activation](#microphone-activation)
   - [Sound Output Activation](#sound-output-activation)
+  - [Vibration Motor (Android Only)](#vibration-motor-android-only)
   - [Debug System](#debug-system)
 
 ### CDN (Recommended)
@@ -191,10 +192,17 @@ enableMicButton(text)     // Button-based microphone activation
 enableSoundTap(message)   // Tap anywhere to enable sound playback
 enableSoundButton(text)   // Button-based sound activation
 
+// Vibration motor (Android only)
+enableVibrationTap(message)   // Tap anywhere to enable vibration
+enableVibrationButton(text)   // Button-based vibration activation
+vibrate(pattern)              // Trigger vibration (duration or pattern array)
+stopVibration()               // Stop any ongoing vibration
+
 // Status variables (check these in your code)
 window.sensorsEnabled     // Boolean: true when motion sensors are active
 window.micEnabled         // Boolean: true when microphone is active
 window.soundEnabled       // Boolean: true when sound output is active
+window.vibrationEnabled   // Boolean: true when vibration is available (Android only)
 
 // Debug system (enhanced in v1.4.0)
 showDebug()       // Show on-screen debug panel with automatic error catching
@@ -225,6 +233,7 @@ this.enableGyroTap('Tap to start');
 - `window.sensorsEnabled` - Boolean indicating if motion sensors are active
 - `window.micEnabled` - Boolean indicating if microphone is active
 - `window.soundEnabled` - Boolean indicating if sound output is active
+- `window.vibrationEnabled` - Boolean indicating if vibration is available (Android only)
 
 **Usage:**
 ```javascript
@@ -243,6 +252,11 @@ function draw() {
   if (window.soundEnabled) {
     // Safe to play sounds
     mySound.play();
+  }
+  
+  if (window.vibrationEnabled) {
+    // Safe to use vibration (Android only)
+    vibrate(50);
   }
 }
 
@@ -452,6 +466,109 @@ function mousePressed() {
   }
 }
 ```
+
+### Vibration Motor (Android Only)
+
+**Purpose:** Access the device's vibration motor for haptic feedback and tactile interactions.
+
+**⚠️ Platform Support:**
+- ✅ **Android** - Full support in Chrome and most Android browsers
+- ❌ **iOS** - Not supported (Vibration API not available on iOS devices)
+
+**Important:** The vibration feature will automatically detect if the device supports vibration. On iOS or unsupported devices, `window.vibrationEnabled` will be `false` and vibration calls will be safely ignored with console warnings.
+
+**Commands:**
+- `enableVibrationTap(message)` - Tap anywhere on screen to enable vibration
+- `enableVibrationButton(text)` - Creates a button with custom text to enable vibration
+- `vibrate(pattern)` - Trigger vibration with a duration (ms) or pattern array
+- `stopVibration()` - Stop any ongoing vibration
+
+**Usage:**
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  
+  // Enable vibration with tap (Android only)
+  enableVibrationTap('Tap to enable vibration');
+  
+  // Or use a button
+  // enableVibrationButton('Enable Haptics');
+}
+
+function draw() {
+  background(220);
+  
+  if (window.vibrationEnabled) {
+    text('Vibration ready! Tap anywhere', 20, 20);
+  } else {
+    text('Vibration not available', 20, 20);
+  }
+}
+
+function mousePressed() {
+  if (window.vibrationEnabled) {
+    // Simple vibration - 50ms pulse
+    vibrate(50);
+  }
+}
+```
+
+**Vibration Patterns:**
+```javascript
+// Single vibration (duration in milliseconds)
+vibrate(100);  // Vibrate for 100ms
+
+// Pattern: [vibrate, pause, vibrate, pause, ...]
+vibrate([100, 50, 100]);           // Short-short pattern
+vibrate([200, 100, 200, 100, 200]); // Triple pulse
+vibrate([50, 50, 50, 50, 500]);     // Quick taps then long
+
+// Stop any ongoing vibration
+stopVibration();
+```
+
+**Common Use Cases:**
+```javascript
+// Haptic feedback for button presses
+function mousePressed() {
+  if (window.vibrationEnabled) {
+    vibrate(20);  // Quick tap feedback
+  }
+}
+
+// Touch zones with different haptic patterns
+function touchStarted() {
+  if (window.vibrationEnabled) {
+    if (mouseX < width/2) {
+      vibrate(50);  // Left side - short pulse
+    } else {
+      vibrate([50, 30, 50]);  // Right side - double pulse
+    }
+  }
+  return false;
+}
+
+// Collision detection
+function checkCollision() {
+  if (collision && window.vibrationEnabled) {
+    vibrate([100, 50, 100, 50, 200]);  // Alert pattern
+  }
+}
+
+// Game events
+function gameOver() {
+  if (window.vibrationEnabled) {
+    vibrate(500);  // Long vibration for game over
+  }
+}
+```
+
+**Best Practices:**
+- Use short vibrations (20-100ms) for subtle feedback
+- Use patterns for more complex haptic responses
+- Always check `window.vibrationEnabled` before calling `vibrate()`
+- Don't overuse - vibration can quickly drain battery
+- Test on Android devices as iOS doesn't support vibration
 
 ### Debug System
 

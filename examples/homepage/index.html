@@ -509,6 +509,7 @@
                         <li><a href="#motion-sensor">Motion Sensor Activation</a></li>
                         <li><a href="#microphone">Microphone Activation</a></li>
                         <li><a href="#sound-activation">Sound Activation</a></li>
+                        <li><a href="#vibration">Vibration Motor (Android)</a></li>
                         <li><a href="#debug-system">Debug System</a></li>
                     </ul>
                 </div>
@@ -522,7 +523,7 @@
                 <h2>Overview</h2>
                 <p>P5-phone bridges the gap between the existing software functions inside p5.js and the realities of contemporary mobile browsers to enable phones to be used for experimental interactions. This is done both through addition and subtraction. Firstly, it streamlines gaining access to phone sensors so that their data can be used inside p5. Secondly, it disables default gestures so that you can create your own.</p>
                 <ul>
-                    <li>Simplifies accessing phone hardware from the browser (accelerometers, gyroscopes, microphone)</li>
+                    <li>Simplifies accessing phone hardware from the browser (accelerometers, gyroscopes, microphone, vibration motor)</li>
                     <li>Simplifies disabling default phone gestures (Zoom, refresh, back, etc)</li>
                     <li>Simplifies enabling audio output</li>
                     <li>Simplifies using an on-screen console to display errors and debug info</li>
@@ -739,6 +740,34 @@ function touchStarted() {
                     </tbody>
                 </table>
 
+                <h4 id="vibration">Vibration Motor (Android Only)</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>enableVibrationTap(message)</code></td>
+                            <td>Tap anywhere to enable vibration motor (Android only - not supported on iOS)</td>
+                        </tr>
+                        <tr>
+                            <td><code>enableVibrationButton(text)</code></td>
+                            <td>Button-based vibration activation (Android only - not supported on iOS)</td>
+                        </tr>
+                        <tr>
+                            <td><code>vibrate(pattern)</code></td>
+                            <td>Trigger vibration with duration (ms) or pattern array. Example: <code>vibrate(50)</code> or <code>vibrate([100, 50, 100])</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>stopVibration()</code></td>
+                            <td>Stop any ongoing vibration</td>
+                        </tr>
+                    </tbody>
+                </table>
+
                 <h4>Status Variables</h4>
                 <table>
                     <thead>
@@ -759,6 +788,10 @@ function touchStarted() {
                         <tr>
                             <td><code>window.soundEnabled</code></td>
                             <td>Boolean: true when sound output is active</td>
+                        </tr>
+                        <tr>
+                            <td><code>window.vibrationEnabled</code></td>
+                            <td>Boolean: true when vibration is available (Android only)</td>
                         </tr>
                     </tbody>
                 </table>
