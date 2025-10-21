@@ -260,6 +260,46 @@
             padding: 0;
         }
 
+        /* Code box with copy button */
+        .code-box {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .code-box h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .code-box pre {
+            margin-bottom: 0;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #000;
+            color: #fff;
+            border: 2px solid #000;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .copy-button:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .copy-button.copied {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -479,13 +519,39 @@
 
             <div class="method-section" id="overview">
                 <h2>Overview</h2>
-                <p>P5.js on mobile provides unique opportunities and challenges. The main P5 framework does an excellent job of making it easy to read data from various phone inputs and sensors, however it doesn't deal with the realities of contemporary browser's built in gestures and security protocols.</p>
-                <p>That's where this library comes in:</p>
+                <p>P5-phone bridges the gap between the existing software functions inside p5.js and the realities of contemporary mobile browsers to enable phones to be used for experimental interactions. This is done both through addition and subtraction. Firstly, it streamlines gaining access to phone sensors so that their data can be used inside p5. Secondly, it disables default gestures so that you can create your own.</p>
                 <ul>
                     <li>Simplifies accessing phone hardware from the browser (accelerometers, gyroscopes, microphone)</li>
                     <li>Simplifies disabling default phone gestures (Zoom, refresh, back, etc)</li>
                     <li>Simplifies enabling audio output</li>
                     <li>Simplifies using an on-screen console to display errors and debug info</li>
+                </ul>
+            </div>
+
+            <div class="method-section" id="cdn">
+                <h2>Linking to the Library</h2>
+                
+                <div class="code-box">
+                    <h4>Minified version (recommended)</h4>
+                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
+                    <button class="copy-button" onclick="copyCode(this, '&lt;script src=&quot;https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.min.js&quot;&gt;&lt;/script&gt;')">Copy</button>
+                </div>
+
+                <div class="code-box">
+                    <h4>Development version (larger, with comments)</h4>
+                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.js"&gt;&lt;/script&gt;</code></pre>
+                    <button class="copy-button" onclick="copyCode(this, '&lt;script src=&quot;https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.js&quot;&gt;&lt;/script&gt;')">Copy</button>
+                </div>
+            </div>
+
+            <div class="method-section" id="browser-compatibility">
+                <h2>Browser Compatibility</h2>
+                <ul>
+                    <li>iOS 13+ (Safari)</li>
+                    <li>Android 7+ (Chrome)</li>
+                    <li>Chrome 80+</li>
+                    <li>Safari 13+</li>
+                    <li>Firefox 75+</li>
                 </ul>
             </div>
 
@@ -518,26 +584,6 @@
                     <li><a href="https://p5js.org/reference/p5.sound/p5.AudioIn/" target="_blank"><code>p5.AudioIn()</code></a> - Audio input object</li>
                     <li><a href="https://p5js.org/reference/p5.sound/p5.AudioIn/getLevel/" target="_blank"><code>getLevel()</code></a> - Current audio input level</li>
                 </ul>
-            </div>
-
-            <div class="method-section" id="browser-compatibility">
-                <h2>Browser Compatibility</h2>
-                <ul>
-                    <li>iOS 13+ (Safari)</li>
-                    <li>Android 7+ (Chrome)</li>
-                    <li>Chrome 80+</li>
-                    <li>Safari 13+</li>
-                    <li>Firefox 75+</li>
-                </ul>
-            </div>
-
-            <div class="method-section" id="cdn">
-                <h2>Linking to the Library</h2>
-                <pre><code>&lt;!-- Minified version (recommended) --&gt;
-&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.min.js"&gt;&lt;/script&gt;
-
-&lt;!-- Development version (larger, with comments) --&gt;
-&lt;!-- &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.4.4/dist/p5-phone.js"&gt;&lt;/script&gt; --&gt;</code></pre>
             </div>
 
             <div class="method-section" id="basic-setup">
@@ -1166,6 +1212,29 @@ function draw() {
     </div>
 
     <script>
+        // Copy to clipboard function
+        function copyCode(button, text) {
+            // Decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = text;
+            const decodedText = tempDiv.textContent || tempDiv.innerText;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(decodedText).then(function() {
+                // Change button text temporarily
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
         // Tab switching function
         function openTab(tabName) {
             // Hide all tab content
