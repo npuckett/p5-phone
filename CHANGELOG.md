@@ -2,7 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.6.0] - 2025-10-29
+## [1.6.1] - 2025-01-29
+
+### Fixed
+- Version comment in source file header (was incorrectly showing v1.5.0)
+
+## [1.6.0] - 2025-01-29
 
 ### Added
 - **PhoneCamera Class**: New ML5-optimized camera class for computer vision integration
