@@ -1130,6 +1130,526 @@ function _updateDebugDisplay() {
 }
 
 // =========================================
+// PHONE CAMERA - ML5-OPTIMIZED VIDEO CAPTURE
+// =========================================
+
+/**
+ * PhoneCamera class - Video capture optimized for ML5 integration
+ * Handles camera switching, mirroring, display modes, and coordinate mapping
+ */
+class PhoneCamera {
+  constructor(active = 'user', mirror = true, mode = 'fitHeight') {
+    this._active = active;
+    this._mirror = mirror;
+    this._mode = mode;
+    this._fixedWidth = 640;
+    this._fixedHeight = 480;
+    this._video = null;
+    this._ready = false;
+    this._p5Instance = window;
+    this._onReadyCallback = null;
+    
+    // Store reference to createCapture for later use
+    this._createCaptureRef = null;
+    
+    // Register this camera instance globally
+    if (!window._phoneCameras) {
+      window._phoneCameras = [];
+    }
+    window._phoneCameras.push(this);
+    
+    // Don't initialize immediately - wait for enableCameraTap() or explicit initialization
+    // This fixes iOS rotation bug where camera was initialized before permissions granted
+  }
+  
+  // ========================================
+  // READ-ONLY PROPERTIES
+  // ========================================
+  
+  get ready() {
+    return this._ready;
+  }
+  
+  get video() {
+    return this._video;
+  }
+  
+  get videoElement() {
+    // Returns the native HTML video element for ML5/other libraries
+    return this._video ? this._video.elt : null;
+  }
+  
+  get width() {
+    if (!this._ready) return 0;
+    const dims = this.getDimensions();
+    return dims.width;
+  }
+  
+  get height() {
+    if (!this._ready) return 0;
+    const dims = this.getDimensions();
+    return dims.height;
+  }
+  
+  // ========================================
+  // READ-WRITE PROPERTIES
+  // ========================================
+  
+  get active() {
+    return this._active;
+  }
+  
+  set active(value) {
+    if (value !== 'user' && value !== 'environment') {
+      console.error('PhoneCamera: active must be "user" or "environment"');
+      return;
+    }
+    if (this._active !== value) {
+      this._active = value;
+      if (this._ready) {
+        this._switchCamera();
+      }
+    }
+  }
+  
+  get mirror() {
+    return this._mirror;
+  }
+  
+  set mirror(value) {
+    this._mirror = !!value;
+  }
+  
+  get mode() {
+    return this._mode;
+  }
+  
+  set mode(value) {
+    const validModes = ['fitWidth', 'fitHeight', 'cover', 'contain', 'fixed'];
+    if (!validModes.includes(value)) {
+      console.error('PhoneCamera: mode must be one of:', validModes.join(', '));
+      return;
+    }
+    this._mode = value;
+  }
+  
+  get fixedWidth() {
+    return this._fixedWidth;
+  }
+  
+  set fixedWidth(value) {
+    this._fixedWidth = Math.max(1, value);
+  }
+  
+  get fixedHeight() {
+    return this._fixedHeight;
+  }
+  
+  set fixedHeight(value) {
+    this._fixedHeight = Math.max(1, value);
+  }
+  
+  /**
+   * Set callback to run when video is fully ready
+   * @param {function} callback - Function to call when video is ready for ML5
+   */
+  onReady(callback) {
+    this._onReadyCallback = callback;
+    
+    // If already ready, call immediately
+    if (this._ready && this._video && this._video.elt && this._video.elt.readyState >= 2) {
+      callback();
+    } else if (this._video) {
+      // Video exists but not ready yet - start checking
+      this._checkVideoReady();
+    }
+    // If video doesn't exist yet, callback will fire when _initializeCamera completes
+  }
+  
+  // ========================================
+  // INTERNAL METHODS
+  // ========================================
+  
+  _initializeCamera() {
+    if (this._ready || this._video) return;
+    
+    const constraints = {
+      video: {
+        facingMode: this._active
+      },
+      audio: false
+    };
+    
+    // Use p5's createCapture
+    this._video = createCapture(constraints, () => {
+      this._ready = true;
+      this._video.hide(); // Hide default video element
+      console.log('✅ PhoneCamera ready');
+      this._checkVideoReady();
+    });
+    
+    // Handle load event for older p5 versions
+    if (this._video && this._video.elt) {
+      this._video.elt.addEventListener('loadeddata', () => {
+        this._ready = true;
+        this._checkVideoReady();
+      });
+    }
+  }
+  
+  _checkVideoReady() {
+    // Check if video element has enough data for ML5
+    if (this._video && this._video.elt && this._video.elt.readyState >= 2) {
+      if (this._onReadyCallback) {
+        const callback = this._onReadyCallback;
+        this._onReadyCallback = null;  // Clear callback so it only fires once
+        callback();
+      }
+    } else {
+      // Check again shortly
+      setTimeout(() => this._checkVideoReady(), 100);
+    }
+  }
+  
+  _switchCamera() {
+    if (!this._video) return;
+    
+    // Remove old video
+    const wasReady = this._ready;
+    this._ready = false;
+    this._video.remove();
+    
+    // Create new video with new facing mode
+    const constraints = {
+      video: {
+        facingMode: this._active
+      },
+      audio: false
+    };
+    
+    this._video = createCapture(constraints, () => {
+      this._ready = true;
+      this._video.hide();
+      console.log(`✅ PhoneCamera switched to ${this._active} camera`);
+    });
+    
+    // Handle load event for older p5 versions
+    if (this._video && this._video.elt) {
+      this._video.elt.addEventListener('loadeddata', () => {
+        this._ready = true;
+      });
+    }
+  }
+  
+  // ========================================
+  // PUBLIC METHODS
+  // ========================================
+  
+  /**
+   * Remove and stop the camera
+   */
+  remove() {
+    if (this._video) {
+      this._video.remove();
+      this._video = null;
+    }
+    this._ready = false;
+  }
+  
+  /**
+   * Get dimension information for the current display mode
+   * Returns: { x, y, width, height, scaleX, scaleY }
+   */
+  getDimensions() {
+    if (!this._ready || !this._video) {
+      return { x: 0, y: 0, width: 0, height: 0, scaleX: 1, scaleY: 1 };
+    }
+    
+    const videoWidth = this._video.width;
+    const videoHeight = this._video.height;
+    const canvasWidth = window.width || window.innerWidth;
+    const canvasHeight = window.height || window.innerHeight;
+    
+    let drawWidth, drawHeight, drawX, drawY;
+    
+    if (this._mode === 'fixed') {
+      drawWidth = this._fixedWidth;
+      drawHeight = this._fixedHeight;
+      drawX = (canvasWidth - drawWidth) / 2;
+      drawY = (canvasHeight - drawHeight) / 2;
+      
+    } else if (this._mode === 'fitWidth') {
+      drawWidth = canvasWidth;
+      drawHeight = (videoHeight / videoWidth) * drawWidth;
+      drawX = 0;
+      drawY = (canvasHeight - drawHeight) / 2;
+      
+    } else if (this._mode === 'fitHeight') {
+      drawHeight = canvasHeight;
+      drawWidth = (videoWidth / videoHeight) * drawHeight;
+      drawX = (canvasWidth - drawWidth) / 2;
+      drawY = 0;
+      
+    } else if (this._mode === 'cover') {
+      const scale = Math.max(
+        canvasWidth / videoWidth,
+        canvasHeight / videoHeight
+      );
+      drawWidth = videoWidth * scale;
+      drawHeight = videoHeight * scale;
+      drawX = (canvasWidth - drawWidth) / 2;
+      drawY = (canvasHeight - drawHeight) / 2;
+      
+    } else if (this._mode === 'contain') {
+      const scale = Math.min(
+        canvasWidth / videoWidth,
+        canvasHeight / videoHeight
+      );
+      drawWidth = videoWidth * scale;
+      drawHeight = videoHeight * scale;
+      drawX = (canvasWidth - drawWidth) / 2;
+      drawY = (canvasHeight - drawHeight) / 2;
+    }
+    
+    return {
+      x: drawX,
+      y: drawY,
+      width: drawWidth,
+      height: drawHeight,
+      scaleX: drawWidth / videoWidth,
+      scaleY: drawHeight / videoHeight
+    };
+  }
+  
+  /**
+   * Map a simple point (x, y) to display coordinates
+   * Handles mirroring automatically
+   * @param {number} x - X coordinate in video space
+   * @param {number} y - Y coordinate in video space
+   * @returns {object} - { x, y } in display space
+   */
+  mapPoint(x, y) {
+    const dims = this.getDimensions();
+    
+    // Scale the coordinates from video space to display space
+    let scaledX = x * dims.scaleX;
+    const scaledY = y * dims.scaleY;
+    
+    // Apply mirroring if enabled
+    if (this._mirror) {
+      // Mirror the scaled coordinate within the video width
+      scaledX = dims.width - scaledX;
+    }
+    
+    // Add offset to position on canvas
+    // Note: dims.x can be negative in fitHeight mode when video is wider than canvas
+    // In that case, the video is drawn starting off-screen, but we want coordinates
+    // relative to the visible portion, so we use max(0, dims.x)
+    const mappedX = scaledX + Math.max(0, dims.x);
+    const mappedY = scaledY + Math.max(0, dims.y);
+    
+    return { x: mappedX, y: mappedY };
+  }
+  
+  /**
+   * Map an ML5 keypoint object to display coordinates
+   * Handles mirroring automatically
+   * Preserves z coordinate and any other properties
+   * @param {object} keypoint - ML5 keypoint { x, y, z?, ... }
+   * @returns {object} - Keypoint with mapped coordinates
+   */
+  mapKeypoint(keypoint) {
+    if (!keypoint || typeof keypoint.x === 'undefined' || typeof keypoint.y === 'undefined') {
+      console.warn('PhoneCamera.mapKeypoint: invalid keypoint', keypoint);
+      return keypoint;
+    }
+    
+    const mapped = this.mapPoint(keypoint.x, keypoint.y);
+    
+    // Preserve all properties from original keypoint
+    return {
+      ...keypoint,
+      x: mapped.x,
+      y: mapped.y
+    };
+  }
+  
+  /**
+   * Map an array of ML5 keypoints to display coordinates
+   * Handles mirroring automatically
+   * @param {array} keypoints - Array of ML5 keypoints
+   * @returns {array} - Array of keypoints with mapped coordinates
+   */
+  mapKeypoints(keypoints) {
+    if (!Array.isArray(keypoints)) {
+      console.warn('PhoneCamera.mapKeypoints: expected array, got', typeof keypoints);
+      return keypoints;
+    }
+    
+    return keypoints.map(kp => this.mapKeypoint(kp));
+  }
+  
+  // ========================================
+  // CANVAS DRAWING INTEGRATION
+  // ========================================
+  
+  /**
+   * Custom draw method for p5.image() compatibility
+   * This allows image(cam, x, y) to work
+   */
+  _draw() {
+    if (!this._ready || !this._video) return;
+    
+    const dims = this.getDimensions();
+    
+    // Save current drawing state
+    push();
+    
+    // Apply mirroring if needed
+    if (this._mirror) {
+      translate(dims.x + dims.width, dims.y);
+      scale(-1, 1);
+      image(this._video, 0, 0, dims.width, dims.height);
+    } else {
+      image(this._video, dims.x, dims.y, dims.width, dims.height);
+    }
+    
+    pop();
+  }
+}
+
+/**
+ * Create a new PhoneCamera instance
+ * @param {string} active - 'user' (front) or 'environment' (back) camera
+ * @param {boolean} mirror - Whether to mirror the video horizontally
+ * @param {string} mode - Display mode: 'fitWidth', 'fitHeight', 'cover', 'contain', 'fixed'
+ * @returns {PhoneCamera} - Camera instance
+ */
+function createPhoneCamera(active = 'user', mirror = true, mode = 'fitHeight') {
+  return new PhoneCamera(active, mirror, mode);
+}
+
+/**
+ * Enable camera with a button interface
+ * Creates a start button that user must click
+ */
+function enableCameraButton(buttonText = 'ENABLE CAMERA', statusText = 'Starting camera...') {
+  _createPermissionButton(buttonText, statusText, async () => {
+    await _requestCameraPermission();
+    console.log('✅ Camera enabled via button');
+  });
+}
+
+/**
+ * Enable camera with tap-to-start
+ * User taps anywhere on screen to enable
+ */
+function enableCameraTap(message = 'Tap screen to enable camera') {
+  // Check if camera permission is already granted
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'camera' })
+      .then(permissionStatus => {
+        if (permissionStatus.state === 'granted') {
+          // Permission already granted - skip the tap UI and initialize immediately
+          console.log('✅ Camera permission already granted - auto-starting');
+          _requestCameraPermission();
+        } else {
+          // Permission not granted - show tap UI
+          _createTapToEnable(message, async () => {
+            await _requestCameraPermission();
+            console.log('✅ Camera enabled via tap');
+          });
+        }
+      })
+      .catch(() => {
+        // Permissions API not supported - show tap UI
+        _createTapToEnable(message, async () => {
+          await _requestCameraPermission();
+          console.log('✅ Camera enabled via tap');
+        });
+      });
+  } else {
+    // Fallback - show tap UI
+    _createTapToEnable(message, async () => {
+      await _requestCameraPermission();
+      console.log('✅ Camera enabled via tap');
+    });
+  }
+}
+
+async function _requestCameraPermission() {
+  try {
+    // Initialize any PhoneCamera instances that haven't been initialized yet
+    // This happens after user interaction grants camera permission
+    if (typeof window._phoneCameras !== 'undefined' && Array.isArray(window._phoneCameras)) {
+      for (let cam of window._phoneCameras) {
+        if (cam && !cam._ready && !cam._video) {
+          cam._initializeCamera();
+        }
+      }
+    }
+    
+    // Call userCameraReady callback if it exists (user-defined function)
+    if (typeof userCameraReady === 'function') {
+      userCameraReady();
+    }
+    
+    _notifySketchReady();
+    
+  } catch (error) {
+    console.error('Camera permission error:', error);
+    if (_debugVisible) {
+      debugError('Camera permission error:', error);
+    }
+    _notifySketchReady();
+  }
+}
+
+// Make camera functions globally accessible
+window.createPhoneCamera = createPhoneCamera;
+window.enableCameraButton = enableCameraButton;
+window.enableCameraTap = enableCameraTap;
+
+// Override p5's image() function to support PhoneCamera
+if (typeof p5 !== 'undefined' && p5.prototype) {
+  const originalImage = p5.prototype.image;
+  
+  p5.prototype.image = function(...args) {
+    // Check if first argument is a PhoneCamera instance
+    if (args[0] instanceof PhoneCamera) {
+      const cam = args[0];
+      
+      // If x and y are provided, use them, otherwise use camera's calculated position
+      if (args.length >= 3) {
+        // User provided position: image(cam, x, y, [w], [h])
+        if (!cam.ready || !cam.video) return;
+        
+        const x = args[1];
+        const y = args[2];
+        const w = args[3] || cam.width;
+        const h = args[4] || cam.height;
+        
+        this.push();
+        if (cam.mirror) {
+          this.translate(x + w, y);
+          this.scale(-1, 1);
+          originalImage.call(this, cam.video, 0, 0, w, h);
+        } else {
+          originalImage.call(this, cam.video, x, y, w, h);
+        }
+        this.pop();
+      } else {
+        // No position provided: image(cam) - use auto-positioning
+        cam._draw();
+      }
+    } else {
+      // Not a PhoneCamera, use original image function
+      originalImage.apply(this, args);
+    }
+  };
+}
+
+// =========================================
 // P5.JS NAMESPACE SUPPORT
 // =========================================
 
@@ -1152,6 +1672,11 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.stopVibration = stopVibration;
   p5.prototype.enableAllTap = enableAllTap;
   p5.prototype.enableAllButton = enableAllButton;
+  
+  // Camera functions
+  p5.prototype.createPhoneCamera = createPhoneCamera;
+  p5.prototype.enableCameraButton = enableCameraButton;
+  p5.prototype.enableCameraTap = enableCameraTap;
   
   // Debug functions
   p5.prototype.showDebug = showDebug;

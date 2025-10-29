@@ -570,6 +570,152 @@ function gameOver() {
 - Don't overuse - vibration can quickly drain battery
 - Test on Android devices as iOS doesn't support vibration
 
+### PhoneCamera (ML5 Integration)
+
+**Purpose:** Simplified camera access optimized for ML5.js machine learning models (FaceMesh, HandPose, BodyPose, etc.). Handles camera initialization, coordinate mapping, mirroring, and display modes automatically.
+
+**Key Features:**
+- **Automatic Coordinate Mapping** - ML5 keypoints automatically mapped to canvas coordinates
+- **Mirror Support** - Handles front camera mirroring for natural interaction
+- **Display Modes** - Multiple video sizing options (fitHeight, cover, contain, fixed)
+- **ML5 Optimized** - Direct integration with ML5 v1.x models
+- **Auto-initialization** - Camera starts automatically when permissions are granted
+
+**Commands:**
+
+| Function | Purpose | Parameters |
+|----------|---------|------------|
+| `createPhoneCamera(active, mirror, mode)` | Create new camera instance | active: 'user' or 'environment'<br>mirror: true/false<br>mode: 'fitHeight', 'cover', 'contain', 'fixed' |
+| `enableCameraTap(message)` | Tap to enable camera | Optional message string |
+| `cam.onReady(callback)` | Execute code when camera ready | Callback function |
+| `cam.mapKeypoint(keypoint)` | Map single ML5 keypoint to screen | ML5 keypoint object |
+| `cam.mapKeypoints(keypoints)` | Map array of ML5 keypoints | Array of ML5 keypoints |
+
+**Properties:**
+
+| Property | Description | Type |
+|----------|-------------|------|
+| `cam.ready` | Camera initialization status | Boolean |
+| `cam.video` | p5.js video element | p5.Element |
+| `cam.active` | Current camera ('user'/'environment') | String |
+| `cam.mirror` | Mirror state | Boolean |
+| `cam.mode` | Display mode | String |
+| `cam.width` | Video width | Number |
+| `cam.height` | Video height | Number |
+
+**Basic Setup:**
+```javascript
+let cam;
+let facemesh;
+let faces = [];
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  
+  // Create camera: front camera, mirrored, fit to canvas height
+  cam = createPhoneCamera('user', true, 'fitHeight');
+  
+  // Enable camera (auto-starts if permission granted)
+  enableCameraTap();
+  
+  // Start ML5 when camera is ready
+  cam.onReady(() => {
+    let options = {
+      maxFaces: 1,
+      refineLandmarks: false,
+      flipHorizontal: false  // cam.mapKeypoint() handles mirroring
+    };
+    
+    facemesh = ml5.faceMesh(options, modelLoaded);
+  });
+}
+
+function modelLoaded() {
+  // Start detection - use cam.videoElement for ML5
+  facemesh.detectStart(cam.videoElement, (results) => {
+    faces = results;
+  });
+}
+
+function draw() {
+  background(220);
+  
+  // Draw camera feed
+  if (cam.ready) {
+    image(cam, 0, 0);  // PhoneCamera handles positioning automatically
+  }
+  
+  // Draw tracked face keypoints
+  if (faces.length > 0) {
+    let face = faces[0];
+    
+    // Map nose tip keypoint (index 1) to screen coordinates
+    let nose = cam.mapKeypoint(face.keypoints[1]);
+    
+    // Use coordinates for interaction
+    fill(255, 0, 0);
+    circle(nose.x, nose.y, 30);
+    
+    // Map all keypoints at once
+    let allPoints = cam.mapKeypoints(face.keypoints);
+    for (let point of allPoints) {
+      circle(point.x, point.y, 3);
+    }
+  }
+}
+```
+
+**Display Modes:**
+
+| Mode | Behavior |
+|------|----------|
+| `'fitHeight'` | Scale video to canvas height (default, recommended) |
+| `'cover'` | Fill entire canvas (may crop video) |
+| `'contain'` | Fit entire video in canvas (may show letterboxing) |
+| `'fixed'` | Fixed size (set with `cam.fixedWidth`, `cam.fixedHeight`) |
+
+**Coordinate Mapping:**
+
+The `mapKeypoint()` and `mapKeypoints()` functions automatically handle:
+- Video-to-canvas scaling
+- Mirror transformation (for front camera)
+- Offset positioning (for different display modes)
+- 3D coordinates (preserves z-depth from BlazePose)
+
+```javascript
+// Single keypoint
+let nose = cam.mapKeypoint(face.keypoints[1]);
+console.log(nose.x, nose.y, nose.z);  // Screen coordinates + depth
+
+// Multiple keypoints
+let hands = cam.mapKeypoints(hand.keypoints);
+hands.forEach(point => {
+  circle(point.x, point.y, 5);
+});
+```
+
+**ML5 Model Examples:**
+
+```javascript
+// FaceMesh (468 keypoints)
+let options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: false };
+facemesh = ml5.faceMesh(options, modelLoaded);
+
+// HandPose (21 keypoints per hand)
+let options = { maxHands: 2, runtime: 'mediapipe', flipHorizontal: false };
+handpose = ml5.handPose(options, modelLoaded);
+
+// BodyPose (33 keypoints with 3D)
+let options = { modelType: 'MULTIPOSE_LIGHTNING', flipped: false };
+bodypose = ml5.bodyPose('BlazePose', options, modelLoaded);
+```
+
+**Important Notes:**
+- Always set `flipHorizontal: false` in ML5 options (PhoneCamera handles mirroring)
+- Use `cam.videoElement` (native HTML video element) when passing to ML5's `detectStart()`
+- Check `cam.ready` before using video or drawing keypoints
+- Call `enableCameraTap()` to handle camera permissions automatically
+
 ### Debug System
 
 **Purpose:** Essential on-screen debugging system for mobile development where traditional browser dev tools aren't accessible. Provides automatic error catching, timestamped logging, and color-coded messages.
