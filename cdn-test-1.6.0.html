@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5-phone CDN Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f5;
+    }
+    .status {
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 2px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 2px solid #f5c6cb;
+    }
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 2px solid #bee5eb;
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: normal;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #333;
+    }
+  </style>
+  
+  <!-- Load p5.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
+  
+  <!-- Load p5-phone from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.1/dist/p5-phone.min.js"></script>
+  
+</head>
+<body>
+  <div id="status"></div>
+  
+  <script>
+    // Test if p5-phone loaded correctly
+    const statusDiv = document.getElementById('status');
+    
+    function addStatus(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = `status ${type}`;
+      div.textContent = message;
+      statusDiv.appendChild(div);
+    }
+    
+    // Check if p5-phone functions are available
+    setTimeout(() => {
+      const checks = [
+        { name: 'lockGestures', exists: typeof lockGestures === 'function' },
+        { name: 'createPhoneCamera', exists: typeof createPhoneCamera === 'function' },
+        { name: 'enableCameraTap', exists: typeof enableCameraTap === 'function' },
+        { name: 'rotationX', exists: typeof rotationX !== 'undefined' },
+        { name: 'accelerationX', exists: typeof accelerationX !== 'undefined' }
+      ];
+      
+      const allLoaded = checks.every(check => check.exists);
+      
+      if (allLoaded) {
+        addStatus('✅ p5-phone v1.6.0 loaded successfully from CDN!', 'success');
+        addStatus('Available functions: ' + checks.map(c => c.name).join(', '), 'info');
+      } else {
+        addStatus('❌ Some p5-phone functions are missing!', 'error');
+        checks.forEach(check => {
+          if (!check.exists) {
+            addStatus(`Missing: ${check.name}`, 'error');
+          }
+        });
+      }
+    }, 500);
+  </script>
+  
+  <script>
+    function setup() {
+      createCanvas(400, 200);
+      lockGestures();
+      textAlign(CENTER, CENTER);
+      textSize(16);
+    }
+    
+    function draw() {
+      background(40);
+      fill(255);
+      noStroke();
+      
+      text('p5-phone CDN Test', width/2, 50);
+      text('Version 1.6.0', width/2, 80);
+      
+      // Show rotation values if available
+      if (typeof rotationX !== 'undefined') {
+        text(`Rotation X: ${rotationX.toFixed(1)}°`, width/2, 120);
+        text(`Rotation Y: ${rotationY.toFixed(1)}°`, width/2, 145);
+        text(`Rotation Z: ${rotationZ.toFixed(1)}°`, width/2, 170);
+      }
+    }
+  </script>
+</body>
+</html>

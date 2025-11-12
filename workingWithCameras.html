@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Working with Cameras and ML5 - p5-phone</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: #f5f5f5;
+    }
+    
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 3rem 2rem;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    header p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+    
+    nav {
+      background: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    nav ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+    }
+    
+    nav a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+    
+    nav a:hover {
+      color: #764ba2;
+    }
+    
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 2rem 4rem;
+    }
+    
+    section {
+      background: white;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    h2 {
+      color: #667eea;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 3px solid #667eea;
+    }
+    
+    h3 {
+      color: #764ba2;
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+    
+    h4 {
+      color: #555;
+      font-size: 1.2rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    p {
+      margin-bottom: 1rem;
+    }
+    
+    ul, ol {
+      margin-left: 2rem;
+      margin-bottom: 1rem;
+    }
+    
+    li {
+      margin-bottom: 0.5rem;
+    }
+    
+    code {
+      background: #f4f4f4;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: #e83e8c;
+    }
+    
+    pre {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 1.5rem;
+      border-radius: 5px;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    
+    pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+    }
+    
+    .note {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+    }
+    
+    .important {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+    }
+    
+    .success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    th {
+      background: #667eea;
+      color: white;
+      font-weight: 600;
+    }
+    
+    tr:hover {
+      background: #f8f9fa;
+    }
+    
+    a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+    
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.8rem;
+      }
+      
+      header p {
+        font-size: 1rem;
+      }
+      
+      nav ul {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      main {
+        padding: 0 1rem 2rem;
+      }
+      
+      section {
+        padding: 1.5rem;
+      }
+      
+      h2 {
+        font-size: 1.5rem;
+      }
+      
+      h3 {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Working with Cameras and ML5</h1>
+    <p>Complete guide to using PhoneCamera with ML5.js for computer vision</p>
+  </header>
+  
+  <nav>
+    <ul>
+      <li><a href="#part1">Part 1: PhoneCamera</a></li>
+      <li><a href="#issues">Common Issues</a></li>
+      <li><a href="#patterns">Basic Patterns</a></li>
+      <li><a href="#part2">Part 2: ML5</a></li>
+      <li><a href="#models">ML5 Models</a></li>
+      <li><a href="#concepts">Key Concepts</a></li>
+    </ul>
+  </nav>
+  
+  <main>
+    <section id="part1">
+      <h2>Part 1: Using PhoneCamera</h2>
+      
+      <h3>Installation</h3>
+      <p>Include p5-phone in your HTML:</p>
+      <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
+      
+      <p>Or install via npm:</p>
+      <pre><code>npm install p5-phone</code></pre>
+    </section>
+    
+    <section id="issues">
+      <h2>Common Issues with Phone Cameras</h2>
+      
+      <h3>Multiple Cameras</h3>
+      <p>Mobile devices often have multiple cameras (front/back). The PhoneCamera class handles switching between them:</p>
+      <ul>
+        <li><code>'user'</code> - Front-facing camera (selfie camera)</li>
+        <li><code>'environment'</code> - Back-facing camera</li>
+      </ul>
+      
+      <h3>Phone Orientation and Fitting</h3>
+      <p>Different phones have different camera aspect ratios and screen sizes. PhoneCamera provides display modes to handle this:</p>
+      <ul>
+        <li><code>'fitHeight'</code> - Fits camera to canvas height (recommended for portrait)</li>
+        <li><code>'fitWidth'</code> - Fits camera to canvas width (recommended for landscape)</li>
+        <li><code>'fixed'</code> - Fixed size display (set with <code>cam.fixedWidth</code> and <code>cam.fixedHeight</code>)</li>
+      </ul>
+      
+      <h3>Video Mirroring</h3>
+      <p>Front cameras typically need to be mirrored for a natural "mirror" effect. PhoneCamera handles this automatically:</p>
+      <ul>
+        <li>Front camera (<code>'user'</code>) → mirrored by default</li>
+        <li>Back camera (<code>'environment'</code>) → not mirrored</li>
+      </ul>
+    </section>
+    
+    <section id="patterns">
+      <h2>Basic Patterns</h2>
+      
+      <h3>Creating a PhoneCamera</h3>
+      <pre><code>let cam;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  
+  // Create camera: facing, mirror, mode
+  cam = createPhoneCamera('user', true, 'fitHeight');
+  
+  // Enable camera with tap
+  enableCameraTap();
+}</code></pre>
+      
+      <p><strong>Parameters:</strong></p>
+      <ul>
+        <li><code>active</code> - Camera to use: <code>'user'</code> (front) or <code>'environment'</code> (back)</li>
+        <li><code>mirror</code> - Boolean to mirror the video horizontally</li>
+        <li><code>mode</code> - Display mode: <code>'fitHeight'</code>, <code>'fitWidth'</code>, <code>'fixed'</code></li>
+      </ul>
+      
+      <h3>Changing Display Modes</h3>
+      <pre><code>// Switch between display modes
+cam.mode = 'fitHeight';  // Fit to height
+cam.mode = 'fitWidth';   // Fit to width
+cam.mode = 'fixed';      // Fixed size (640x480 default)
+
+// For fixed mode, set custom size
+cam.fixedWidth = 800;
+cam.fixedHeight = 600;
+cam.mode = 'fixed';</code></pre>
+      
+      <h3>Switching Cameras</h3>
+      <pre><code>// Switch between front and back camera
+cam.active = 'environment';  // Back camera
+cam.active = 'user';         // Front camera
+
+// Toggle camera
+function switchCamera() {
+  cam.active = cam.active === 'user' ? 'environment' : 'user';
+}</code></pre>
+      
+      <h3>Enabling Camera Access</h3>
+      <pre><code>function setup() {
+  createCanvas(windowWidth, windowHeight);
+  
+  cam = createPhoneCamera('user', true, 'fitHeight');
+  
+  // Option 1: Tap to enable (recommended)
+  enableCameraTap();
+  
+  // Option 2: Button to enable
+  // enableCameraButton();
+  
+  // Option 3: Use callback when camera is ready
+  cam.onReady(() => {
+    console.log('Camera initialized!');
+    // Start ML5 models here
+  });
+}</code></pre>
+    </section>
+    
+    <section id="part2">
+      <h2>Part 2: Integrating with ML5</h2>
+      
+      <h3>Getting ML5</h3>
+      <p><strong>CDN Link:</strong></p>
+      <pre><code>&lt;script src="https://unpkg.com/ml5@1/dist/ml5.min.js"&gt;&lt;/script&gt;</code></pre>
+      
+      <p><strong>Documentation:</strong> <a href="https://docs.ml5js.org/" target="_blank">https://docs.ml5js.org/</a></p>
+      
+      <h3>Complete HTML Template</h3>
+      <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;title&gt;Phone Camera + ML5&lt;/title&gt;
+  
+  &lt;!-- p5.js library --&gt;
+  &lt;script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"&gt;&lt;/script&gt;
+  
+  &lt;!-- ML5.js library (v1.x) --&gt;
+  &lt;script src="https://unpkg.com/ml5@1/dist/ml5.min.js"&gt;&lt;/script&gt;
+  
+  &lt;!-- p5-phone library --&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;
+  
+  &lt;style&gt;
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;script src="sketch.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+      
+      <h3>Integrating PhoneCamera with ML5</h3>
+      
+      <h4>Understanding Synchronous vs Asynchronous Events</h4>
+      
+      <p><strong>Camera Initialization (Asynchronous):</strong><br>
+      The camera needs user permission and time to start. Use <code>cam.onReady()</code> callback:</p>
+      <pre><code>cam.onReady(() => {
+  // Camera is ready - safe to start ML5 models
+});</code></pre>
+      
+      <p><strong>Model Loading (Asynchronous):</strong><br>
+      ML5 models need to download and initialize. Use the model's callback:</p>
+      <pre><code>let model = ml5.faceMesh(options, modelLoaded);
+
+function modelLoaded() {
+  // Model is ready - safe to start detection
+  model.detectStart(cam.videoElement, gotResults);
+}</code></pre>
+      
+      <p><strong>Detection (Asynchronous):</strong><br>
+      ML5 continuously detects and calls your callback with results:</p>
+      <pre><code>function gotResults(results) {
+  // Process results here (runs every frame)
+  detections = results;
+}</code></pre>
+      
+      <h3>Basic Pattern for Loading ML5 Models</h3>
+      <p><strong>Standard Pattern (Recommended):</strong></p>
+      <pre><code>let cam;
+let model;
+let results = [];
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  
+  // Create camera
+  cam = createPhoneCamera('user', true, 'fitHeight');
+  enableCameraTap();
+  
+  // Wait for camera, then load model
+  cam.onReady(() => {
+    let options = {
+      runtime: 'mediapipe',  // IMPORTANT: Required for iOS
+      flipHorizontal: false  // PhoneCamera handles mirroring
+    };
+    
+    model = ml5.modelName(options, modelLoaded);
+  });
+}
+
+function modelLoaded() {
+  console.log('Model loaded!');
+  // Start detection with camera video element
+  model.detectStart(cam.videoElement, gotResults);
+}
+
+function gotResults(detections) {
+  results = detections;
+}</code></pre>
+    </section>
+    
+    <section id="models">
+      <h2>ML5 Models and Their Results</h2>
+      
+      <h3>1. FaceMesh - Face Landmark Detection</h3>
+      <p><strong>Reference:</strong> <a href="https://docs.ml5js.org/#/reference/facemesh" target="_blank">https://docs.ml5js.org/#/reference/facemesh</a></p>
+      <p><strong>Returns:</strong> 468 keypoints per face</p>
+      
+      <pre><code>let facemesh;
+let faces = [];
+
+cam.onReady(() => {
+  let options = {
+    maxFaces: 1,
+    refineLandmarks: false,
+    runtime: 'mediapipe',
+    flipHorizontal: false
+  };
+  
+  facemesh = ml5.faceMesh(options, modelLoaded);
+});
+
+function modelLoaded() {
+  facemesh.detectStart(cam.videoElement, (results) => {
+    faces = results;
+  });
+}
+
+function draw() {
+  // Each face has:
+  // - face.keypoints[] - Array of 468 keypoints
+  // - Each keypoint has: {x, y, z, name}
+  
+  if (faces.length > 0) {
+    let face = faces[0];
+    let nose = face.keypoints[1];  // Nose tip
+    let mappedNose = cam.mapKeypoint(nose);
+    ellipse(mappedNose.x, mappedNose.y, 20, 20);
+  }
+}</code></pre>
+      
+      <p><strong>Important Keypoints:</strong></p>
+      <ul>
+        <li>Keypoint 1: Nose tip</li>
+        <li>Keypoints 33-263: Facial contours</li>
+        <li>Total: 468 keypoints per face</li>
+      </ul>
+      
+      <h3>2. HandPose - Hand Tracking</h3>
+      <p><strong>Reference:</strong> <a href="https://docs.ml5js.org/#/reference/handpose" target="_blank">https://docs.ml5js.org/#/reference/handpose</a></p>
+      <p><strong>Returns:</strong> 21 keypoints per hand + 3D coordinates</p>
+      
+      <pre><code>let handpose;
+let hands = [];
+
+cam.onReady(() => {
+  let options = {
+    maxHands: 2,
+    runtime: 'mediapipe',
+    flipHorizontal: false
+  };
+  
+  handpose = ml5.handPose(options, modelLoaded);
+});
+
+function modelLoaded() {
+  handpose.detectStart(cam.videoElement, (results) => {
+    hands = results;
+  });
+}
+
+function draw() {
+  // Each hand has:
+  // - hand.keypoints[] - Array of 21 2D keypoints
+  // - hand.keypoints3D[] - Array of 21 3D keypoints (includes z-depth)
+  // - hand.handedness - 'Left' or 'Right'
+  
+  if (hands.length > 0) {
+    let hand = hands[0];
+    let indexTip = hand.keypoints[8];  // Index finger tip
+    let indexTip3D = hand.keypoints3D[8];  // With z-depth
+    
+    // Map to screen coordinates
+    let mapped = cam.mapKeypoint(indexTip);
+    
+    // Use z-depth for interaction
+    let depth = indexTip3D.z;
+    let size = map(depth, -0.1, 0.1, 50, 20);
+    
+    ellipse(mapped.x, mapped.y, size, size);
+  }
+}</code></pre>
+      
+      <p><strong>Important Keypoints:</strong></p>
+      <ul>
+        <li>Keypoint 0: Wrist</li>
+        <li>Keypoint 4: Thumb tip</li>
+        <li>Keypoint 8: Index finger tip</li>
+        <li>Keypoint 12: Middle finger tip</li>
+        <li>Keypoint 16: Ring finger tip</li>
+        <li>Keypoint 20: Pinky tip</li>
+      </ul>
+      
+      <h3>3. BodyPose - Full Body Tracking</h3>
+      <p><strong>Reference:</strong> <a href="https://docs.ml5js.org/#/reference/bodypose" target="_blank">https://docs.ml5js.org/#/reference/bodypose</a></p>
+      <p><strong>Returns:</strong> 33 keypoints per person</p>
+      
+      <pre><code>let bodypose;
+let poses = [];
+
+cam.onReady(() => {
+  let options = {
+    runtime: 'mediapipe',
+    modelType: 'MULTIPOSE_LIGHTNING',
+    enableSmoothing: true,
+    minPoseScore: 0.25
+  };
+  
+  bodypose = ml5.bodyPose('BlazePose', options, modelLoaded);
+});
+
+function modelLoaded() {
+  bodypose.detectStart(cam.videoElement, (results) => {
+    poses = results;
+  });
+}
+
+function draw() {
+  // Each pose has:
+  // - pose.keypoints[] - Array of 33 keypoints
+  // - Each keypoint has: {x, y, z, score, name}
+  // - score: Confidence (0-1)
+  
+  if (poses.length > 0) {
+    let pose = poses[0];
+    
+    // Filter by confidence
+    for (let kp of pose.keypoints) {
+      if (kp.score > 0.3) {
+        let mapped = cam.mapKeypoint(kp);
+        ellipse(mapped.x, mapped.y, 10, 10);
+      }
+    }
+  }
+}</code></pre>
+      
+      <p><strong>Important Keypoints:</strong></p>
+      <ul>
+        <li>Keypoint 0: Nose</li>
+        <li>Keypoints 11-12: Shoulders</li>
+        <li>Keypoints 13-14: Elbows</li>
+        <li>Keypoints 15-16: Wrists</li>
+        <li>Keypoints 23-24: Hips</li>
+        <li>Keypoints 25-26: Knees</li>
+        <li>Keypoints 27-28: Ankles</li>
+      </ul>
+    </section>
+    
+    <section id="concepts">
+      <h2>Important Concepts for workArea Examples</h2>
+      
+      <h3>Key Variables</h3>
+      <p>All examples use this pattern:</p>
+      <pre><code>let cam;           // PhoneCamera instance
+let model;         // ML5 model (facemesh, handpose, or bodypose)
+let results = [];  // Detection results (updated automatically)</code></pre>
+      
+      <h3>Coordinate Mapping</h3>
+      <div class="important">
+        <p><strong>IMPORTANT:</strong> Always map ML5 coordinates to screen space:</p>
+      </div>
+      
+      <pre><code>// Map single keypoint
+let mappedPoint = cam.mapKeypoint(keypoint);
+
+// Map array of keypoints
+let mappedPoints = cam.mapKeypoints(keypoints);</code></pre>
+      
+      <p><strong>Why?</strong> ML5 returns coordinates in video space (e.g., 640x480), but your canvas might be different (e.g., 1920x1080). <code>cam.mapKeypoint()</code> handles:</p>
+      <ul>
+        <li>Scaling to canvas size</li>
+        <li>Mirroring (for front camera)</li>
+        <li>Offset positioning (for different display modes)</li>
+      </ul>
+      
+      <h3>Video Element Access</h3>
+      <p>ML5 needs the native HTML video element:</p>
+      <div class="success">
+        <p><strong>✅ Correct:</strong></p>
+        <pre><code>model.detectStart(cam.videoElement, gotResults);</code></pre>
+      </div>
+      
+      <div class="important">
+        <p><strong>❌ Wrong:</strong></p>
+        <pre><code>model.detectStart(cam, gotResults);
+model.detectStart(cam.video, gotResults);</code></pre>
+      </div>
+      
+      <h3>Display Modes</h3>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Mode</th>
+            <th>Description</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>fitHeight</code></td>
+            <td>Camera fits to canvas height. May have horizontal offset if aspect ratios differ.</td>
+            <td>Portrait phone orientation</td>
+          </tr>
+          <tr>
+            <td><code>fitWidth</code></td>
+            <td>Camera fits to canvas width. May have vertical offset.</td>
+            <td>Landscape orientation</td>
+          </tr>
+          <tr>
+            <td><code>fixed</code></td>
+            <td>Camera displays at exact size (cam.fixedWidth × cam.fixedHeight). Centered on canvas.</td>
+            <td>Consistent sizing across devices</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <h3>Example Structure</h3>
+      <p>All workArea examples follow this pattern:</p>
+      <pre><code>// 1. Setup
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  cam = createPhoneCamera('user', true, 'fitHeight');
+  enableCameraTap();
+  
+  cam.onReady(() => {
+    // 2. Load model when camera ready
+    model = ml5.modelName(options, modelLoaded);
+  });
+}
+
+// 3. Start detection when model loaded
+function modelLoaded() {
+  model.detectStart(cam.videoElement, gotResults);
+}
+
+// 4. Store results
+function gotResults(detections) {
+  results = detections;
+}
+
+// 5. Draw
+function draw() {
+  background(40);
+  image(cam, 0, 0);  // Draw camera
+  
+  // Map and draw keypoints
+  if (results.length > 0) {
+    let mappedPoints = cam.mapKeypoints(results[0].keypoints);
+    // Draw with mappedPoints
+  }
+}</code></pre>
+    </section>
+    
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="README.md#phonecamera-ml5-integration">PhoneCamera Documentation (README.md)</a></li>
+        <li><a href="https://docs.ml5js.org/" target="_blank">ML5 Documentation</a></li>
+        <li><strong>p5-phone Examples:</strong> <code>/examples/workArea/</code>
+          <ul>
+            <li><code>PHONE_01_camera-selector</code> - Camera switching and modes</li>
+            <li><code>PHONE_02_facemesh</code> - Face tracking</li>
+            <li><code>PHONE_03_handpose</code> - Hand tracking with 3D depth</li>
+            <li><code>PHONE_04_bodypose</code> - Full body tracking</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

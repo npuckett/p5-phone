@@ -173,7 +173,7 @@ function drawTrackedCursor() {
     }
   }
   
-  if (!trackedHand || !trackedHand.keypoints) return;
+  if (!trackedHand || !trackedHand.keypoints || !trackedHand.keypoints3D) return;
   
   // ==============================================
   // MAIN INTERACTION: Get tracked keypoint position (3D)
@@ -181,19 +181,15 @@ function drawTrackedCursor() {
   // This is the hand point you can use to control UI elements!
   // Change TRACKED_KEYPOINT_INDEX at top of file to track different points
   
-  // Get 2D keypoint for x, y coordinates
-  let trackedKeypoint = trackedHand.keypoints[TRACKED_KEYPOINT_INDEX];
-  if (!trackedKeypoint) return;
+  // Get 2D keypoint for screen position (x, y)
+  let keypoint = trackedHand.keypoints[TRACKED_KEYPOINT_INDEX];
   
-  // Map to screen coordinates
-  // cam.mapKeypoint() handles all scaling and mirroring
-  cursor = cam.mapKeypoint(trackedKeypoint);
+  // Map to screen coordinates (cam.mapKeypoint handles scaling and mirroring)
+  cursor = cam.mapKeypoint(keypoint);
   
-  // Get 3D keypoint for z-depth coordinate
-  if (trackedHand.keypoints3D && trackedHand.keypoints3D[TRACKED_KEYPOINT_INDEX]) {
-    let keypoint3D = trackedHand.keypoints3D[TRACKED_KEYPOINT_INDEX];
-    cursor.z = keypoint3D.z;  // Add z-depth to cursor
-  }
+  // Get 3D keypoint for depth (z)
+  let keypoint3D = trackedHand.keypoints3D[TRACKED_KEYPOINT_INDEX];
+  cursor.z = keypoint3D.z;  // Add z-depth for 3D interaction
   
   // ==============================================
   // USE THE CURSOR POSITION FOR INTERACTION

@@ -6,7 +6,7 @@
 // 
 // KEY FEATURES:
 // - Switch between front/back cameras
-// - Cycle through display modes (fitHeight, fitWidth, cover, contain, fixed)
+// - Cycle through display modes (fitHeight, fitWidth, fixed)
 // - Toggle mirroring on/off
 // - All camera logic handled by PhoneCamera class
 // ==============================================
@@ -31,6 +31,10 @@ function setup() {
   // Create PhoneCamera: front camera, mirrored, fit to height
   cam = createPhoneCamera('user', true, 'fitHeight');
   
+  // Set fixed size dimensions (used when mode is 'fixed')
+  cam.fixedWidth = 200;
+  cam.fixedHeight = 120;
+  
   // Create UI buttons
   createCameraButton();
   createScaleModeButton();
@@ -38,15 +42,11 @@ function setup() {
   
   // Enable camera with tap
   enableCameraTap();
-}
-
-// ==============================================
-// CAMERA READY - Called when user enables camera
-// ==============================================
-function userCameraReady() {
-  // Initialize the camera (starts video capture)
-  cam._initializeCamera();
-  console.log('Camera started!');
+  
+  // Optional: Use onReady callback to know when camera is initialized
+  cam.onReady(() => {
+    console.log('✅ Camera is ready!');
+  });
 }
 
 // ==============================================
@@ -164,14 +164,25 @@ function switchCamera() {
 function cycleScaleMode() {
   if (!cam.ready) return;
   
-  // Cycle through: fitHeight -> fitWidth -> cover -> contain -> fixed -> fitHeight
-  const modes = ['fitHeight', 'fitWidth', 'cover', 'contain', 'fixed'];
-  const modeNames = ['Fit Height', 'Fit Width', 'Cover', 'Contain', 'Fixed'];
+  // Cycle through: fitHeight -> fitWidth -> fixed -> fitHeight
+  const modes = ['fitHeight', 'fitWidth', 'fixed'];
+  const modeNames = ['Fit Height', 'Fit Width', 'Fixed'];
   
+  // Find current mode index
   let currentIndex = modes.indexOf(cam.mode);
+  
+  // If current mode is not in our list (e.g., 'cover', 'contain'), start at 0
+  if (currentIndex === -1) {
+    currentIndex = 0;
+  }
+  
+  // Calculate next index (loop back to 0 after last mode)
   let nextIndex = (currentIndex + 1) % modes.length;
   
+  // Use library method to set mode
   cam.mode = modes[nextIndex];
+  
+  // Update button label to show current mode
   scaleModeButton.html(modeNames[nextIndex]);
 }
 
@@ -213,27 +224,3 @@ function drawStatus() {
   pop();
 }
 
-// ==============================================
-// WINDOW RESIZE
-// ==============================================
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  
-  // Recalculate button dimensions and positions
-  let buttonWidth = width / 3;
-  let buttonHeight = 60;
-  let buttonY = height - buttonHeight;
-  
-  if (cameraButton) {
-    cameraButton.position(0, buttonY);
-    cameraButton.size(buttonWidth, buttonHeight);
-  }
-  if (scaleModeButton) {
-    scaleModeButton.position(buttonWidth, buttonY);
-    scaleModeButton.size(buttonWidth, buttonHeight);
-  }
-  if (flipButton) {
-    flipButton.position(buttonWidth * 2, buttonY);
-    flipButton.size(buttonWidth, buttonHeight);
-  }
-}
