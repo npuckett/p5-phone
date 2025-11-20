@@ -67,10 +67,10 @@ This library simplifies access to the following p5.js mobile sensor and audio co
 
 ```html
 <!-- Minified version (recommended) -->
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.1/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.2/dist/p5-phone.min.js"></script>
 
 <!-- Development version (larger, with comments) -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.1/dist/p5-phone.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.2/dist/p5-phone.js"></script> -->
 ```
 
 ### Basic Setup
@@ -98,7 +98,7 @@ This library simplifies access to the following p5.js mobile sensor and audio co
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
   
   <!-- Load p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.1/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.2/dist/p5-phone.min.js"></script>
   
 </head>
 <body>
