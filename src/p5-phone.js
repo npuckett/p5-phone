@@ -1368,8 +1368,9 @@ class PhoneCamera {
     const videoWidth = this._video.width;
     const videoHeight = this._video.height;
     
-    // Get actual canvas dimensions (works on both desktop and mobile)
-    // Use p5.js width/height globals if available, otherwise fall back to window dimensions
+    // Get actual canvas DISPLAY dimensions (not drawing buffer dimensions)
+    // In p5.js, the width/height globals represent the logical canvas size
+    // which already accounts for pixel density in recent versions
     const canvasWidth = (typeof width !== 'undefined') ? width : window.innerWidth;
     const canvasHeight = (typeof height !== 'undefined') ? height : window.innerHeight;
     
@@ -1445,11 +1446,10 @@ class PhoneCamera {
     }
     
     // Add offset to position on canvas
-    // Note: dims.x can be negative in fitHeight mode when video is wider than canvas
-    // In that case, the video is drawn starting off-screen, but we want coordinates
-    // relative to the visible portion, so we use max(0, dims.x)
-    const mappedX = scaledX + Math.max(0, dims.x);
-    const mappedY = scaledY + Math.max(0, dims.y);
+    // dims.x and dims.y represent where the video is drawn on the canvas
+    // This can be negative when the video is larger than the canvas (fitHeight/fitWidth modes)
+    const mappedX = scaledX + dims.x;
+    const mappedY = scaledY + dims.y;
     
     return { x: mappedX, y: mappedY };
   }
@@ -1505,14 +1505,32 @@ class PhoneCamera {
     
     const dims = this.getDimensions();
     
+    // Get canvas display dimensions for mirroring
+    const canvasWidth = (typeof width !== 'undefined') ? width : window.innerWidth;
+    
+    // Debug: log what we're drawing (once)
+    if (!this._drawDebugLogged) {
+      console.log('_draw() params:', {
+        x: dims.x,
+        y: dims.y,
+        width: dims.width,
+        height: dims.height,
+        canvasWidth: canvasWidth,
+        mirror: this._mirror
+      });
+      this._drawDebugLogged = true;
+    }
+    
     // Save current drawing state
     push();
     
     // Apply mirroring if needed
     if (this._mirror) {
-      translate(dims.x + dims.width, dims.y);
+      // Mirror by flipping around the center of the canvas
+      translate(canvasWidth, 0);
       scale(-1, 1);
-      image(this._video, 0, 0, dims.width, dims.height);
+      // Draw at the same logical position
+      image(this._video, dims.x, dims.y, dims.width, dims.height);
     } else {
       image(this._video, dims.x, dims.y, dims.width, dims.height);
     }
@@ -1622,29 +1640,9 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
     if (args[0] instanceof PhoneCamera) {
       const cam = args[0];
       
-      // If x and y are provided, use them, otherwise use camera's calculated position
-      if (args.length >= 3) {
-        // User provided position: image(cam, x, y, [w], [h])
-        if (!cam.ready || !cam.video) return;
-        
-        const x = args[1];
-        const y = args[2];
-        const w = args[3] || cam.width;
-        const h = args[4] || cam.height;
-        
-        this.push();
-        if (cam.mirror) {
-          this.translate(x + w, y);
-          this.scale(-1, 1);
-          originalImage.call(this, cam.video, 0, 0, w, h);
-        } else {
-          originalImage.call(this, cam.video, x, y, w, h);
-        }
-        this.pop();
-      } else {
-        // No position provided: image(cam) - use auto-positioning
-        cam._draw();
-      }
+      // Always use auto-positioning for PhoneCamera
+      // The camera calculates the correct position based on mode (fitHeight, fitWidth, etc)
+      cam._draw();
     } else {
       // Not a PhoneCamera, use original image function
       originalImage.apply(this, args);
