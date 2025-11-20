@@ -1367,8 +1367,11 @@ class PhoneCamera {
     
     const videoWidth = this._video.width;
     const videoHeight = this._video.height;
-    const canvasWidth = window.width || window.innerWidth;
-    const canvasHeight = window.height || window.innerHeight;
+    
+    // Get actual canvas dimensions (works on both desktop and mobile)
+    // Use p5.js width/height globals if available, otherwise fall back to window dimensions
+    const canvasWidth = (typeof width !== 'undefined') ? width : window.innerWidth;
+    const canvasHeight = (typeof height !== 'undefined') ? height : window.innerHeight;
     
     let drawWidth, drawHeight, drawX, drawY;
     
