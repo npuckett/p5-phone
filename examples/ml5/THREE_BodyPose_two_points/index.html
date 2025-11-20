@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BodyPose Two Points - Three.js</title>
+  
+  <!-- Basic CSS to remove browser defaults and align canvas -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+  
+  <!-- Load ml5.js library -->
+  <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+  
+</head>
+<body>
+  <!-- Load Three.js as ES module and run the sketch -->
+  <script type="module">
+    // Import Three.js as ES module
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+    
+    // Make THREE available globally for the sketch
+    window.THREE = THREE;
+    
+    // Dynamically load the helper functions and sketch after THREE is available
+    const functionsScript = document.createElement('script');
+    functionsScript.src = 'functions.js';
+    document.body.appendChild(functionsScript);
+    
+    functionsScript.onload = () => {
+      const sketchScript = document.createElement('script');
+      sketchScript.src = 'sketch.js';
+      document.body.appendChild(sketchScript);
+    };
+  </script>
+</body>
+</html>

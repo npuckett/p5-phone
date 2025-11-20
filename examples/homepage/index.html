@@ -510,6 +510,9 @@
                         <li><a href="#microphone">Microphone Activation</a></li>
                         <li><a href="#sound-activation">Sound Activation</a></li>
                         <li><a href="#vibration">Vibration Motor (Android)</a></li>
+                        <li><a href="#camera-activation">Camera/Video Functions</a></li>
+                        <li><a href="#camera-ml5-methods">PhoneCamera ML5 Methods</a></li>
+                        <li><a href="#camera-properties">PhoneCamera Properties</a></li>
                         <li><a href="#debug-system">Debug System</a></li>
                     </ul>
                 </div>
@@ -764,6 +767,102 @@ function touchStarted() {
                         <tr>
                             <td><code>stopVibration()</code></td>
                             <td>Stop any ongoing vibration</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4 id="camera-activation">Camera/Video Functions</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>createPhoneCamera(mode, mirror, displayMode)</code></td>
+                            <td>Create a camera optimized for phone use. Returns a PhoneCamera instance with automatic coordinate mapping for ML5 models (BodyPose, FaceMesh, HandPose). Parameters: <code>mode</code> ('user' for front camera, 'environment' for back camera), <code>mirror</code> (boolean, flip horizontally), <code>displayMode</code> ('fitHeight', 'fitWidth', 'cover', 'contain', or 'fixed'). Use with ML5 models for automatic coordinate mapping between video and canvas space.</td>
+                        </tr>
+                        <tr>
+                            <td><code>enableCameraTap(message)</code></td>
+                            <td>Tap anywhere to enable camera permissions. Automatically initializes all PhoneCamera instances. Required for iOS camera access.</td>
+                        </tr>
+                        <tr>
+                            <td><code>enableCameraButton(text)</code></td>
+                            <td>Button-based camera activation. Creates a button that enables camera permissions when clicked.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4 id="camera-ml5-methods">PhoneCamera ML5 Integration Methods</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>cam.mapPoint(x, y)</code></td>
+                            <td>Map a simple point from video coordinates to canvas display coordinates. Handles scaling and mirroring automatically. Returns <code>{x, y}</code> object. Use for drawing custom points on top of scaled video.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.mapKeypoint(keypoint)</code></td>
+                            <td>Map an ML5 keypoint object to display coordinates. Handles scaling and mirroring automatically. Preserves all keypoint properties (z, confidence, etc.). Returns mapped keypoint object. Use with ML5 BodyPose, FaceMesh, or HandPose keypoints.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.mapKeypoints(keypoints)</code></td>
+                            <td>Map an array of ML5 keypoints to display coordinates. Handles scaling and mirroring automatically. Returns array of mapped keypoints. Use when processing multiple keypoints at once.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.onReady(callback)</code></td>
+                            <td>Set a callback function to run when the video is fully ready for ML5 detection. Use this before initializing ML5 models to ensure the video element has loaded. Example: <code>cam.onReady(() => { /* create ML5 model here */ })</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.getDimensions()</code></td>
+                            <td>Get dimension information for the current display mode. Returns <code>{x, y, width, height, scaleX, scaleY}</code> object. Use for custom coordinate calculations or understanding the video layout.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4 id="camera-properties">PhoneCamera Properties</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>cam.videoElement</code></td>
+                            <td>Read-only. Returns the native HTML video element for use with ML5 libraries. Pass this to ML5 model constructors.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.ready</code></td>
+                            <td>Read-only. Boolean indicating if camera is ready for use.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.width</code></td>
+                            <td>Read-only. Current display width of the video on canvas.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.height</code></td>
+                            <td>Read-only. Current display height of the video on canvas.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.active</code></td>
+                            <td>Read-write. Camera facing mode: 'user' (front) or 'environment' (back). Changing this switches the camera.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.mirror</code></td>
+                            <td>Read-write. Boolean to control horizontal mirroring of the video.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.mode</code></td>
+                            <td>Read-write. Display mode: 'fitWidth', 'fitHeight', 'cover', 'contain', or 'fixed'.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1032,6 +1131,68 @@ function touchStarted() {
             </div>
         </div>
 
+        <!-- ML5 Machine Learning Examples -->
+        <div class="section">
+            <h2 class="section-title">ML5 Machine Learning Examples</h2>
+            <div class="examples-grid">
+                <div class="example-card">
+                    <div class="example-title">Gaze Detector Class</div>
+                    <p class="example-description">Eye gaze tracking with ml5.js FaceMesh</p>
+                    <a href="../ml5/Gaze_detector_class/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/Gaze_detector_class" target="_blank" class="github-link">View Code</a>
+                    <div class="qr-code" id="qr-ml5-gaze"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">PHONE BodyPose Two Points</div>
+                    <p class="example-description">Body tracking with phone sensors and ml5.js BodyPose</p>
+                    <a href="../ml5/PHONE_BodyPose_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/PHONE_BodyPose_two_points" target="_blank" class="github-link">View Code</a>
+                    <div class="qr-code" id="qr-ml5-phone-bodypose"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">PHONE FaceMesh Two Points</div>
+                    <p class="example-description">Face tracking with phone sensors and ml5.js FaceMesh</p>
+                    <a href="../ml5/PHONE_FaceMesh_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/PHONE_FaceMesh_two_points" target="_blank" class="github-link">View Code</a>
+                    <div class="qr-code" id="qr-ml5-phone-facemesh"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">PHONE HandPose Two Points</div>
+                    <p class="example-description">Hand tracking with phone sensors and ml5.js HandPose</p>
+                    <a href="../ml5/PHONE_HandPose_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/PHONE_HandPose_two_points" target="_blank" class="github-link">View Code</a>
+                    <div class="qr-code" id="qr-ml5-phone-handpose"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">THREE BodyPose Two Points</div>
+                    <p class="example-description">3D body tracking visualization with Three.js and ml5.js</p>
+                    <a href="../ml5/THREE_BodyPose_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/THREE_BodyPose_two_points" target="_blank" class="github-link">View Code</a>
+                    <div class="qr-code" id="qr-ml5-three-bodypose"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">THREE FaceMesh Two Points</div>
+                    <p class="example-description">3D face tracking visualization with Three.js and ml5.js</p>
+                    <a href="../ml5/THREE_FaceMesh_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/THREE_FaceMesh_two_points" target="_blank" class="github-link">View Code</a>
+                    <div class="qr-code" id="qr-ml5-three-facemesh"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">THREE HandPose Two Points</div>
+                    <p class="example-description">3D hand tracking visualization with Three.js and ml5.js</p>
+                    <a href="../ml5/THREE_HandPose_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/THREE_HandPose_two_points" target="_blank" class="github-link">View Code</a>
+                    <div class="qr-code" id="qr-ml5-three-handpose"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Phone and GIF Examples -->
         <div class="section">
             <h2 class="section-title">Interactive GIF Examples</h2>
@@ -1207,6 +1368,13 @@ function touchStarted() {
                 { id: 'qr-sound-01', url: 'Phone%20Sensor%20Examples/sound/01_dual_audio/' },
                 { id: 'qr-sound-02', url: 'Phone%20Sensor%20Examples/sound/02_volume_touches/' },
                 { id: 'qr-vibration-01', url: 'Phone%20Sensor%20Examples/vibration/01_haptic_feedback/' },
+                { id: 'qr-ml5-gaze', url: 'ml5/Gaze_detector_class/' },
+                { id: 'qr-ml5-phone-bodypose', url: 'ml5/PHONE_BodyPose_two_points/' },
+                { id: 'qr-ml5-phone-facemesh', url: 'ml5/PHONE_FaceMesh_two_points/' },
+                { id: 'qr-ml5-phone-handpose', url: 'ml5/PHONE_HandPose_two_points/' },
+                { id: 'qr-ml5-three-bodypose', url: 'ml5/THREE_BodyPose_two_points/' },
+                { id: 'qr-ml5-three-facemesh', url: 'ml5/THREE_FaceMesh_two_points/' },
+                { id: 'qr-ml5-three-handpose', url: 'ml5/THREE_HandPose_two_points/' },
                 { id: 'qr-gif-fetch', url: 'Phone%20and%20Gif/fetch/' },
                 { id: 'qr-gif-roll', url: 'Phone%20and%20Gif/roll/' },
                 { id: 'qr-gif-fly', url: 'Phone%20and%20Gif/fly/' },

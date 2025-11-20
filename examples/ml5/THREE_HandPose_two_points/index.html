@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THREE.js HandPose Two Points</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+    }
+    #video {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 160px;
+      height: 120px;
+      border: 2px solid white;
+      border-radius: 8px;
+      z-index: 10;
+      display: none;
+    }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 10;
+      max-width: 300px;
+    }
+    #controls h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+    #controls p {
+      margin: 5px 0;
+      line-height: 1.5;
+    }
+    #controls .status {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+    #controls .error {
+      color: #f44336;
+    }
+    #controls button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #controls button:hover {
+      background: #1976D2;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="canvas-container"></div>
+    <video id="video" autoplay playsinline></video>
+    <div id="controls">
+      <h3>THREE.js HandPose Tracking</h3>
+      <p id="status">Initializing...</p>
+      <p id="info">Two-variable method: Index + Data</p>
+      <p id="measurements"></p>
+      <button id="toggleVideo">Toggle Video</button>
+    </div>
+  </div>
+
+  <!-- Three.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  
+  <!-- ML5.js library - use version 1 to match p5.js examples -->
+  <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+  
+  <!-- Helper functions -->
+  <script src="functions.js"></script>
+  
+  <!-- Main sketch -->
+  <script src="sketch.js"></script>
+</body>
+</html>
