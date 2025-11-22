@@ -1,9 +1,10 @@
 // Speech Recognition example using p5.speech
-// Simple continuous speech recognition with p5-phone microphone permission
-// Based on p5.speech example: 05continuousrecognition.html
+// Touch to talk - tap screen, speak, release
+// Based on p5.speech example: 04simplerecognition.html
 
 let speechRec;
-let recognizedText = "";
+let recognizedText = "Tap screen and say something";
+let isListening = false;
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
@@ -15,84 +16,76 @@ function setup() {
     // Lock gestures to prevent browser interference
     lockGestures();
     
-    // Enable microphone permission with custom function
-    enableSpeechRecognition();
+    // Enable speech recognition permission
+    // This activates the audio context without creating p5.AudioIn
+    enableSpeechTap('Tap to enable speech recognition');
+}
+
+// This runs after speech permission is granted
+function userSetupComplete() {
+    // Create speech recognition object
+    speechRec = new p5.SpeechRec('en-US');
+    speechRec.continuous = false; // One phrase per touch
+    speechRec.interimResults = false; // Only final results
+    speechRec.onResult = showResult;
+    
+    // Handle when recognition ends
+    speechRec.onEnd = function() {
+        isListening = false;
+        console.log("Recognition ended");
+    };
+    
+    console.log('✅ Speech recognition ready - tap screen to talk');
 }
 
 function draw() {
-    background(50);
+    // Change background color when listening
+    if (isListening) {
+        background(100, 200, 100); // Green when listening
+    } else {
+        background(50);
+    }
     
     fill(255);
-    textSize(24);
+    textSize(32);
     textAlign(CENTER, CENTER);
     
     if (speechRec && window.speechEnabled) {
-        text("🎤 Listening...", width/2, 50);
-        text(recognizedText || "Say something", width/2, height/2);
+        if (isListening) {
+            text("🎤 Listening...", width/2, 50);
+        } else {
+            text("👆 Tap to talk", width/2, 50);
+        }
+        text(recognizedText, 40, height/2, width - 80);
     } else {
         text("Tap to enable speech recognition", width/2, height/2);
     }
 }
 
 // Handle speech recognition results
-function handleSpeech() {
+function showResult() {
     if (speechRec.resultValue) {
         recognizedText = speechRec.resultString;
         console.log("Recognized:", recognizedText);
     }
 }
 
-// Custom function to enable speech recognition
-// Based on p5-phone's tap-to-enable pattern
-function enableSpeechRecognition() {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 999999;
-        cursor: pointer;
-    `;
-    
-    const message = document.createElement('div');
-    message.textContent = 'Tap to enable speech recognition';
-    message.style.cssText = `
-        color: white;
-        font-size: 24px;
-        font-family: sans-serif;
-        text-align: center;
-        padding: 40px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.1);
-    `;
-    
-    overlay.appendChild(message);
-    
-    overlay.addEventListener('click', async () => {
-        message.textContent = 'Enabling...';
-        
-        // Start audio context (required for mobile)
-        if (typeof userStartAudio !== 'undefined') {
-            await userStartAudio();
-        }
-        
-        // Create speech recognition
-        speechRec = new p5.SpeechRec('en-US', handleSpeech);
-        speechRec.continuous = true;
-        speechRec.interimResults = true;
+// Touch started - start listening
+function touchStarted() {
+    if (speechRec && window.speechEnabled && !isListening) {
+        isListening = true;
         speechRec.start();
-        
-        window.speechEnabled = true;
-        document.body.removeChild(overlay);
-        console.log('✅ Speech recognition started');
-    });
-    
-    document.body.appendChild(overlay);
+        console.log("Started listening...");
+    }
+    return false; // Prevent default
+}
+
+// Touch ended - stop listening  
+function touchEnded() {
+    if (speechRec && isListening) {
+        isListening = false;
+        // Don't call stop - just let it process what was said
+        console.log("Stopped listening...");
+    }
+    return false;
 }

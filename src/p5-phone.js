@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.6.0
+ * p5-phone v1.6.4
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -178,6 +178,20 @@ function enableSoundTap(message = 'Tap screen to enable sound') {
 }
 
 /**
+ * Enable speech recognition with tap-to-start
+ * User taps anywhere on screen to enable
+ * IMPORTANT: This does NOT create a p5.AudioIn object
+ * Only activates audio context for Web Speech API
+ * You must create your own p5.SpeechRec object after this
+ */
+function enableSpeechTap(message = 'Tap to enable speech recognition') {
+  _createTapToEnable(message, async () => {
+    await _requestSpeechPermission();
+    console.log('✅ Speech recognition enabled via tap');
+  });
+}
+
+/**
  * Enable vibration motor with a button interface
  * Creates a start button that user must click
  * Note: Vibration API is supported on Android, but not iOS
@@ -335,6 +349,26 @@ async function _requestSoundOutput() {
       debugError('Sound output error:', error);
     }
     window.soundEnabled = true; // Enable anyway since no permission needed
+    _notifySketchReady();
+  }
+}
+
+async function _requestSpeechPermission() {
+  try {
+    // Start audio context for Web Speech API
+    // DO NOT create or start p5.AudioIn - this would conflict with speech recognition
+    if (typeof userStartAudio !== 'undefined') {
+      await userStartAudio();
+    }
+    
+    window.speechEnabled = true;
+    _notifySketchReady();
+    
+  } catch (error) {
+    console.error('Speech permission error:', error);
+    if (_debugVisible) {
+      debugError('Speech permission error:', error);
+    }
     _notifySketchReady();
   }
 }
@@ -930,6 +964,7 @@ window.enableMicTap = enableMicTap;
 window.enableMicButton = enableMicButton;
 window.enableSoundTap = enableSoundTap;
 window.enableSoundButton = enableSoundButton;
+window.enableSpeechTap = enableSpeechTap;
 window.enableVibrationTap = enableVibrationTap;
 window.enableVibrationButton = enableVibrationButton;
 window.vibrate = vibrate;
@@ -1667,6 +1702,7 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.enableMicButton = enableMicButton;
   p5.prototype.enableSoundTap = enableSoundTap;
   p5.prototype.enableSoundButton = enableSoundButton;
+  p5.prototype.enableSpeechTap = enableSpeechTap;
   p5.prototype.enableVibrationTap = enableVibrationTap;
   p5.prototype.enableVibrationButton = enableVibrationButton;
   p5.prototype.vibrate = vibrate;

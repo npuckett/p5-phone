@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.4] - 2025-01-31
+
+### Added
+- **Speech Recognition Support**: New `enableSpeechTap()` method for Web Speech API integration
+  - Activates audio context without creating p5.AudioIn (prevents microphone hardware conflict on mobile)
+  - Compatible with p5.js-speech library and p5.SpeechRec
+  - Includes new speech recognition example using touch-to-talk pattern
+  - Works reliably on mobile devices (Android/iOS)
+
 ## [1.6.1] - 2025-01-29
 
 ### Fixed
