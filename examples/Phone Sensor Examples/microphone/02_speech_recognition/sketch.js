@@ -18,7 +18,7 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     
     // Show debug panel immediately to catch any errors
-    showDebug();
+    //showDebug();
     
     // Set up colors
     notListeningColor = color(50, 50, 70); // Dark blue-gray when not listening
