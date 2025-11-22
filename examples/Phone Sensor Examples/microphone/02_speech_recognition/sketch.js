@@ -120,7 +120,7 @@ function userSetupComplete() {
             if (window.micEnabled && !isListening) {
                 try {
                     debug('🔄 Attempting to restart recognition...');
-                    speechRec.start();
+                    speechRec.start(false, true); // Pass params on restart too
                 } catch (e) {
                     debugWarn('Could not restart recognition:', e.message);
                 }
@@ -156,7 +156,7 @@ function userSetupComplete() {
             setTimeout(() => {
                 if (window.micEnabled && !isListening) {
                     try {
-                        speechRec.start();
+                        speechRec.start(false, true); // Pass params on error restart
                     } catch (e) {
                         debugWarn('Could not restart after error:', e.message);
                     }
@@ -170,8 +170,10 @@ function userSetupComplete() {
     // Start listening
     try {
         debug('🎤 Starting initial speech recognition...');
-        speechRec.start();
-        debug('Start command executed successfully');
+        // IMPORTANT: Pass continuous and interimResults as parameters to start()
+        // instead of setting them as properties - this is how p5.speech expects them
+        speechRec.start(false, true); // (continuous=false, interimResults=true)
+        debug('Start command executed with params: continuous=false, interimResults=true');
     } catch (e) {
         debugError('❌ Error starting speech recognition:', e.message);
         debugError('Stack:', e.stack);
@@ -299,7 +301,7 @@ function touchStarted() {
     if (window.micEnabled && speechRec && !isListening) {
         try {
             debug('🎤 Manual restart of recognition');
-            speechRec.start();
+            speechRec.start(false, true); // Pass params on manual restart
         } catch (e) {
             debugWarn('Could not start recognition:', e.message);
         }
