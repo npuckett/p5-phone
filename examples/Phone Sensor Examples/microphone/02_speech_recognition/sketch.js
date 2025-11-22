@@ -96,6 +96,36 @@ function userSetupComplete() {
         debug('Native rec.lang:', speechRec.rec.lang);
         debug('Native rec.continuous:', speechRec.rec.continuous);
         debug('Native rec.interimResults:', speechRec.rec.interimResults);
+        
+        // Add extra handlers directly to the native object to debug
+        // These will fire in addition to p5.speech's handlers
+        speechRec.rec.onaudiostart = function(e) {
+            debug('🎤 NATIVE: Audio capture started');
+        };
+        
+        speechRec.rec.onaudioend = function(e) {
+            debug('🔇 NATIVE: Audio capture ended');
+        };
+        
+        speechRec.rec.onsoundstart = function(e) {
+            debug('🔊 NATIVE: Sound detected by recognition');
+        };
+        
+        speechRec.rec.onsoundend = function(e) {
+            debug('🔇 NATIVE: Sound ended');
+        };
+        
+        speechRec.rec.onspeechstart = function(e) {
+            debug('🗣️ NATIVE: Speech detected!');
+        };
+        
+        speechRec.rec.onspeechend = function(e) {
+            debug('🤐 NATIVE: Speech ended');
+        };
+        
+        speechRec.rec.onnomatch = function(e) {
+            debugWarn('❓ NATIVE: No match found for speech');
+        };
     }
     
     // Set up callback for when speech is recognized
@@ -171,10 +201,26 @@ function userSetupComplete() {
     // Start listening
     try {
         debug('🎤 Starting initial speech recognition...');
+        debug('About to call start() with params: continuous=false, interimResults=true');
+        
+        // Log the state right before starting
+        if (speechRec.rec) {
+            debug('Pre-start check - rec.lang:', speechRec.rec.lang);
+            debug('Pre-start check - rec.continuous:', speechRec.rec.continuous);
+            debug('Pre-start check - rec.interimResults:', speechRec.rec.interimResults);
+        }
+        
         // IMPORTANT: Pass continuous and interimResults as parameters to start()
         // instead of setting them as properties - this is how p5.speech expects them
         speechRec.start(false, true); // (continuous=false, interimResults=true)
+        
         debug('Start command executed with params: continuous=false, interimResults=true');
+        
+        // Log the state right after starting
+        if (speechRec.rec) {
+            debug('Post-start check - rec.continuous:', speechRec.rec.continuous);
+            debug('Post-start check - rec.interimResults:', speechRec.rec.interimResults);
+        }
     } catch (e) {
         debugError('❌ Error starting speech recognition:', e.message);
         debugError('Stack:', e.stack);
