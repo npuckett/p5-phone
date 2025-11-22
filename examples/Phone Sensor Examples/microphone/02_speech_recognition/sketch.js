@@ -10,6 +10,7 @@ let previousTexts = []; // Array to store previous recognized phrases
 let maxPreviousTexts = 5; // Maximum number of previous phrases to display
 let isListening = false; // Flag to track if recognition is active
 let confidence = 0; // Confidence level of recognition (0.0 - 1.0)
+let micLevel = 0; // Current microphone input level
 let backgroundColor;
 let listeningColor;
 let notListeningColor;
@@ -219,9 +220,36 @@ function draw() {
     // Check if microphone is available and speech recognition is initialized
     if (window.micEnabled && speechRec) {
         
+        // Get microphone level and display it
+        micLevel = mic.getLevel();
+        
+        // Microphone level indicator (top right corner)
+        push();
+        fill(255);
+        textSize(12);
+        textAlign(RIGHT, TOP);
+        text("Mic Level:", width - 70, 10);
+        text(nf(micLevel, 1, 3), width - 10, 10);
+        
+        // Visual mic level bar
+        let micBarWidth = 60;
+        let micBarHeight = map(micLevel, 0, 1, 0, 100);
+        fill(50);
+        rect(width - micBarWidth - 10, 30, micBarWidth, 100);
+        fill(0, 255, 0);
+        rect(width - micBarWidth - 10, 30 + (100 - micBarHeight), micBarWidth, micBarHeight);
+        
+        // Show if mic is detecting sound
+        if (micLevel > 0.01) {
+            fill(0, 255, 0);
+            text("🎤 AUDIO DETECTED", width - 70, 140);
+        }
+        pop();
+        
         // Display listening status
         fill(255);
         textSize(20);
+        textAlign(CENTER, CENTER);
         if (isListening) {
             text("🎤 LISTENING...", width/2, 60);
         } else {
