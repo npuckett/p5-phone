@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2025-06-25
+
+### Added
+- **Permission UI Styles**: Three new ways to present permission prompts
+  - **Canvas style** (`enableSensorCanvas`, `enableMicCanvas`, etc.) — message drawn on the p5 canvas, tap canvas to activate
+  - **Banner style** (`enableSensorBanner`, `enableMicBanner`, etc.) — animated slide-in banner at top of screen
+  - **Custom element** (`enableSensorOn`, `enableMicOn`, etc.) — bind activation to any HTML element via CSS selector
+- `enableSpeechButton(text)` — button-based speech recognition activation (was missing)
+- All 21 new API functions registered on both `window` and `p5.prototype`
+
+### Fixed
+- **Timing bug**: `_initializeP5TouchOverrides()` replaced infinite `window._setupDone` poll with canvas-detection loop (max 50 attempts)
+- **Duplicate notifications**: `enableAllTap`/`enableAllButton` now use internal Core functions to prevent multiple `_notifySketchReady()` calls
+- **Infinite polling**: `_checkVideoReady()` now has max 100 attempts (10s timeout) instead of polling forever
+- **Console override safety**: `_setupConsoleOverrides()` wrapped in try/catch to prevent crashes
+- **Missing global**: Added `window.speechEnabled = false` initialization
+- Removed dead `_permissionsInitialized` variable
+- `_notifySketchReady()` event detail now includes `speech: window.speechEnabled`
+
+### Changed
+- `_removeExistingUI()` now also removes `#permissionBanner` elements
+- Internal permission handlers split into Core (no notify) + wrapped (with notify) pairs
+
 ## [1.6.4] - 2025-01-31
 
 ### Added

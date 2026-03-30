@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.6.4
+ * p5-phone v1.7.0
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -86,9 +86,9 @@ window.micEnabled = false;
 window.soundEnabled = false;
 window.gesturesLocked = false;
 window.vibrationEnabled = false;
+window.speechEnabled = false;
 
 // Internal state
-let _permissionsInitialized = false;
 let _micInstance = null;
 
 // =========================================
@@ -192,6 +192,20 @@ function enableSpeechTap(message = 'Tap to enable speech recognition') {
 }
 
 /**
+ * Enable speech recognition with a button interface
+ * Creates a start button that user must click
+ * IMPORTANT: This does NOT create a p5.AudioIn object
+ * Only activates audio context for Web Speech API
+ * You must create your own p5.SpeechRec object after this
+ */
+function enableSpeechButton(buttonText = 'ENABLE SPEECH RECOGNITION', statusText = 'Enabling speech recognition...') {
+  _createPermissionButton(buttonText, statusText, async () => {
+    await _requestSpeechPermission();
+    console.log('✅ Speech recognition enabled via button');
+  });
+}
+
+/**
  * Enable vibration motor with a button interface
  * Creates a start button that user must click
  * Note: Vibration API is supported on Android, but not iOS
@@ -221,8 +235,9 @@ function enableVibrationTap(message = 'Tap screen to enable vibration') {
  */
 function enableAllButton(buttonText = 'ENABLE MOTION & MICROPHONE', statusText = 'Requesting permissions...') {
   _createPermissionButton(buttonText, statusText, async () => {
-    await _requestMotionPermissions();
-    await _requestMicrophonePermissions();
+    await _requestMotionPermissionsCore();
+    await _requestMicrophonePermissionsCore();
+    _notifySketchReady();
     console.log('✅ Motion sensors and microphone enabled via button');
   });
 }
@@ -233,9 +248,210 @@ function enableAllButton(buttonText = 'ENABLE MOTION & MICROPHONE', statusText =
  */
 function enableAllTap(message = 'Tap screen to enable motion sensors & microphone') {
   _createTapToEnable(message, async () => {
-    await _requestMotionPermissions();
-    await _requestMicrophonePermissions();
+    await _requestMotionPermissionsCore();
+    await _requestMicrophonePermissionsCore();
+    _notifySketchReady();
     console.log('✅ Motion sensors and microphone enabled via tap');
+  });
+}
+
+// =========================================
+// CANVAS-FIRST-TOUCH — enableXxxCanvas()
+// Permissions fire on the user's first touch/click on the p5 canvas.
+// No overlay or button. Closest thing to "automatic".
+// =========================================
+
+/**
+ * Enable gyroscope on first canvas touch
+ * @param {string|null} message - Optional hint text shown on canvas
+ */
+function enableGyroCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestMotionPermissions();
+    console.log('✅ Gyroscope enabled via canvas touch');
+  });
+}
+
+/**
+ * Enable microphone on first canvas touch
+ */
+function enableMicCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestMicrophonePermissions();
+    console.log('✅ Microphone enabled via canvas touch');
+  });
+}
+
+/**
+ * Enable sound output on first canvas touch
+ */
+function enableSoundCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestSoundOutput();
+    console.log('✅ Sound output enabled via canvas touch');
+  });
+}
+
+/**
+ * Enable speech recognition on first canvas touch
+ */
+function enableSpeechCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestSpeechPermission();
+    console.log('✅ Speech recognition enabled via canvas touch');
+  });
+}
+
+/**
+ * Enable vibration on first canvas touch
+ */
+function enableVibrationCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestVibrationPermission();
+    console.log('✅ Vibration enabled via canvas touch');
+  });
+}
+
+/**
+ * Enable both motion sensors and microphone on first canvas touch
+ */
+function enableAllCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestMotionPermissionsCore();
+    await _requestMicrophonePermissionsCore();
+    _notifySketchReady();
+    console.log('✅ Motion sensors and microphone enabled via canvas touch');
+  });
+}
+
+/**
+ * Enable camera on first canvas touch
+ */
+function enableCameraCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestCameraPermission();
+    console.log('✅ Camera enabled via canvas touch');
+  });
+}
+
+// =========================================
+// BANNER UI — enableXxxBanner()
+// A slim notification bar at the top or bottom of the screen.
+// =========================================
+
+/**
+ * Enable gyroscope with a banner notification
+ * @param {string} message - Banner text
+ * @param {string} position - 'top' or 'bottom' (default: 'top')
+ */
+function enableGyroBanner(message = 'Tap to enable motion sensors', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestMotionPermissions();
+    console.log('✅ Gyroscope enabled via banner');
+  });
+}
+
+function enableMicBanner(message = 'Tap to enable microphone', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestMicrophonePermissions();
+    console.log('✅ Microphone enabled via banner');
+  });
+}
+
+function enableSoundBanner(message = 'Tap to enable sound', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestSoundOutput();
+    console.log('✅ Sound output enabled via banner');
+  });
+}
+
+function enableSpeechBanner(message = 'Tap to enable speech recognition', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestSpeechPermission();
+    console.log('✅ Speech recognition enabled via banner');
+  });
+}
+
+function enableVibrationBanner(message = 'Tap to enable vibration', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestVibrationPermission();
+    console.log('✅ Vibration enabled via banner');
+  });
+}
+
+function enableAllBanner(message = 'Tap to enable sensors & microphone', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestMotionPermissionsCore();
+    await _requestMicrophonePermissionsCore();
+    _notifySketchReady();
+    console.log('✅ Motion sensors and microphone enabled via banner');
+  });
+}
+
+function enableCameraBanner(message = 'Tap to enable camera', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestCameraPermission();
+    console.log('✅ Camera enabled via banner');
+  });
+}
+
+// =========================================
+// CUSTOM ELEMENT BINDING — enableXxxOn()
+// Attach permission trigger to any existing DOM element.
+// =========================================
+
+/**
+ * Enable gyroscope when a custom DOM element is clicked/tapped
+ * @param {string} selector - CSS selector (e.g., '#my-button', '.start-btn')
+ */
+function enableGyroOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestMotionPermissions();
+    console.log('✅ Gyroscope enabled via custom element');
+  });
+}
+
+function enableMicOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestMicrophonePermissions();
+    console.log('✅ Microphone enabled via custom element');
+  });
+}
+
+function enableSoundOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestSoundOutput();
+    console.log('✅ Sound output enabled via custom element');
+  });
+}
+
+function enableSpeechOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestSpeechPermission();
+    console.log('✅ Speech recognition enabled via custom element');
+  });
+}
+
+function enableVibrationOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestVibrationPermission();
+    console.log('✅ Vibration enabled via custom element');
+  });
+}
+
+function enableAllOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestMotionPermissionsCore();
+    await _requestMicrophonePermissionsCore();
+    _notifySketchReady();
+    console.log('✅ Motion sensors and microphone enabled via custom element');
+  });
+}
+
+function enableCameraOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestCameraPermission();
+    console.log('✅ Camera enabled via custom element');
   });
 }
 
@@ -276,7 +492,8 @@ function stopVibration() {
 // INTERNAL PERMISSION HANDLERS
 // =========================================
 
-async function _requestMotionPermissions() {
+// Core permission logic (without notification) — used by combo functions
+async function _requestMotionPermissionsCore() {
   try {
     // Request motion sensor permissions (iOS 13+)
     if (typeof DeviceOrientationEvent !== 'undefined' &&
@@ -293,20 +510,18 @@ async function _requestMotionPermissions() {
     }
     
     window.sensorsEnabled = true;
-    _notifySketchReady();
     
   } catch (error) {
     console.error('Motion sensor permission error:', error);
     if (_debugVisible) {
       debugError('Motion sensor permission error:', error);
     }
-    // Enable anyway for non-iOS devices
+    // Enable anyway for non-iOS devices (Android doesn't require requestPermission)
     window.sensorsEnabled = true;
-    _notifySketchReady();
   }
 }
 
-async function _requestMicrophonePermissions() {
+async function _requestMicrophonePermissionsCore() {
   try {
     // Start audio context for p5.sound
     if (typeof userStartAudio !== 'undefined') {
@@ -322,18 +537,15 @@ async function _requestMicrophonePermissions() {
       console.warn('No microphone object found. Create one with: mic = new p5.AudioIn();');
     }
     
-    _notifySketchReady();
-    
   } catch (error) {
     console.error('Microphone permission error:', error);
     if (_debugVisible) {
       debugError('Microphone permission error:', error);
     }
-    _notifySketchReady();
   }
 }
 
-async function _requestSoundOutput() {
+async function _requestSoundOutputCore() {
   try {
     // Start audio context for p5.sound (enables sound playback)
     if (typeof userStartAudio !== 'undefined') {
@@ -341,7 +553,6 @@ async function _requestSoundOutput() {
     }
     
     window.soundEnabled = true;
-    _notifySketchReady();
     
   } catch (error) {
     console.error('Sound output error:', error);
@@ -349,11 +560,10 @@ async function _requestSoundOutput() {
       debugError('Sound output error:', error);
     }
     window.soundEnabled = true; // Enable anyway since no permission needed
-    _notifySketchReady();
   }
 }
 
-async function _requestSpeechPermission() {
+async function _requestSpeechPermissionCore() {
   try {
     // Start audio context for Web Speech API
     // DO NOT create or start p5.AudioIn - this would conflict with speech recognition
@@ -362,18 +572,16 @@ async function _requestSpeechPermission() {
     }
     
     window.speechEnabled = true;
-    _notifySketchReady();
     
   } catch (error) {
     console.error('Speech permission error:', error);
     if (_debugVisible) {
       debugError('Speech permission error:', error);
     }
-    _notifySketchReady();
   }
 }
 
-async function _requestVibrationPermission() {
+async function _requestVibrationPermissionCore() {
   try {
     // Check if Vibration API is supported
     if (!navigator.vibrate) {
@@ -382,7 +590,6 @@ async function _requestVibrationPermission() {
         debugWarn('Vibration API not supported on this device');
       }
       window.vibrationEnabled = false;
-      _notifySketchReady();
       return;
     }
     
@@ -397,16 +604,39 @@ async function _requestVibrationPermission() {
       window.vibrationEnabled = false;
     }
     
-    _notifySketchReady();
-    
   } catch (error) {
     console.error('Vibration permission error:', error);
     if (_debugVisible) {
       debugError('Vibration permission error:', error);
     }
     window.vibrationEnabled = false;
-    _notifySketchReady();
   }
+}
+
+// Wrapped versions that notify the sketch (used by single-permission functions)
+async function _requestMotionPermissions() {
+  await _requestMotionPermissionsCore();
+  _notifySketchReady();
+}
+
+async function _requestMicrophonePermissions() {
+  await _requestMicrophonePermissionsCore();
+  _notifySketchReady();
+}
+
+async function _requestSoundOutput() {
+  await _requestSoundOutputCore();
+  _notifySketchReady();
+}
+
+async function _requestSpeechPermission() {
+  await _requestSpeechPermissionCore();
+  _notifySketchReady();
+}
+
+async function _requestVibrationPermission() {
+  await _requestVibrationPermissionCore();
+  _notifySketchReady();
 }
 
 function _notifySketchReady() {
@@ -421,6 +651,7 @@ function _notifySketchReady() {
       sensors: window.sensorsEnabled,
       microphone: window.micEnabled,
       sound: window.soundEnabled,
+      speech: window.speechEnabled,
       vibration: window.vibrationEnabled,
       gestures: window.gesturesLocked
     }
@@ -586,10 +817,191 @@ function _removeExistingUI() {
   const button = document.getElementById('permissionButton');
   const status = document.getElementById('permissionStatus');
   const overlay = document.getElementById('tapOverlay');
+  const banner = document.getElementById('permissionBanner');
   
   if (button) button.remove();
   if (status) status.remove();
   if (overlay) overlay.remove();
+  if (banner) banner.remove();
+}
+
+// =========================================
+// ALTERNATIVE UI STYLES
+// =========================================
+
+/**
+ * Canvas-first-touch: Permissions fire on the user's first touch/click on the p5 canvas.
+ * No overlay or button UI is shown. Optionally displays a text hint on the canvas.
+ * @param {string|null} message - Optional hint text to display on canvas (or null for no hint)
+ * @param {function} onActivateHandler - Async permission handler to run on first interaction
+ */
+function _createCanvasToEnable(message, onActivateHandler) {
+  _removeExistingUI();
+  
+  let activated = false;
+  let hintInterval = null;
+  
+  // Draw hint text on the canvas if message is provided
+  if (message) {
+    hintInterval = setInterval(() => {
+      const canvas = document.querySelector('canvas');
+      if (canvas && typeof push === 'function') {
+        // Use p5 drawing functions to show hint
+        push();
+        fill(255, 255, 255, 200);
+        noStroke();
+        textAlign(CENTER, CENTER);
+        textSize(Math.min(canvas.width, canvas.height) * 0.04);
+        text(message, (typeof width !== 'undefined' ? width : canvas.width) / 2, 
+             (typeof height !== 'undefined' ? height : canvas.height) * 0.9);
+        pop();
+      }
+    }, 50);
+  }
+  
+  const handleFirstInteraction = async (e) => {
+    if (activated) return;
+    activated = true;
+    
+    // Clean up hint drawing
+    if (hintInterval) {
+      clearInterval(hintInterval);
+      hintInterval = null;
+    }
+    
+    // Clean up listeners
+    document.removeEventListener('touchstart', handleFirstInteraction, true);
+    document.removeEventListener('mousedown', handleFirstInteraction, true);
+    
+    await onActivateHandler();
+  };
+  
+  // Wait for canvas to appear, then attach listeners
+  const waitForCanvas = () => {
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      canvas.addEventListener('touchstart', handleFirstInteraction, { once: true, capture: true });
+      canvas.addEventListener('mousedown', handleFirstInteraction, { once: true, capture: true });
+    } else {
+      // Canvas not ready yet — also listen on document as a fallback
+      setTimeout(waitForCanvas, 50);
+    }
+  };
+  
+  waitForCanvas();
+}
+
+/**
+ * Banner UI: A slim notification-style banner at top or bottom of screen.
+ * Less intrusive than full-screen overlay or centered button.
+ * @param {string} message - Banner text
+ * @param {string} position - 'top' or 'bottom'
+ * @param {function} onActivateHandler - Async permission handler
+ */
+function _createBannerToEnable(message, position, onActivateHandler) {
+  _removeExistingUI();
+  
+  const banner = document.createElement('div');
+  banner.id = 'permissionBanner';
+  
+  const isTop = position === 'top';
+  banner.style.cssText = `
+    position: fixed;
+    ${isTop ? 'top: 0;' : 'bottom: 0;'}
+    left: 0;
+    width: 100%;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    text-align: center;
+    z-index: 999999;
+    cursor: pointer;
+    touch-action: manipulation;
+    box-shadow: ${isTop ? '0 2px 10px rgba(0,0,0,0.3)' : '0 -2px 10px rgba(0,0,0,0.3)'};
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(${isTop ? '-100%' : '100%'});
+  `;
+  
+  banner.textContent = message;
+  document.body.appendChild(banner);
+  
+  // Slide in animation
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      banner.style.transform = 'translateY(0)';
+    });
+  });
+  
+  const handleActivation = async () => {
+    if (!banner.parentNode) return;
+    
+    banner.textContent = 'Enabling...';
+    banner.style.pointerEvents = 'none';
+    
+    await onActivateHandler();
+    
+    // Slide out animation
+    banner.style.transform = `translateY(${isTop ? '-100%' : '100%'})`;
+    banner.style.opacity = '0';
+    setTimeout(() => {
+      if (banner.parentNode) banner.remove();
+    }, 300);
+  };
+  
+  banner.addEventListener('click', handleActivation);
+  banner.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    handleActivation();
+  });
+  banner.addEventListener('pointerup', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    handleActivation();
+  });
+}
+
+/**
+ * Custom element binding: Attach permission trigger to any existing DOM element.
+ * Users build their own UI and just bind the permission handler.
+ * @param {string} selector - CSS selector for the target element
+ * @param {function} onActivateHandler - Async permission handler
+ */
+function _bindPermissionTo(selector, onActivateHandler) {
+  let activated = false;
+  
+  const attach = () => {
+    const element = document.querySelector(selector);
+    if (!element) {
+      console.warn(`p5-phone: Element "${selector}" not found. Retrying...`);
+      setTimeout(attach, 100);
+      return;
+    }
+    
+    const handleActivation = async () => {
+      if (activated) return;
+      activated = true;
+      
+      await onActivateHandler();
+    };
+    
+    element.addEventListener('click', handleActivation);
+    element.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleActivation();
+    });
+  };
+  
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attach);
+  } else {
+    attach();
+  }
 }
 
 // =========================================
@@ -705,20 +1117,27 @@ function _initializeOtherGesturePrevention() {
 }
 
 function _initializeP5TouchOverrides() {
-  // Wait for p5 to be ready
-  setTimeout(() => {
-    if (window._setupDone) {
+  // Wait for p5 to be ready by checking for a canvas element or p5 instance
+  const maxAttempts = 50; // Stop after 5 seconds (50 * 100ms)
+  let attempts = 0;
+  
+  const tryOverride = () => {
+    attempts++;
+    // Check multiple signals that p5 setup has completed
+    const p5Ready = (typeof p5 !== 'undefined' && p5.instance) ||
+                    document.querySelector('canvas') ||
+                    (typeof window.setup === 'function' && typeof window.draw === 'function');
+    
+    if (p5Ready) {
       _overrideP5Touch();
+    } else if (attempts < maxAttempts) {
+      setTimeout(tryOverride, 100);
     } else {
-      // Try again after setup
-      const checkP5 = setInterval(() => {
-        if (window._setupDone) {
-          _overrideP5Touch();
-          clearInterval(checkP5);
-        }
-      }, 100);
+      console.warn('p5-phone: Could not detect p5.js setup completion. Touch overrides not applied.');
     }
-  }, 100);
+  };
+  
+  setTimeout(tryOverride, 100);
 }
 
 function _overrideP5Touch() {
@@ -965,12 +1384,40 @@ window.enableMicButton = enableMicButton;
 window.enableSoundTap = enableSoundTap;
 window.enableSoundButton = enableSoundButton;
 window.enableSpeechTap = enableSpeechTap;
+window.enableSpeechButton = enableSpeechButton;
 window.enableVibrationTap = enableVibrationTap;
 window.enableVibrationButton = enableVibrationButton;
 window.vibrate = vibrate;
 window.stopVibration = stopVibration;
 window.enableAllTap = enableAllTap;
 window.enableAllButton = enableAllButton;
+
+// Canvas-first-touch style
+window.enableGyroCanvas = enableGyroCanvas;
+window.enableMicCanvas = enableMicCanvas;
+window.enableSoundCanvas = enableSoundCanvas;
+window.enableSpeechCanvas = enableSpeechCanvas;
+window.enableVibrationCanvas = enableVibrationCanvas;
+window.enableAllCanvas = enableAllCanvas;
+window.enableCameraCanvas = enableCameraCanvas;
+
+// Banner style
+window.enableGyroBanner = enableGyroBanner;
+window.enableMicBanner = enableMicBanner;
+window.enableSoundBanner = enableSoundBanner;
+window.enableSpeechBanner = enableSpeechBanner;
+window.enableVibrationBanner = enableVibrationBanner;
+window.enableAllBanner = enableAllBanner;
+window.enableCameraBanner = enableCameraBanner;
+
+// Custom element binding
+window.enableGyroOn = enableGyroOn;
+window.enableMicOn = enableMicOn;
+window.enableSoundOn = enableSoundOn;
+window.enableSpeechOn = enableSpeechOn;
+window.enableVibrationOn = enableVibrationOn;
+window.enableAllOn = enableAllOn;
+window.enableCameraOn = enableCameraOn;
 
 /**
  * Set up console overrides to capture console.error and console.warn
@@ -981,12 +1428,19 @@ function _setupConsoleOverrides() {
   window._consoleOverrideSet = true;
   
   // Store original console methods for debug functions to use
-  window._originalConsoleError = console.error;
-  window._originalConsoleWarn = console.warn;
+  // Verify originals are functions before storing
+  if (typeof console.error === 'function') {
+    window._originalConsoleError = console.error;
+  }
+  if (typeof console.warn === 'function') {
+    window._originalConsoleWarn = console.warn;
+  }
   
   // Override console.error to also show in debug panel
   console.error = function(...args) {
-    window._originalConsoleError.apply(console, args);
+    try {
+      window._originalConsoleError.apply(console, args);
+    } catch (e) { /* prevent override from breaking error flow */ }
     if (_debugVisible) {
       debugError(...args);
     }
@@ -994,7 +1448,9 @@ function _setupConsoleOverrides() {
   
   // Override console.warn to also show in debug panel
   console.warn = function(...args) {
-    window._originalConsoleWarn.apply(console, args);
+    try {
+      window._originalConsoleWarn.apply(console, args);
+    } catch (e) { /* prevent override from breaking warn flow */ }
     if (_debugVisible) {
       debugWarn(...args);
     }
@@ -1332,7 +1788,9 @@ class PhoneCamera {
     }
   }
   
-  _checkVideoReady() {
+  _checkVideoReady(attempts = 0) {
+    const maxAttempts = 100; // 10 seconds (100 * 100ms)
+    
     // Check if video element has enough data for ML5
     if (this._video && this._video.elt && this._video.elt.readyState >= 2) {
       if (this._onReadyCallback) {
@@ -1340,9 +1798,14 @@ class PhoneCamera {
         this._onReadyCallback = null;  // Clear callback so it only fires once
         callback();
       }
-    } else {
+    } else if (attempts < maxAttempts) {
       // Check again shortly
-      setTimeout(() => this._checkVideoReady(), 100);
+      setTimeout(() => this._checkVideoReady(attempts + 1), 100);
+    } else {
+      console.warn('PhoneCamera: Video failed to reach ready state after 10 seconds');
+      if (_debugVisible) {
+        debugWarn('PhoneCamera: Video not ready after timeout. Check camera permissions.');
+      }
     }
   }
   
@@ -1703,12 +2166,40 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.enableSoundTap = enableSoundTap;
   p5.prototype.enableSoundButton = enableSoundButton;
   p5.prototype.enableSpeechTap = enableSpeechTap;
+  p5.prototype.enableSpeechButton = enableSpeechButton;
   p5.prototype.enableVibrationTap = enableVibrationTap;
   p5.prototype.enableVibrationButton = enableVibrationButton;
   p5.prototype.vibrate = vibrate;
   p5.prototype.stopVibration = stopVibration;
   p5.prototype.enableAllTap = enableAllTap;
   p5.prototype.enableAllButton = enableAllButton;
+  
+  // Canvas-first-touch style
+  p5.prototype.enableGyroCanvas = enableGyroCanvas;
+  p5.prototype.enableMicCanvas = enableMicCanvas;
+  p5.prototype.enableSoundCanvas = enableSoundCanvas;
+  p5.prototype.enableSpeechCanvas = enableSpeechCanvas;
+  p5.prototype.enableVibrationCanvas = enableVibrationCanvas;
+  p5.prototype.enableAllCanvas = enableAllCanvas;
+  p5.prototype.enableCameraCanvas = enableCameraCanvas;
+  
+  // Banner style
+  p5.prototype.enableGyroBanner = enableGyroBanner;
+  p5.prototype.enableMicBanner = enableMicBanner;
+  p5.prototype.enableSoundBanner = enableSoundBanner;
+  p5.prototype.enableSpeechBanner = enableSpeechBanner;
+  p5.prototype.enableVibrationBanner = enableVibrationBanner;
+  p5.prototype.enableAllBanner = enableAllBanner;
+  p5.prototype.enableCameraBanner = enableCameraBanner;
+  
+  // Custom element binding
+  p5.prototype.enableGyroOn = enableGyroOn;
+  p5.prototype.enableMicOn = enableMicOn;
+  p5.prototype.enableSoundOn = enableSoundOn;
+  p5.prototype.enableSpeechOn = enableSpeechOn;
+  p5.prototype.enableVibrationOn = enableVibrationOn;
+  p5.prototype.enableAllOn = enableAllOn;
+  p5.prototype.enableCameraOn = enableCameraOn;
   
   // Camera functions
   p5.prototype.createPhoneCamera = createPhoneCamera;

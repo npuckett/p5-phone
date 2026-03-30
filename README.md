@@ -60,17 +60,27 @@ This library simplifies access to the following p5.js mobile sensor and audio co
   - [Motion Sensor Activation](#motion-sensor-activation)
   - [Microphone Activation](#microphone-activation)
   - [Sound Output Activation](#sound-output-activation)
+  - [Speech Recognition Activation](#speech-recognition-activation)
+  - [Combined Activation](#combined-activation)
   - [Vibration Motor (Android Only)](#vibration-motor-android-only)
+  - [PhoneCamera (ML5 Integration)](#phonecamera-ml5-integration)
   - [Debug System](#debug-system)
+- [Permission UI Styles](#permission-ui-styles)
+  - [Tap (Full-Screen Overlay)](#tap-full-screen-overlay)
+  - [Button (Centered Button)](#button-centered-button)
+  - [Canvas (First Touch)](#canvas-first-touch)
+  - [Banner (Top/Bottom Bar)](#banner-topbottom-bar)
+  - [Custom Element Binding](#custom-element-binding)
+- [Troubleshooting / FAQ](#troubleshooting--faq)
 
 ### CDN (Recommended)
 
 ```html
 <!-- Minified version (recommended) -->
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.3/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.7.0/dist/p5-phone.min.js"></script>
 
 <!-- Development version (larger, with comments) -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.3/dist/p5-phone.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.7.0/dist/p5-phone.js"></script> -->
 ```
 
 ### Basic Setup
@@ -98,7 +108,7 @@ This library simplifies access to the following p5.js mobile sensor and audio co
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
   
   <!-- Load p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.3/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.7.0/dist/p5-phone.min.js"></script>
   
 </head>
 <body>
@@ -192,19 +202,51 @@ enableMicButton(text)     // Button-based microphone activation
 enableSoundTap(message)   // Tap anywhere to enable sound playback
 enableSoundButton(text)   // Button-based sound activation
 
+// Speech recognition activation (Web Speech API)
+enableSpeechTap(message)    // Tap anywhere to enable speech
+enableSpeechButton(text)    // Button-based speech activation
+
+// Combined activation (motion + microphone)
+enableAllTap(message)     // Tap anywhere to enable both
+enableAllButton(text)     // Button-based combined activation
+
 // Vibration motor (Android only)
 enableVibrationTap(message)   // Tap anywhere to enable vibration
 enableVibrationButton(text)   // Button-based vibration activation
 vibrate(pattern)              // Trigger vibration (duration or pattern array)
 stopVibration()               // Stop any ongoing vibration
 
+// Camera (ML5 integration)
+createPhoneCamera(active, mirror, mode)  // Create camera instance
+enableCameraTap(message)                 // Tap to enable camera
+enableCameraButton(text)                 // Button-based camera activation
+
+// --- Alternative Permission UI Styles (v1.7.0) ---
+
+// Canvas-first-touch — permissions fire on first canvas interaction
+enableGyroCanvas(message)    // Also: enableMicCanvas, enableSoundCanvas,
+                             //        enableSpeechCanvas, enableVibrationCanvas,
+                             //        enableAllCanvas, enableCameraCanvas
+
+// Banner — slim notification bar at top or bottom of screen
+enableGyroBanner(message, position)   // position: 'top' or 'bottom'
+                                      // Also: enableMicBanner, enableSoundBanner,
+                                      //        enableSpeechBanner, enableVibrationBanner,
+                                      //        enableAllBanner, enableCameraBanner
+
+// Custom element binding — attach to your own DOM element
+enableGyroOn(selector)    // e.g., enableGyroOn('#my-button')
+                          // Also: enableMicOn, enableSoundOn, enableSpeechOn,
+                          //        enableVibrationOn, enableAllOn, enableCameraOn
+
 // Status variables (check these in your code)
 window.sensorsEnabled     // Boolean: true when motion sensors are active
 window.micEnabled         // Boolean: true when microphone is active
 window.soundEnabled       // Boolean: true when sound output is active
+window.speechEnabled      // Boolean: true when speech recognition is active
 window.vibrationEnabled   // Boolean: true when vibration is available (Android only)
 
-// Debug system (enhanced in v1.4.0)
+// Debug system
 showDebug()       // Show on-screen debug panel with automatic error catching
 hideDebug()       // Hide debug panel
 toggleDebug()     // Toggle panel visibility
@@ -233,6 +275,7 @@ this.enableGyroTap('Tap to start');
 - `window.sensorsEnabled` - Boolean indicating if motion sensors are active
 - `window.micEnabled` - Boolean indicating if microphone is active
 - `window.soundEnabled` - Boolean indicating if sound output is active
+- `window.speechEnabled` - Boolean indicating if speech recognition is active
 - `window.vibrationEnabled` - Boolean indicating if vibration is available (Android only)
 
 **Usage:**
@@ -570,6 +613,80 @@ function gameOver() {
 - Don't overuse - vibration can quickly drain battery
 - Test on Android devices as iOS doesn't support vibration
 
+### Speech Recognition Activation
+
+**Purpose:** Enable the Web Speech API for voice input and speech-to-text in mobile browsers.
+
+**Important:** This does NOT create a `p5.AudioIn` object — it only activates the audio context needed for the Web Speech API. You must create your own `p5.SpeechRec` object after enabling.
+
+**Commands:**
+- `enableSpeechTap(message)` - Tap anywhere on screen to enable speech recognition
+- `enableSpeechButton(text)` - Creates a button with custom text to enable speech
+
+**Usage:**
+```javascript
+let speechRec;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  
+  // Enable speech recognition
+  enableSpeechTap('Tap to enable speech recognition');
+}
+
+// Use userSetupComplete() to know when permissions are ready
+function userSetupComplete() {
+  if (window.speechEnabled) {
+    speechRec = new p5.SpeechRec('en-US');
+    speechRec.continuous = true;
+    speechRec.interimResults = true;
+    speechRec.onResult = gotSpeech;
+    speechRec.start();
+  }
+}
+
+function gotSpeech() {
+  if (speechRec.resultValue) {
+    debug('You said:', speechRec.resultString);
+  }
+}
+```
+
+### Combined Activation
+
+**Purpose:** Enable both motion sensors and microphone with a single permission prompt, reducing the number of taps required.
+
+**Commands:**
+- `enableAllTap(message)` - Tap anywhere to enable motion sensors + microphone
+- `enableAllButton(text)` - Button-based combined activation
+
+**Usage:**
+```javascript
+let mic;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  mic = new p5.AudioIn();
+  lockGestures();
+  
+  // One tap enables both sensors and microphone
+  enableAllTap('Tap to enable sensors & microphone');
+}
+
+function draw() {
+  background(220);
+  
+  if (window.sensorsEnabled) {
+    circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
+  }
+  
+  if (window.micEnabled) {
+    let level = mic.getLevel();
+    rect(10, 10, level * 200, 20);
+  }
+}
+```
+
 ### PhoneCamera (ML5 Integration)
 
 **Purpose:** Simplified camera access optimized for ML5.js machine learning models (FaceMesh, HandPose, BodyPose, etc.). Handles camera initialization, coordinate mapping, mirroring, and display modes automatically.
@@ -768,4 +885,151 @@ debug("Touch points:", touches);
 debug({rotation: rotationX, acceleration: accelerationX});
 ```
 
+---
+
+## Permission UI Styles
+
+Beyond the default **Tap** and **Button** styles, p5-phone v1.7.0 provides three additional ways to present permission prompts. Each permission type (sensors, microphone, speech, all, camera) has all five variants.
+
+### Canvas Style
+
+The canvas displays a centered message until the user taps. Great for "full-screen tap to start" experiences where you want the canvas to feel like a splash screen.
+
+**Commands:**
+- `enableSensorCanvas(message)`
+- `enableMicCanvas(message)`
+- `enableSpeechCanvas(message)`
+- `enableAllCanvas(message)`  
+- `enableCameraCanvas(message)`
+
+**Usage:**
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableSensorCanvas('Tap canvas to begin');
+}
+
+function draw() {
+  if (!window.sensorsEnabled) return;
+  background(220);
+  circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
+}
+```
+
+### Banner Style
+
+A styled banner slides in from the top of the screen with an animated entrance. After the user taps, the banner slides away and permissions are activated. Ideal when you want to keep your canvas visible underneath the prompt.
+
+**Commands:**
+- `enableSensorBanner(message)`
+- `enableMicBanner(message)`
+- `enableSpeechBanner(message)`
+- `enableAllBanner(message)`
+- `enableCameraBanner(message)`
+
+**Usage:**
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableSensorBanner('Tap here to enable motion sensors');
+}
+
+function draw() {
+  background(220);
+  if (window.sensorsEnabled) {
+    text('Rotation: ' + rotationX.toFixed(1), 20, 60);
+  }
+}
+```
+
+### Custom Element Style
+
+Bind the permission activation to any existing HTML element on the page using a CSS selector. This gives you full control over the look and placement of the trigger. The element is hidden after successful activation.
+
+**Commands:**
+- `enableSensorOn(selector)`
+- `enableMicOn(selector)`
+- `enableSpeechOn(selector)`
+- `enableAllOn(selector)`
+- `enableCameraOn(selector)`
+
+**Usage (HTML):**
+```html
+<button id="start-btn" style="font-size:24px; padding:20px;">
+  Start Experience
+</button>
+```
+
+**Usage (sketch.js):**
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableAllOn('#start-btn');
+}
+
+function draw() {
+  if (!window.sensorsEnabled) return;
+  background(220);
+  circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
+}
+```
+
+### Which Style Should I Use?
+
+| Style | Best For | How It Works |
+|-------|----------|-------------|
+| **Tap** | Quick prototypes | Full-screen transparent overlay |
+| **Button** | Clear UI | Auto-generated styled button |
+| **Canvas** | Splash screens | Message drawn on the p5 canvas |
+| **Banner** | Polished apps | Animated slide-in banner |
+| **Custom** | Custom designs | Bind to your own HTML element |
+
+---
+
+## Troubleshooting / FAQ
+
+### Why do I have to tap before sensors work?
+
+iOS Safari requires a **user gesture** (tap, click) before granting access to motion sensors and the microphone. This is a browser security requirement — it cannot be bypassed. Android does not have this restriction, but the tap/button still works on Android (it's a no-op).
+
+### My sketch works on desktop but not on my phone
+
+1. Make sure you're serving over **HTTPS** — motion sensors and microphone are blocked on insecure origins.
+2. Check that you've called one of the `enable...` functions in `setup()`.
+3. On iOS, check Settings → Safari → Motion & Orientation Access is enabled.
+
+### The debug console isn't showing
+
+Make sure you're calling `enableConsole()` in your sketch. The console overlay appears at the bottom of the screen. You can use `debug()`, `debugWarn()`, and `debugError()` to log to it.
+
+### How do I know when permissions are ready?
+
+Define a `userSetupComplete()` function — it's called automatically after the user taps and all requested permissions have been granted:
+
+```javascript
+function userSetupComplete() {
+  debug('All permissions granted!');
+  debug('Sensors:', window.sensorsEnabled);
+  debug('Mic:', window.micEnabled);
+}
+```
+
+You can also check the status variables at any time:
+- `window.sensorsEnabled`
+- `window.micEnabled`
+- `window.speechEnabled`
+
+### Camera feed is blank or not loading
+
+1. Ensure your page is served over **HTTPS**.
+2. Check that you're using `new PhoneCamera(this)` in your sketch.
+3. Grant camera permission in the browser when prompted.
+4. Some iOS versions require the user to explicitly allow camera access in Settings → Safari → Camera.
+
+### Vibration isn't working on iOS
+
+The Vibration API is **not supported on iOS**. Use `navigator.vibrate` only as an enhancement for Android devices. Check `'vibrate' in navigator` before calling it.
 
