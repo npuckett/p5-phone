@@ -74,18 +74,18 @@ function draw()
 }
 
 // ==============================================
-// TOUCH EVENT FUNCTIONS
+// INPUT EVENT FUNCTIONS
 // ==============================================
 
 // This function runs when a new touch begins
-function touchStarted() 
+function mousePressed() 
 {
     // Touch count will be updated in draw() function
     return false;
 }
 
 // This function runs when a touch ends
-function touchEnded() 
+function mouseReleased() 
 {
     // Touch count will be updated in draw() function  
     return false;

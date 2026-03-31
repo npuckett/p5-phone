@@ -132,11 +132,11 @@ function draw() {
 }
 
 // ==============================================
-// TOUCH EVENT FUNCTIONS
+// INPUT EVENT FUNCTIONS
 // ==============================================
 
 // This function runs when a touch begins
-function touchStarted() {
+function mousePressed() {
     // Only proceed if vibration is enabled
     if (!window.vibrationEnabled) {
         return false;
@@ -162,7 +162,7 @@ function touchStarted() {
 }
 
 // This function runs when a touch ends
-function touchEnded() {
+function mouseReleased() {
     currentZone = -1;  // No zone is being touched
     return false;
 }

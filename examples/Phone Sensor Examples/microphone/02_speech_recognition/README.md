@@ -74,7 +74,7 @@ speechRec.interimResults = false; // Only final results
 speechRec.onResult = showResult;
 
 // Touch-to-talk pattern
-function touchStarted() {
+function mousePressed() {
     if (speechRec && window.speechEnabled) {
         speechRec.start();
     }

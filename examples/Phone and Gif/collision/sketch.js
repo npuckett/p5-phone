@@ -168,7 +168,7 @@ function draw()
     text("Using collidePointRect() - each object detects touches independently", width/2, height - 20);
 }
 
-function touchStarted() 
+function mousePressed() 
 {
     // Check all touch points
     for (let i = 0; i < touches.length; i = i + 1)
@@ -192,7 +192,7 @@ function touchStarted()
     return false;
 }
 
-function touchMoved() 
+function mouseDragged() 
 {
     // Check touches during movement too
     for (let i = 0; i < touches.length; i = i + 1)
@@ -211,7 +211,7 @@ function touchMoved()
     return false;
 }
 
-function touchEnded() 
+function mouseReleased() 
 {
     // Reset background color when touch ends
     backgroundColor = color(20, 20, 40);

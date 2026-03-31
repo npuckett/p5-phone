@@ -91,6 +91,12 @@ window.speechEnabled = false;
 // Internal state
 let _micInstance = null;
 
+// p5.js version detection (1.x vs 2.x)
+const _p5MajorVersion = (typeof p5 !== 'undefined' && p5.VERSION)
+  ? parseInt(p5.VERSION.split('.')[0], 10)
+  : 1; // Default to 1 if p5 not loaded yet
+const _isP5v2 = _p5MajorVersion >= 2;
+
 // =========================================
 // PUBLIC API - CALL THESE FROM YOUR P5 SKETCH
 // =========================================
@@ -1141,29 +1147,37 @@ function _initializeP5TouchOverrides() {
 }
 
 function _overrideP5Touch() {
-  const origTouchStarted = window.touchStarted || function() {};
-  const origTouchMoved = window.touchMoved || function() {};
-  const origTouchEnded = window.touchEnded || function() {};
   const origMousePressed = window.mousePressed || function() {};
   const origMouseDragged = window.mouseDragged || function() {};
   const origMouseReleased = window.mouseReleased || function() {};
   
-  // Ensure all touch functions return false to prevent default behaviors
-  window.touchStarted = function(e) {
-    origTouchStarted(e);
-    return false;
-  };
+  // In p5.js 2.0, touch and mouse are unified via Pointer API.
+  // mousePressed/mouseDragged/mouseReleased fire for ALL pointer types (mouse + touch).
+  // In p5.js 1.x, touchStarted/touchMoved/touchEnded are separate from mouse callbacks.
+  // We wrap both sets for 1.x, and only mouse callbacks for 2.0.
+  if (!_isP5v2) {
+    // p5.js 1.x: also wrap touch-specific callbacks
+    const origTouchStarted = window.touchStarted || function() {};
+    const origTouchMoved = window.touchMoved || function() {};
+    const origTouchEnded = window.touchEnded || function() {};
+    
+    window.touchStarted = function(e) {
+      origTouchStarted(e);
+      return false;
+    };
+    
+    window.touchMoved = function(e) {
+      origTouchMoved(e);
+      return false;
+    };
+    
+    window.touchEnded = function(e) {
+      origTouchEnded(e);
+      return false;
+    };
+  }
   
-  window.touchMoved = function(e) {
-    origTouchMoved(e);
-    return false;
-  };
-  
-  window.touchEnded = function(e) {
-    origTouchEnded(e);
-    return false;
-  };
-  
+  // Mouse callbacks — work in both 1.x and 2.0
   window.mousePressed = function(e) {
     origMousePressed(e);
     return false;
@@ -2215,4 +2229,77 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.debugWarn = debugWarn;
   
   console.log('✅ Mobile p5.js Permissions: p5.prototype functions registered');
+}
+
+// =========================================
+// P5.JS 2.0 ADDON REGISTRATION
+// =========================================
+
+/**
+ * Register as a p5.js 2.0 addon via p5.registerAddon().
+ * This provides the modern lifecycle integration for p5.js 2.0+
+ * while the p5.prototype block above handles 1.x compatibility.
+ */
+if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
+  p5.registerAddon(function(p5, fn, lifecycles) {
+    // Register all public functions on the prototype (fn === p5.prototype)
+    // Core permission functions
+    fn.lockGestures = lockGestures;
+    fn.enableGyroTap = enableGyroTap;
+    fn.enableGyroButton = enableGyroButton;
+    fn.enableMicTap = enableMicTap;
+    fn.enableMicButton = enableMicButton;
+    fn.enableSoundTap = enableSoundTap;
+    fn.enableSoundButton = enableSoundButton;
+    fn.enableSpeechTap = enableSpeechTap;
+    fn.enableSpeechButton = enableSpeechButton;
+    fn.enableVibrationTap = enableVibrationTap;
+    fn.enableVibrationButton = enableVibrationButton;
+    fn.vibrate = vibrate;
+    fn.stopVibration = stopVibration;
+    fn.enableAllTap = enableAllTap;
+    fn.enableAllButton = enableAllButton;
+    
+    // Canvas-first-touch style
+    fn.enableGyroCanvas = enableGyroCanvas;
+    fn.enableMicCanvas = enableMicCanvas;
+    fn.enableSoundCanvas = enableSoundCanvas;
+    fn.enableSpeechCanvas = enableSpeechCanvas;
+    fn.enableVibrationCanvas = enableVibrationCanvas;
+    fn.enableAllCanvas = enableAllCanvas;
+    fn.enableCameraCanvas = enableCameraCanvas;
+    
+    // Banner style
+    fn.enableGyroBanner = enableGyroBanner;
+    fn.enableMicBanner = enableMicBanner;
+    fn.enableSoundBanner = enableSoundBanner;
+    fn.enableSpeechBanner = enableSpeechBanner;
+    fn.enableVibrationBanner = enableVibrationBanner;
+    fn.enableAllBanner = enableAllBanner;
+    fn.enableCameraBanner = enableCameraBanner;
+    
+    // Custom element binding
+    fn.enableGyroOn = enableGyroOn;
+    fn.enableMicOn = enableMicOn;
+    fn.enableSoundOn = enableSoundOn;
+    fn.enableSpeechOn = enableSpeechOn;
+    fn.enableVibrationOn = enableVibrationOn;
+    fn.enableAllOn = enableAllOn;
+    fn.enableCameraOn = enableCameraOn;
+    
+    // Camera functions
+    fn.createPhoneCamera = createPhoneCamera;
+    fn.enableCameraButton = enableCameraButton;
+    fn.enableCameraTap = enableCameraTap;
+    
+    // Debug functions
+    fn.showDebug = showDebug;
+    fn.hideDebug = hideDebug;
+    fn.toggleDebug = toggleDebug;
+    fn.debug = debug;
+    fn.debugError = debugError;
+    fn.debugWarn = debugWarn;
+    
+    console.log('✅ Mobile p5.js Permissions: registered as p5.js 2.0 addon');
+  });
 }

@@ -8,7 +8,7 @@ applyTo: "**/sketch.js"
 p5-phone provides mobile hardware access for p5.js sketches. Include it via CDN:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.7.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.min.js"></script>
 ```
 
 ## Essential Pattern
@@ -101,6 +101,21 @@ debugError('error');   // Red error
 - `enableSpeech*` only activates the audio context — create your own `p5.SpeechRec` object after.
 - `enableAll*` combines sensors + microphone (not speech or camera).
 
+## p5.js 2.0 Compatibility
+
+p5-phone supports both p5.js 1.x and 2.0. Key difference:
+
+- **p5.js 2.0 removes `touchStarted`/`touchMoved`/`touchEnded`** — use `mousePressed`/`mouseDragged`/`mouseReleased` instead. These mouse callbacks work for ALL pointer types (mouse + touch) in **both** 1.x and 2.0.
+- p5-phone auto-detects the p5.js version and adjusts its internal behavior.
+- In p5.js 2.0, p5-phone also registers via `p5.registerAddon()` automatically.
+
+**Use `mousePressed`/`mouseReleased` for forward-compatible sketches:**
+```javascript
+function mousePressed() {
+  return false; // Works in both p5.js 1.x and 2.0
+}
+```
+
 ## HTML Template
 
 ```html
@@ -112,7 +127,7 @@ debugError('error');   // Red error
   <title>Mobile p5.js App</title>
   <style>body { margin: 0; padding: 0; overflow: hidden; }</style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.7.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>

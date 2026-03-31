@@ -127,17 +127,17 @@ function draw()
 }
 
 // ==============================================
-// TOUCH EVENT FUNCTIONS
+// INPUT EVENT FUNCTIONS
 // ==============================================
 // Note: Touch events are handled by enableGyroTap for permissions
 
-function touchStarted() 
+function mousePressed() 
 {
     // Permission handling is done by enableGyroTap
     return false;
 }
 
-function touchEnded() 
+function mouseReleased() 
 {
     return false;
 }

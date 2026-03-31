@@ -44,12 +44,12 @@ function draw()
 }
 
 // Prevent default touch behavior (optional but recommended)
-function touchStarted() 
+function mousePressed() 
 {
   return false;
 }
 
-function touchEnded() 
+function mouseReleased() 
 {
   return false;
 }

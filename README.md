@@ -17,9 +17,11 @@ That's where this library comes in:
 
 This library simplifies access to the following p5.js mobile sensor and audio commands:
 
-**Touch Events:**
-- [`touchStarted()`](https://p5js.org/reference/p5/touchStarted/) - Called when a touch begins
-- [`touchEnded()`](https://p5js.org/reference/p5/touchEnded/) - Called when a touch ends
+**Touch/Pointer Events:**
+- [`mousePressed()`](https://p5js.org/reference/p5/mousePressed/) - Called when a press/touch begins (works for both mouse and touch in p5.js 1.x and 2.0)
+- [`mouseReleased()`](https://p5js.org/reference/p5/mouseReleased/) - Called when a press/touch ends (works for both mouse and touch in p5.js 1.x and 2.0)
+- [`touchStarted()`](https://p5js.org/reference/p5/touchStarted/) - Called when a touch begins (p5.js 1.x only)
+- [`touchEnded()`](https://p5js.org/reference/p5/touchEnded/) - Called when a touch ends (p5.js 1.x only)
 
 **Device Motion & Orientation:**
 - [`rotationX`](https://p5js.org/reference/p5/rotationX/) - Device tilt forward/backward
@@ -45,10 +47,31 @@ This library simplifies access to the following p5.js mobile sensor and audio co
 - Safari 13+
 - Firefox 75+
 
+## p5.js Version Compatibility
+
+p5-phone supports both **p5.js 1.x** and **p5.js 2.0+**.
+
+| Feature | p5.js 1.x | p5.js 2.0+ |
+|---------|-----------|------------|
+| Permission UI (Tap/Button/Canvas/Banner/Custom) | ✅ | ✅ |
+| Motion sensors (rotationX/Y/Z, accelerationX/Y/Z) | ✅ | ✅ |
+| Microphone / Speech / Sound | ✅ | ✅ |
+| Camera (PhoneCamera) | ✅ | ✅ |
+| Vibration | ✅ | ✅ |
+| Debug console | ✅ | ✅ |
+| lockGestures() | ✅ | ✅ |
+| `touchStarted()` / `touchEnded()` | ✅ | ❌ Use `mousePressed()` / `mouseReleased()` |
+| `p5.registerAddon()` | ❌ | ✅ (auto-detected) |
+
+**Key change in p5.js 2.0:** Touch-specific callbacks (`touchStarted`, `touchMoved`, `touchEnded`) are no longer dispatched. The unified Pointer API routes all input (mouse + touch) through `mousePressed()`, `mouseDragged()`, and `mouseReleased()`. These mouse callbacks work in **both** p5.js 1.x and 2.0, so use them for forward-compatible code.
+
+p5-phone automatically detects the p5.js version and adjusts its internal touch override behavior accordingly. No configuration needed.
+
 ## Table of Contents
 
 - [Link for Interactive Examples](#link-for-interactive-examples)
 - [Browser Compatibility](#browser-compatibility)
+- [p5.js Version Compatibility](#p5js-version-compatibility)
 - [CDN (Recommended)](#cdn-recommended)
 - [Basic Setup](#basic-setup)
   - [Index HTML](#index-html)
@@ -77,10 +100,10 @@ This library simplifies access to the following p5.js mobile sensor and audio co
 
 ```html
 <!-- Minified version (recommended) -->
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.7.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.min.js"></script>
 
 <!-- Development version (larger, with comments) -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.7.0/dist/p5-phone.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.js"></script> -->
 ```
 
 ### Basic Setup
@@ -106,9 +129,10 @@ This library simplifies access to the following p5.js mobile sensor and audio co
   
   <!-- Load p5.js library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
+  <!-- For p5.js 2.0: <script src="https://cdn.jsdelivr.net/npm/p5@2/lib/p5.min.js"></script> -->
   
   <!-- Load p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.7.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.min.js"></script>
   
 </head>
 <body>
@@ -173,11 +197,12 @@ function draw() {
 }
 
 // Prevent default touch behavior (optional but recommended)
-function touchStarted() {
+// Use mousePressed/mouseReleased — works in both p5.js 1.x and 2.0
+function mousePressed() {
   return false;
 }
 
-function touchEnded() {
+function mouseReleased() {
   return false;
 }
 ```
@@ -580,7 +605,7 @@ function mousePressed() {
 }
 
 // Touch zones with different haptic patterns
-function touchStarted() {
+function mousePressed() {
   if (window.vibrationEnabled) {
     if (mouseX < width/2) {
       vibrate(50);  // Left side - short pulse

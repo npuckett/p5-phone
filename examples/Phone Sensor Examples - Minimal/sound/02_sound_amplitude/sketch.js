@@ -91,7 +91,7 @@ function draw()
 }
 
 // Play audio when touched
-function touchStarted() 
+function mousePressed() 
 {
     if (window.soundEnabled) 
     {
@@ -106,7 +106,7 @@ function touchStarted()
 }
 
 // Pause audio when touch ends
-function touchEnded() 
+function mouseReleased() 
 {
     if (window.soundEnabled) 
     {

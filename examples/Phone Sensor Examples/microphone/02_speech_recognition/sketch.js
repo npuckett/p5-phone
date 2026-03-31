@@ -71,7 +71,7 @@ function showResult() {
 }
 
 // Touch started - start listening
-function touchStarted() {
+function mousePressed() {
     if (speechRec && window.speechEnabled && !isListening) {
         isListening = true;
         speechRec.start();
@@ -81,7 +81,7 @@ function touchStarted() {
 }
 
 // Touch ended - stop listening  
-function touchEnded() {
+function mouseReleased() {
     if (speechRec && isListening) {
         isListening = false;
         // Don't call stop - just let it process what was said

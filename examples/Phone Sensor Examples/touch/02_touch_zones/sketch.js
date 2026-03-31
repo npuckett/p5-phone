@@ -172,11 +172,11 @@ function getZone(x, y)
 }
 
 // ==============================================
-// TOUCH EVENT FUNCTIONS
+// INPUT EVENT FUNCTIONS
 // ==============================================
 
 // This function runs when a touch begins
-function touchStarted() 
+function mousePressed() 
 {
     // Find out which zone was touched
     let touchedZone = getZone(touches[0].x, touches[0].y);
@@ -207,7 +207,7 @@ function touchStarted()
 }
 
 // This function runs when a touch ends
-function touchEnded() 
+function mouseReleased() 
 {
     // Reset all zones to not touched
     zone1Touched = false;

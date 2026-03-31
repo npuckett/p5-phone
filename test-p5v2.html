@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5-phone: p5.js 2.0 Compatibility Test</title>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; }
+  </style>
+  
+  <!-- p5.js 2.0 -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@2/lib/p5.min.js"></script>
+  
+  <!-- p5-phone (local build) -->
+  <script src="dist/p5-phone.js"></script>
+</head>
+<body>
+<script>
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  showDebug();
+  
+  debug('p5.js version: ' + p5.VERSION);
+  debug('p5-phone loaded');
+  debug('_isP5v2: ' + (typeof _isP5v2 !== 'undefined' ? _isP5v2 : 'N/A'));
+  
+  enableAllTap('Tap to enable sensors + mic');
+}
+
+function draw() {
+  background(30, 30, 50);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(16);
+  
+  let y = 40;
+  text('p5.js ' + p5.VERSION + ' + p5-phone test', width/2, y);
+  y += 30;
+  
+  text('sensorsEnabled: ' + window.sensorsEnabled, width/2, y);
+  y += 25;
+  text('micEnabled: ' + window.micEnabled, width/2, y);
+  y += 25;
+  
+  if (window.sensorsEnabled) {
+    y += 20;
+    text('rotationX: ' + nf(rotationX, 1, 1), width/2, y);
+    y += 25;
+    text('rotationY: ' + nf(rotationY, 1, 1), width/2, y);
+    y += 25;
+    text('rotationZ: ' + nf(rotationZ, 1, 1), width/2, y);
+    y += 25;
+    text('accelX: ' + nf(accelerationX, 1, 1), width/2, y);
+    y += 25;
+    text('accelY: ' + nf(accelerationY, 1, 1), width/2, y);
+    y += 25;
+    text('accelZ: ' + nf(accelerationZ, 1, 1), width/2, y);
+  }
+  
+  // Draw touch indicator
+  if (mouseIsPressed) {
+    fill(0, 255, 100, 150);
+    circle(mouseX, mouseY, 60);
+  }
+}
+
+function userSetupComplete() {
+  debug('Permissions granted!');
+  debug('Sensors: ' + window.sensorsEnabled);
+  debug('Mic: ' + window.micEnabled);
+}
+
+// Using mousePressed/mouseReleased (works in both 1.x and 2.0)
+function mousePressed() {
+  debug('mousePressed at ' + mouseX + ', ' + mouseY);
+  return false;
+}
+
+function mouseReleased() {
+  debug('mouseReleased');
+  return false;
+}
+</script>
+</body>
+</html>

@@ -67,7 +67,7 @@ function draw()
 }
 
 // Toggle play/pause on touch
-function touchStarted() 
+function mousePressed() 
 {
     if (window.soundEnabled) 
     {
@@ -90,7 +90,7 @@ function touchStarted()
 }
 
 // Prevent default touch behavior
-function touchEnded() 
+function mouseReleased() 
 {
     return false;  // Prevents default behavior
 }

@@ -190,11 +190,11 @@ function drawTouchIndicators(currentTouches)
 }
 
 // ==============================================
-// TOUCH EVENT FUNCTIONS
+// INPUT EVENT FUNCTIONS
 // ==============================================
 
-// touchStarted() runs when a touch begins
-function touchStarted() 
+// mousePressed() runs when a touch begins
+function mousePressed() 
 {
     // Only process if sound system is enabled
     if (!window.soundEnabled) 
@@ -215,8 +215,8 @@ function touchStarted()
     return false;
 }
 
-// touchMoved() runs continuously while touches are moving
-function touchMoved() 
+// mouseDragged() runs continuously while touches are moving
+function mouseDragged() 
 {
     // Update volume as touches are added or removed
     if (window.soundEnabled) 
@@ -228,8 +228,8 @@ function touchMoved()
     return false;
 }
 
-// touchEnded() runs when a touch is released
-function touchEnded() 
+// mouseReleased() runs when a touch is released
+function mouseReleased() 
 {
     // If no more touches, pause the audio
     if (window.soundEnabled && touches.length === 0) 

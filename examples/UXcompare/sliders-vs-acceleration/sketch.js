@@ -264,7 +264,7 @@ function updateSliderValue(sliderIndex, x) {
 }
 
 // Handle touch interaction for mobile
-function touchStarted() {
+function mousePressed() {
   // Check all sliders for touch in top section
   if (touches && touches.length >= 1) {
     for (let touch of touches) {
@@ -282,7 +282,7 @@ function touchStarted() {
   // Don't prevent default if we didn't handle the touch - this allows overlay clicks to work
 }
 
-function touchMoved() {
+function mouseDragged() {
   // Update slider if dragging
   if (isDraggingSlider !== -1 && touches && touches.length >= 1) {
     for (let touch of touches) {
@@ -295,7 +295,7 @@ function touchMoved() {
   // Don't prevent default if we're not dragging
 }
 
-function touchEnded() {
+function mouseReleased() {
   // Check if any touches remain in slider area
   if (isDraggingSlider !== -1) {
     let sliderTouchExists = false;

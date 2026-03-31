@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2025-06-26
+
+### Added
+- **p5.js 2.0 compatibility**: Full support for both p5.js 1.x and 2.0+
+  - Automatic version detection via `p5.VERSION` (`_p5MajorVersion`, `_isP5v2`)
+  - `p5.registerAddon()` integration for p5.js 2.0+ (in addition to existing `p5.prototype` registration)
+  - `_overrideP5Touch()` conditionally wraps touch callbacks only in 1.x (no-ops in 2.0 where Pointer API handles all input)
+- p5.js 2.0 CDN comments in all example HTML files
+- `test-p5v2.html` — test page for verifying p5.js 2.0 compatibility
+- "p5.js Version Compatibility" section in README with feature matrix
+
+### Changed
+- All 31 example `sketch.js` files: `touchStarted()` → `mousePressed()`, `touchMoved()` → `mouseDragged()`, `touchEnded()` → `mouseReleased()` (works in both p5.js 1.x and 2.0)
+- Homepage `index.html` updated: Touch Events section → Touch/Pointer Events, function declarations renamed
+- Section headers in examples updated from "TOUCH EVENT FUNCTIONS" to "INPUT EVENT FUNCTIONS"
+- README code examples updated to use `mousePressed`/`mouseReleased` instead of `touchStarted`/`touchEnded`
+- Updated `.github/copilot-instructions.md` and `.github/instructions/p5-phone.instructions.md` with 2.0 compatibility notes
+
 ## [1.7.0] - 2025-06-25
 
 ### Added

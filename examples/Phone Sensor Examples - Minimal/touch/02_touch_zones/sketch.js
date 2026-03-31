@@ -48,7 +48,7 @@ function getZone(x, y)
 }
 
 // Prevent default touch behavior and unwanted gestures
-function touchStarted() 
+function mousePressed() 
 {
     // Check all active touches
     for (let i = 0; i < touches.length; i++) 
@@ -72,7 +72,7 @@ function touchStarted()
 }
 
 // Prevent default touch behavior and unwanted gestures
-function touchEnded() 
+function mouseReleased() 
 {
     return false;  // Prevents default behavior
 }

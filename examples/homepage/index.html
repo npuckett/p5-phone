@@ -565,10 +565,10 @@
                 <h2>Accessing Phone Hardware in p5.js</h2>
                 <p>p5.js has several existing commands that are specific to phone hardware. However, it requires extra steps to use them effectively. To use the Touch based commands, you need to disable the default gestures on your phone browser. For Motion and Microphone date you need to provide specific permissions for your browser to read the data.</p>
                 
-                <h3>Touch Events</h3>
+                <h3>Touch/Pointer Events</h3>
                 <ul>
-                    <li><a href="https://p5js.org/reference/p5/touchStarted/" target="_blank"><code>touchStarted()</code></a> - Called when a touch begins</li>
-                    <li><a href="https://p5js.org/reference/p5/touchEnded/" target="_blank"><code>touchEnded()</code></a> - Called when a touch ends</li>
+                    <li><a href="https://p5js.org/reference/p5/mousePressed/" target="_blank"><code>mousePressed()</code></a> - Called when a press/touch begins (works in both p5.js 1.x and 2.0)</li>
+                    <li><a href="https://p5js.org/reference/p5/mouseReleased/" target="_blank"><code>mouseReleased()</code></a> - Called when a press/touch ends (works in both p5.js 1.x and 2.0)</li>
                 </ul>
 
                 <h3>Device Motion & Orientation</h3>
@@ -612,6 +612,7 @@
   &lt;/style&gt;
   
   &lt;script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"&gt;&lt;/script&gt;
+  <!-- For p5.js 2.0: <script src="https://cdn.jsdelivr.net/npm/p5@2/lib/p5.min.js"></script> -->
   &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.4/dist/p5-phone.min.js"&gt;&lt;/script&gt;
 &lt;/head&gt;
 &lt;body&gt;
@@ -658,7 +659,7 @@ function draw() {
 }
 
 // Prevent default touch behavior
-function touchStarted() {
+function mousePressed() {
   return false;
 }</code></pre>
             </div>

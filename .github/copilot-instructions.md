@@ -53,3 +53,10 @@ Permission types: `Sensor`, `Mic`, `Speech`, `All` (sensors+mic), `Camera`.
 - The `userSetupComplete()` callback fires after permissions are granted.
 - Always call `lockGestures()` in `setup()` to prevent browser default touch behaviors.
 - Use `debug()`, `debugWarn()`, `debugError()` for on-device logging (requires `showDebug()` first).
+
+## p5.js 2.0 Compatibility
+
+- p5-phone supports **both p5.js 1.x and 2.0+** with automatic version detection.
+- `touchStarted`/`touchMoved`/`touchEnded` are **removed** in p5.js 2.0 — use `mousePressed`/`mouseDragged`/`mouseReleased` instead (work in both 1.x and 2.0).
+- p5-phone registers via `p5.registerAddon()` when available (2.0+), in addition to `p5.prototype` registration (works in both).
+- The `_overrideP5Touch()` function conditionally wraps only mouse callbacks in 2.0 (touch callbacks are no-ops).

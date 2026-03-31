@@ -52,13 +52,13 @@ function draw()
 }
 
 // Prevent default touch behavior and unwanted gestures
-function touchStarted() 
+function mousePressed() 
 {
     return false;  // Prevents default behavior
 }
 
 // Prevent default touch behavior and unwanted gestures
-function touchEnded() 
+function mouseReleased() 
 {
     return false;  // Prevents default behavior
 }

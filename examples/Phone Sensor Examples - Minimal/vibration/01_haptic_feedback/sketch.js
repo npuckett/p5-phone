@@ -35,7 +35,7 @@ function draw()
 }
 
 // Prevent default touch behavior and unwanted gestures
-function touchStarted() 
+function mousePressed() 
 {
     // Check if vibration is enabled
     if (!window.vibrationEnabled) 
@@ -81,7 +81,7 @@ function touchStarted()
 }
 
 // Prevent default touch behavior
-function touchEnded() 
+function mouseReleased() 
 {
     return false;
 }

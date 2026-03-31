@@ -5,7 +5,7 @@
 // is touching the screen and display appropriate text
 // 
 //  CONCEPTS COVERED:
-// - Touch detection (touchStarted, touchEnded)
+// - Touch detection (mousePressed, mouseReleased)
 // - Visual feedback based on user interaction
 // - Basic p5.js setup and draw functions
 // - Mobile gesture locking
@@ -71,11 +71,11 @@ function draw()
 }
 
 // ==============================================
-// TOUCH EVENT FUNCTIONS
+// INPUT EVENT FUNCTIONS
 // ==============================================
 
 // This function runs when a touch begins (finger touches screen)
-function touchStarted() 
+function mousePressed() 
 {
     isCurrentlyTouching = true;
     touchCounter = touchCounter + 1;  // Add 1 to our counter each time screen is touched
@@ -85,7 +85,7 @@ function touchStarted()
 }
 
 // This function runs when a touch ends (finger lifts off screen)
-function touchEnded() 
+function mouseReleased() 
 {
     isCurrentlyTouching = false;
 

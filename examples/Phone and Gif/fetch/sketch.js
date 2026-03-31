@@ -99,7 +99,7 @@ function draw()
     text("Touch to throw the ball!", width/2, height - 30);
 }
 
-function touchStarted() 
+function mousePressed() 
 {
     touchCounter = touchCounter + 1;
     
@@ -116,7 +116,7 @@ function touchStarted()
     return false;
 }
 
-function touchMoved() 
+function mouseDragged() 
 {
     // Update target as touch moves
     if (touches.length > 0) 
@@ -128,7 +128,7 @@ function touchMoved()
     return false;
 }
 
-function touchEnded() 
+function mouseReleased() 
 {
     return false;
 }

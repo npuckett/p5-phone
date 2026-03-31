@@ -167,12 +167,12 @@ function drawVisualizers()
 }
 
 // ==============================================
-// TOUCH EVENT FUNCTIONS
+// INPUT EVENT FUNCTIONS
 // ==============================================
 
-// touchStarted() runs when a touch begins
+// mousePressed() runs when a touch begins
 // This function starts playing audio based on which zone is touched
-function touchStarted() 
+function mousePressed() 
 {
     // Only process if sound system is enabled
     if (!window.soundEnabled) 
@@ -207,9 +207,9 @@ function touchStarted()
     return false;
 }
 
-// touchEnded() runs when a touch is released
+// mouseReleased() runs when a touch is released
 // This function stops the audio when touch is released
-function touchEnded() 
+function mouseReleased() 
 {
     // Only process if sound system is enabled
     if (window.soundEnabled) 

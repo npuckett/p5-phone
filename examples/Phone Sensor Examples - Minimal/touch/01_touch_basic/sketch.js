@@ -32,7 +32,7 @@ function draw()
 }
 
 // Prevent default touch behavior and unwanted gestures
-function touchStarted() 
+function mousePressed() 
 {
     isCurrentlyTouching = true;
     touchCounter = touchCounter + 1;
@@ -46,7 +46,7 @@ function touchStarted()
 }
 
 // Prevent default touch behavior and unwanted gestures
-function touchEnded() 
+function mouseReleased() 
 {
     isCurrentlyTouching = false;
     
