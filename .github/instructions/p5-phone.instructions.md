@@ -1,5 +1,5 @@
 ---
-description: "Use when writing p5.js sketches that use mobile phone sensors, microphone, camera, speech recognition, vibration, or the p5-phone library. Use when: enableSensorTap, enableMicTap, enableAllTap, lockGestures, PhoneCamera, mobile permissions, device orientation, accelerometer, gyroscope."
+description: "Use when writing p5.js sketches that use mobile phone sensors, microphone, camera, speech recognition, vibration, NFC, or the p5-phone library. Use when: enableSensorTap, enableMicTap, enableAllTap, enableNfcTap, lockGestures, PhoneCamera, mobile permissions, device orientation, accelerometer, gyroscope, NFC tag reading."
 applyTo: "**/sketch.js"
 ---
 
@@ -8,7 +8,7 @@ applyTo: "**/sketch.js"
 p5-phone provides mobile hardware access for p5.js sketches. Include it via CDN:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
 ```
 
 ## Essential Pattern
@@ -37,13 +37,13 @@ function draw() {
 
 Each permission type has 5 UI styles — pick the one that fits your design:
 
-| Style | Sensor | Microphone | Speech | Both | Camera |
-|-------|--------|------------|--------|------|--------|
-| **Tap** (overlay) | `enableSensorTap(msg)` | `enableMicTap(msg)` | `enableSpeechTap(msg)` | `enableAllTap(msg)` | `enableCameraTap(msg)` |
-| **Button** | `enableSensorButton(txt)` | `enableMicButton(txt)` | `enableSpeechButton(txt)` | `enableAllButton(txt)` | `enableCameraButton(txt)` |
-| **Canvas** | `enableSensorCanvas(msg)` | `enableMicCanvas(msg)` | `enableSpeechCanvas(msg)` | `enableAllCanvas(msg)` | `enableCameraCanvas(msg)` |
-| **Banner** | `enableSensorBanner(msg)` | `enableMicBanner(msg)` | `enableSpeechBanner(msg)` | `enableAllBanner(msg)` | `enableCameraBanner(msg)` |
-| **Custom** | `enableSensorOn(sel)` | `enableMicOn(sel)` | `enableSpeechOn(sel)` | `enableAllOn(sel)` | `enableCameraOn(sel)` |
+| Style | Sensor | Microphone | Speech | Both | Camera | NFC |
+|-------|--------|------------|--------|------|--------|-----|
+| **Tap** (overlay) | `enableSensorTap(msg)` | `enableMicTap(msg)` | `enableSpeechTap(msg)` | `enableAllTap(msg)` | `enableCameraTap(msg)` | `enableNfcTap(msg)` |
+| **Button** | `enableSensorButton(txt)` | `enableMicButton(txt)` | `enableSpeechButton(txt)` | `enableAllButton(txt)` | `enableCameraButton(txt)` | `enableNfcButton(txt)` |
+| **Canvas** | `enableSensorCanvas(msg)` | `enableMicCanvas(msg)` | `enableSpeechCanvas(msg)` | `enableAllCanvas(msg)` | `enableCameraCanvas(msg)` | `enableNfcCanvas(msg)` |
+| **Banner** | `enableSensorBanner(msg)` | `enableMicBanner(msg)` | `enableSpeechBanner(msg)` | `enableAllBanner(msg)` | `enableCameraBanner(msg)` | `enableNfcBanner(msg)` |
+| **Custom** | `enableSensorOn(sel)` | `enableMicOn(sel)` | `enableSpeechOn(sel)` | `enableAllOn(sel)` | `enableCameraOn(sel)` | `enableNfcOn(sel)` |
 
 Legacy aliases: `enableGyroTap`, `enableGyroButton` also work (same as `enableSensor*`).
 
@@ -53,6 +53,7 @@ Check these to know if permissions have been granted:
 - `window.sensorsEnabled` — motion sensors active
 - `window.micEnabled` — microphone active
 - `window.speechEnabled` — speech recognition active
+- `window.nfcEnabled` — NFC scanning active (Android only)
 
 ## Callback
 
@@ -98,6 +99,7 @@ debugError('error');   // Red error
 - iOS requires a **user tap** before granting sensor/mic access — cannot auto-trigger.
 - Always serve over **HTTPS** — sensors and mic are blocked on HTTP.
 - Call `lockGestures()` in `setup()` to prevent browser default touch behaviors.
+- **NFC** is Android-only (Chrome 89+). Define `nfcRead(message, serialNumber)` in your sketch to receive tag data. Use `stopNfc()` to stop scanning.
 - `enableSpeech*` only activates the audio context — create your own `p5.SpeechRec` object after.
 - `enableAll*` combines sensors + microphone (not speech or camera).
 
@@ -127,7 +129,7 @@ function mousePressed() {
   <title>Mobile p5.js App</title>
   <style>body { margin: 0; padding: 0; overflow: hidden; }</style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>

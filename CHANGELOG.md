@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] - 2026-04-08
+
+### Added
+- **NFC Tag Reading (Android Only)**: Read NFC tags via the Web NFC API (`NDEFReader`)
+  - 5 UI activation styles: `enableNfcTap()`, `enableNfcButton()`, `enableNfcCanvas()`, `enableNfcBanner()`, `enableNfcOn()`
+  - `stopNfc()` to stop scanning via `AbortController`
+  - `window.nfcEnabled` status variable
+  - `window.lastNfcMessage` / `window.lastNfcSerialNumber` globals for most recent tag data
+  - User-defined `nfcRead(message, serialNumber)` callback with pre-decoded NDEF records (text, url, mime/JSON)
+  - Graceful degradation on unsupported platforms (iOS, desktop) with console warnings
+  - Registered on `window`, `p5.prototype`, and `p5.registerAddon()` for p5.js 1.x and 2.0+ compatibility
+- NFC documentation section in README with platform support, API reference, record types table, and examples
+- NFC example: `examples/Phone Sensor Examples/nfc/01_nfc_read/`
+- NFC added to `.github/instructions/p5-phone.instructions.md` permission table
+
 ## [1.8.0] - 2025-06-26
 
 ### Added

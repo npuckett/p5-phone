@@ -58,6 +58,7 @@ p5-phone supports both **p5.js 1.x** and **p5.js 2.0+**.
 | Microphone / Speech / Sound | ✅ | ✅ |
 | Camera (PhoneCamera) | ✅ | ✅ |
 | Vibration | ✅ | ✅ |
+| NFC Tag Reading (Android only) | ✅ | ✅ |
 | Debug console | ✅ | ✅ |
 | lockGestures() | ✅ | ✅ |
 | `touchStarted()` / `touchEnded()` | ✅ | ❌ Use `mousePressed()` / `mouseReleased()` |
@@ -86,6 +87,7 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   - [Speech Recognition Activation](#speech-recognition-activation)
   - [Combined Activation](#combined-activation)
   - [Vibration Motor (Android Only)](#vibration-motor-android-only)
+  - [NFC Tag Reading (Android Only)](#nfc-tag-reading-android-only)
   - [PhoneCamera (ML5 Integration)](#phonecamera-ml5-integration)
   - [Debug System](#debug-system)
 - [Permission UI Styles](#permission-ui-styles)
@@ -100,10 +102,10 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
 
 ```html
 <!-- Minified version (recommended) -->
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
 
 <!-- Development version (larger, with comments) -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.js"></script> -->
 ```
 
 ### Basic Setup
@@ -132,7 +134,7 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   <!-- For p5.js 2.0: <script src="https://cdn.jsdelivr.net/npm/p5@2/lib/p5.min.js"></script> -->
   
   <!-- Load p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.8.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
   
 </head>
 <body>
@@ -302,6 +304,7 @@ this.enableGyroTap('Tap to start');
 - `window.soundEnabled` - Boolean indicating if sound output is active
 - `window.speechEnabled` - Boolean indicating if speech recognition is active
 - `window.vibrationEnabled` - Boolean indicating if vibration is available (Android only)
+- `window.nfcEnabled` - Boolean indicating if NFC scanning is active (Android only)
 
 **Usage:**
 ```javascript
@@ -325,6 +328,11 @@ function draw() {
   if (window.vibrationEnabled) {
     // Safe to use vibration (Android only)
     vibrate(50);
+  }
+  
+  if (window.nfcEnabled) {
+    // NFC scanning is active (Android only)
+    // Tag data arrives via nfcRead() callback
   }
 }
 
@@ -638,6 +646,94 @@ function gameOver() {
 - Don't overuse - vibration can quickly drain battery
 - Test on Android devices as iOS doesn't support vibration
 
+### NFC Tag Reading (Android Only)
+
+**Purpose:** Read NFC (Near Field Communication) tags using the Web NFC API. Ideal for interactive installations, scavenger hunts, or any sketch that responds to physical NFC tags.
+
+**⚠️ Platform Support:**
+- ✅ **Android** - Chrome 89+ and Samsung Internet 15+
+- ❌ **iOS** - Not supported (Web NFC API not available on iOS)
+- Requires **HTTPS** — NFC is blocked on insecure origins
+
+**Important:** The Web NFC API requires user activation (a tap or click) before scanning can begin — the same pattern used by all other p5-phone permission functions. On unsupported devices/browsers, `window.nfcEnabled` will be `false` and calls will be safely ignored with console warnings.
+
+**Commands:**
+- `enableNfcTap(message)` - Tap anywhere on screen to enable NFC scanning
+- `enableNfcButton(text)` - Creates a button with custom text to enable NFC
+- `stopNfc()` - Stop NFC scanning
+
+**Status Variables:**
+- `window.nfcEnabled` - Boolean indicating if NFC scanning is active
+- `window.lastNfcMessage` - Object containing the most recently read tag's data
+- `window.lastNfcSerialNumber` - Serial number string of the most recently read tag
+
+**User Callback:**
+
+Define an `nfcRead()` function in your sketch to receive tag data when a tag is scanned:
+
+```javascript
+function nfcRead(message, serialNumber) {
+  // message.serialNumber — tag serial number
+  // message.records — array of NDEF records, each with:
+  //   .recordType — 'text', 'url', 'mime', etc.
+  //   .data — decoded content (string for text/url, object for JSON, raw for others)
+  //   .mediaType — MIME type (for 'mime' records)
+  //   .id — record id (if present)
+  //   .raw — original DataView
+}
+```
+
+**Usage:**
+```javascript
+let tagText = 'No tag scanned yet';
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableNfcTap('Tap to enable NFC');
+}
+
+function draw() {
+  background(220);
+  textAlign(CENTER, CENTER);
+  textSize(20);
+
+  if (!window.nfcEnabled) {
+    text('NFC not active', width / 2, height / 2);
+  } else {
+    text(tagText, width / 2, height / 2);
+    text('Hold an NFC tag near your phone', width / 2, height / 2 + 40);
+  }
+}
+
+function nfcRead(message, serialNumber) {
+  tagText = 'Tag: ' + serialNumber;
+  for (let record of message.records) {
+    if (record.recordType === 'text' || record.recordType === 'url') {
+      tagText += '\n' + record.data;
+    }
+  }
+}
+```
+
+**Record Types:**
+
+NFC tags contain NDEF records. The most common types are:
+
+| Record Type | `record.data` Contains | Example |
+|-------------|----------------------|----------|
+| `text` | Decoded string | `"Hello World"` |
+| `url` | Decoded URL string | `"https://example.com"` |
+| `mime` | Decoded string or parsed JSON | `{ id: 42 }` |
+| other | Raw `DataView` | Binary data |
+
+**Best Practices:**
+- Always check `window.nfcEnabled` before relying on NFC features
+- Use the `nfcRead()` callback for real-time tag processing
+- Use `window.lastNfcMessage` in `draw()` for displaying the most recent tag
+- Test on Android devices with Chrome — NFC is not available on iOS or desktop browsers
+- Tags must be NDEF-formatted to be read by the Web NFC API
+
 ### Speech Recognition Activation
 
 **Purpose:** Enable the Web Speech API for voice input and speech-to-text in mobile browsers.
@@ -924,6 +1020,7 @@ The canvas displays a centered message until the user taps. Great for "full-scre
 - `enableSensorCanvas(message)`
 - `enableMicCanvas(message)`
 - `enableSpeechCanvas(message)`
+- `enableNfcCanvas(message)`
 - `enableAllCanvas(message)`  
 - `enableCameraCanvas(message)`
 
@@ -950,6 +1047,7 @@ A styled banner slides in from the top of the screen with an animated entrance. 
 - `enableSensorBanner(message)`
 - `enableMicBanner(message)`
 - `enableSpeechBanner(message)`
+- `enableNfcBanner(message)`
 - `enableAllBanner(message)`
 - `enableCameraBanner(message)`
 
@@ -977,6 +1075,7 @@ Bind the permission activation to any existing HTML element on the page using a 
 - `enableSensorOn(selector)`
 - `enableMicOn(selector)`
 - `enableSpeechOn(selector)`
+- `enableNfcOn(selector)`
 - `enableAllOn(selector)`
 - `enableCameraOn(selector)`
 

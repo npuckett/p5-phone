@@ -87,9 +87,14 @@ window.soundEnabled = false;
 window.gesturesLocked = false;
 window.vibrationEnabled = false;
 window.speechEnabled = false;
+window.nfcEnabled = false;
+window.lastNfcMessage = null;
+window.lastNfcSerialNumber = null;
 
 // Internal state
 let _micInstance = null;
+let _nfcReader = null;
+let _nfcAbortController = null;
 
 // p5.js version detection (1.x vs 2.x)
 const _p5MajorVersion = (typeof p5 !== 'undefined' && p5.VERSION)
@@ -236,6 +241,30 @@ function enableVibrationTap(message = 'Tap screen to enable vibration') {
 }
 
 /**
+ * Enable NFC tag reading with a button interface
+ * Creates a start button that user must click
+ * Note: Web NFC is supported on Android Chrome 89+ only, not iOS
+ */
+function enableNfcButton(buttonText = 'ENABLE NFC', statusText = 'Enabling NFC...') {
+  _createPermissionButton(buttonText, statusText, async () => {
+    await _requestNfcPermission();
+    console.log('✅ NFC enabled via button');
+  });
+}
+
+/**
+ * Enable NFC tag reading with tap-to-start
+ * User taps anywhere on screen to enable
+ * Note: Web NFC is supported on Android Chrome 89+ only, not iOS
+ */
+function enableNfcTap(message = 'Tap screen to enable NFC') {
+  _createTapToEnable(message, async () => {
+    await _requestNfcPermission();
+    console.log('✅ NFC enabled via tap');
+  });
+}
+
+/**
  * Enable both motion sensors and microphone with a button interface
  * Creates a start button that user must click to enable both
  */
@@ -319,6 +348,16 @@ function enableVibrationCanvas(message = 'Touch to start') {
 }
 
 /**
+ * Enable NFC on first canvas touch
+ */
+function enableNfcCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestNfcPermission();
+    console.log('✅ NFC enabled via canvas touch');
+  });
+}
+
+/**
  * Enable both motion sensors and microphone on first canvas touch
  */
 function enableAllCanvas(message = 'Touch to start') {
@@ -385,6 +424,13 @@ function enableVibrationBanner(message = 'Tap to enable vibration', position = '
   });
 }
 
+function enableNfcBanner(message = 'Tap to enable NFC', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestNfcPermission();
+    console.log('✅ NFC enabled via banner');
+  });
+}
+
 function enableAllBanner(message = 'Tap to enable sensors & microphone', position = 'top') {
   _createBannerToEnable(message, position, async () => {
     await _requestMotionPermissionsCore();
@@ -445,6 +491,13 @@ function enableVibrationOn(selector) {
   });
 }
 
+function enableNfcOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestNfcPermission();
+    console.log('✅ NFC enabled via custom element');
+  });
+}
+
 function enableAllOn(selector) {
   _bindPermissionTo(selector, async () => {
     await _requestMotionPermissionsCore();
@@ -492,6 +545,19 @@ function stopVibration() {
   if (navigator.vibrate) {
     navigator.vibrate(0);
   }
+}
+
+/**
+ * Stop NFC scanning
+ */
+function stopNfc() {
+  if (_nfcAbortController) {
+    _nfcAbortController.abort();
+    _nfcAbortController = null;
+  }
+  _nfcReader = null;
+  window.nfcEnabled = false;
+  console.log('NFC scanning stopped');
 }
 
 // =========================================
@@ -619,6 +685,102 @@ async function _requestVibrationPermissionCore() {
   }
 }
 
+async function _requestNfcPermissionCore() {
+  try {
+    // Check if Web NFC API is supported
+    if (!('NDEFReader' in window)) {
+      console.warn('⚠️ Web NFC API not supported on this device/browser (Android Chrome 89+ required)');
+      if (_debugVisible) {
+        debugWarn('Web NFC not supported on this device/browser');
+      }
+      window.nfcEnabled = false;
+      return;
+    }
+
+    _nfcAbortController = new AbortController();
+    _nfcReader = new NDEFReader();
+
+    _nfcReader.onreading = (event) => {
+      const serialNumber = event.serialNumber || '';
+      const decoder = new TextDecoder();
+      const records = [];
+
+      for (const record of event.message.records) {
+        const entry = {
+          recordType: record.recordType,
+          mediaType: record.mediaType || null,
+          id: record.id || null,
+          data: null,
+          raw: record.data
+        };
+
+        if (record.recordType === 'text' || record.recordType === 'url') {
+          entry.data = decoder.decode(record.data);
+        } else if (record.recordType === 'mime' && record.mediaType) {
+          try {
+            const text = decoder.decode(record.data);
+            if (record.mediaType.includes('json')) {
+              entry.data = JSON.parse(text);
+            } else {
+              entry.data = text;
+            }
+          } catch (e) {
+            entry.data = record.data;
+          }
+        } else {
+          entry.data = record.data;
+        }
+
+        records.push(entry);
+      }
+
+      const message = { serialNumber: serialNumber, records: records };
+      window.lastNfcMessage = message;
+      window.lastNfcSerialNumber = serialNumber;
+
+      // Call user-defined callback if it exists
+      if (typeof nfcRead === 'function') {
+        nfcRead(message, serialNumber);
+      }
+
+      console.log('NFC tag read — serial:', serialNumber, 'records:', records.length);
+      if (_debugVisible) {
+        debug('NFC tag read: ' + serialNumber);
+      }
+    };
+
+    _nfcReader.onreadingerror = (event) => {
+      console.warn('⚠️ NFC read error — tag may be incompatible or out of range');
+      if (_debugVisible) {
+        debugWarn('NFC read error — tag incompatible or out of range');
+      }
+    };
+
+    await _nfcReader.scan({ signal: _nfcAbortController.signal });
+    window.nfcEnabled = true;
+    console.log('✅ NFC scanning active');
+
+  } catch (error) {
+    if (error.name === 'NotAllowedError') {
+      console.warn('⚠️ NFC permission denied by user');
+      if (_debugVisible) {
+        debugWarn('NFC permission denied');
+      }
+    } else if (error.name === 'NotSupportedError') {
+      console.warn('⚠️ NFC not supported on this device');
+      if (_debugVisible) {
+        debugWarn('NFC not supported on this device');
+      }
+    } else {
+      console.error('NFC permission error:', error);
+      if (_debugVisible) {
+        debugError('NFC error: ' + error.message);
+      }
+    }
+    window.nfcEnabled = false;
+  }
+}
+
 // Wrapped versions that notify the sketch (used by single-permission functions)
 async function _requestMotionPermissions() {
   await _requestMotionPermissionsCore();
@@ -645,6 +807,11 @@ async function _requestVibrationPermission() {
   _notifySketchReady();
 }
 
+async function _requestNfcPermission() {
+  await _requestNfcPermissionCore();
+  _notifySketchReady();
+}
+
 function _notifySketchReady() {
   // Call userSetupComplete if it exists
   if (typeof userSetupComplete === 'function') {
@@ -659,6 +826,7 @@ function _notifySketchReady() {
       sound: window.soundEnabled,
       speech: window.speechEnabled,
       vibration: window.vibrationEnabled,
+      nfc: window.nfcEnabled,
       gestures: window.gesturesLocked
     }
   }));
@@ -1403,6 +1571,9 @@ window.enableVibrationTap = enableVibrationTap;
 window.enableVibrationButton = enableVibrationButton;
 window.vibrate = vibrate;
 window.stopVibration = stopVibration;
+window.enableNfcTap = enableNfcTap;
+window.enableNfcButton = enableNfcButton;
+window.stopNfc = stopNfc;
 window.enableAllTap = enableAllTap;
 window.enableAllButton = enableAllButton;
 
@@ -1412,6 +1583,7 @@ window.enableMicCanvas = enableMicCanvas;
 window.enableSoundCanvas = enableSoundCanvas;
 window.enableSpeechCanvas = enableSpeechCanvas;
 window.enableVibrationCanvas = enableVibrationCanvas;
+window.enableNfcCanvas = enableNfcCanvas;
 window.enableAllCanvas = enableAllCanvas;
 window.enableCameraCanvas = enableCameraCanvas;
 
@@ -1421,6 +1593,7 @@ window.enableMicBanner = enableMicBanner;
 window.enableSoundBanner = enableSoundBanner;
 window.enableSpeechBanner = enableSpeechBanner;
 window.enableVibrationBanner = enableVibrationBanner;
+window.enableNfcBanner = enableNfcBanner;
 window.enableAllBanner = enableAllBanner;
 window.enableCameraBanner = enableCameraBanner;
 
@@ -1430,6 +1603,7 @@ window.enableMicOn = enableMicOn;
 window.enableSoundOn = enableSoundOn;
 window.enableSpeechOn = enableSpeechOn;
 window.enableVibrationOn = enableVibrationOn;
+window.enableNfcOn = enableNfcOn;
 window.enableAllOn = enableAllOn;
 window.enableCameraOn = enableCameraOn;
 
@@ -2185,6 +2359,9 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.enableVibrationButton = enableVibrationButton;
   p5.prototype.vibrate = vibrate;
   p5.prototype.stopVibration = stopVibration;
+  p5.prototype.enableNfcTap = enableNfcTap;
+  p5.prototype.enableNfcButton = enableNfcButton;
+  p5.prototype.stopNfc = stopNfc;
   p5.prototype.enableAllTap = enableAllTap;
   p5.prototype.enableAllButton = enableAllButton;
   
@@ -2194,6 +2371,7 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.enableSoundCanvas = enableSoundCanvas;
   p5.prototype.enableSpeechCanvas = enableSpeechCanvas;
   p5.prototype.enableVibrationCanvas = enableVibrationCanvas;
+  p5.prototype.enableNfcCanvas = enableNfcCanvas;
   p5.prototype.enableAllCanvas = enableAllCanvas;
   p5.prototype.enableCameraCanvas = enableCameraCanvas;
   
@@ -2203,6 +2381,7 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.enableSoundBanner = enableSoundBanner;
   p5.prototype.enableSpeechBanner = enableSpeechBanner;
   p5.prototype.enableVibrationBanner = enableVibrationBanner;
+  p5.prototype.enableNfcBanner = enableNfcBanner;
   p5.prototype.enableAllBanner = enableAllBanner;
   p5.prototype.enableCameraBanner = enableCameraBanner;
   
@@ -2212,6 +2391,7 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.enableSoundOn = enableSoundOn;
   p5.prototype.enableSpeechOn = enableSpeechOn;
   p5.prototype.enableVibrationOn = enableVibrationOn;
+  p5.prototype.enableNfcOn = enableNfcOn;
   p5.prototype.enableAllOn = enableAllOn;
   p5.prototype.enableCameraOn = enableCameraOn;
   
@@ -2257,6 +2437,9 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
     fn.enableVibrationButton = enableVibrationButton;
     fn.vibrate = vibrate;
     fn.stopVibration = stopVibration;
+    fn.enableNfcTap = enableNfcTap;
+    fn.enableNfcButton = enableNfcButton;
+    fn.stopNfc = stopNfc;
     fn.enableAllTap = enableAllTap;
     fn.enableAllButton = enableAllButton;
     
@@ -2266,6 +2449,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
     fn.enableSoundCanvas = enableSoundCanvas;
     fn.enableSpeechCanvas = enableSpeechCanvas;
     fn.enableVibrationCanvas = enableVibrationCanvas;
+    fn.enableNfcCanvas = enableNfcCanvas;
     fn.enableAllCanvas = enableAllCanvas;
     fn.enableCameraCanvas = enableCameraCanvas;
     
@@ -2275,6 +2459,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
     fn.enableSoundBanner = enableSoundBanner;
     fn.enableSpeechBanner = enableSpeechBanner;
     fn.enableVibrationBanner = enableVibrationBanner;
+    fn.enableNfcBanner = enableNfcBanner;
     fn.enableAllBanner = enableAllBanner;
     fn.enableCameraBanner = enableCameraBanner;
     
@@ -2284,6 +2469,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
     fn.enableSoundOn = enableSoundOn;
     fn.enableSpeechOn = enableSpeechOn;
     fn.enableVibrationOn = enableVibrationOn;
+    fn.enableNfcOn = enableNfcOn;
     fn.enableAllOn = enableAllOn;
     fn.enableCameraOn = enableCameraOn;
     

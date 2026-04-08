@@ -9,7 +9,7 @@ This guide covers how to use the PhoneCamera class from p5-phone for computer vi
 Include p5-phone in your HTML:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.1/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
 ```
 
 Or install via npm:
@@ -137,7 +137,7 @@ function setup() {
   <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
   
   <!-- p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.6.1/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
   
   <style>
     body {
