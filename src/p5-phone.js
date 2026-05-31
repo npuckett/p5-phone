@@ -88,6 +88,8 @@ window.gesturesLocked = false;
 window.vibrationEnabled = false;
 window.speechEnabled = false;
 window.nfcEnabled = false;
+window.nfcError = '';
+window.nfcStatus = 'idle';
 window.lastNfcMessage = null;
 window.lastNfcSerialNumber = null;
 
@@ -557,6 +559,7 @@ function stopNfc() {
   }
   _nfcReader = null;
   window.nfcEnabled = false;
+  window.nfcStatus = 'stopped';
   console.log('NFC scanning stopped');
 }
 
@@ -687,6 +690,13 @@ async function _requestVibrationPermissionCore() {
 
 async function _requestNfcPermissionCore() {
   try {
+    if (window.nfcEnabled && _nfcReader) {
+      return true;
+    }
+
+    window.nfcError = '';
+    window.nfcStatus = 'starting';
+
     // Check if Web NFC API is supported
     if (!('NDEFReader' in window)) {
       console.warn('⚠️ Web NFC API not supported on this device/browser (Android Chrome 89+ required)');
@@ -694,9 +704,14 @@ async function _requestNfcPermissionCore() {
         debugWarn('Web NFC not supported on this device/browser');
       }
       window.nfcEnabled = false;
-      return;
+      window.nfcStatus = 'unsupported';
+      window.nfcError = window.isSecureContext === false
+        ? 'NFC requires HTTPS. Serve this sketch from an HTTPS URL, not plain HTTP.'
+        : 'Web NFC is not supported in this browser. Use Android Chrome 89+ over HTTPS.';
+      return false;
     }
 
+    window.nfcStatus = 'requesting-permission';
     _nfcAbortController = new AbortController();
     _nfcReader = new NDEFReader();
 
@@ -737,6 +752,8 @@ async function _requestNfcPermissionCore() {
       const message = { serialNumber: serialNumber, records: records };
       window.lastNfcMessage = message;
       window.lastNfcSerialNumber = serialNumber;
+      window.nfcStatus = 'tag-read';
+      window.nfcError = '';
 
       // Call user-defined callback if it exists
       if (typeof nfcRead === 'function') {
@@ -751,6 +768,7 @@ async function _requestNfcPermissionCore() {
 
     _nfcReader.onreadingerror = (event) => {
       console.warn('⚠️ NFC read error — tag may be incompatible or out of range');
+      window.nfcError = 'NFC read error. Make sure the tag is NDEF formatted and hold it near the phone NFC antenna.';
       if (_debugVisible) {
         debugWarn('NFC read error — tag incompatible or out of range');
       }
@@ -758,26 +776,44 @@ async function _requestNfcPermissionCore() {
 
     await _nfcReader.scan({ signal: _nfcAbortController.signal });
     window.nfcEnabled = true;
+    window.nfcStatus = 'scanning';
     console.log('✅ NFC scanning active');
+    return true;
 
   } catch (error) {
     if (error.name === 'NotAllowedError') {
       console.warn('⚠️ NFC permission denied by user');
+      window.nfcStatus = 'permission-denied';
+      window.nfcError = 'NFC permission was denied. Reload and tap Allow if Chrome asks.';
       if (_debugVisible) {
         debugWarn('NFC permission denied');
       }
     } else if (error.name === 'NotSupportedError') {
       console.warn('⚠️ NFC not supported on this device');
+      window.nfcStatus = 'unsupported';
+      window.nfcError = 'NFC is not supported on this device/browser, or this page is not using HTTPS.';
       if (_debugVisible) {
         debugWarn('NFC not supported on this device');
       }
+    } else if (error.name === 'SecurityError') {
+      console.warn('⚠️ NFC requires a secure HTTPS context');
+      window.nfcStatus = 'secure-context-required';
+      window.nfcError = 'NFC requires HTTPS. Serve this sketch from an HTTPS URL, not plain HTTP.';
+      if (_debugVisible) {
+        debugWarn('NFC requires HTTPS');
+      }
     } else {
       console.error('NFC permission error:', error);
+      window.nfcStatus = 'error';
+      window.nfcError = error && error.message ? error.message : 'NFC could not start.';
       if (_debugVisible) {
         debugError('NFC error: ' + error.message);
       }
     }
     window.nfcEnabled = false;
+    _nfcReader = null;
+    _nfcAbortController = null;
+    return false;
   }
 }
 
@@ -808,8 +844,9 @@ async function _requestVibrationPermission() {
 }
 
 async function _requestNfcPermission() {
-  await _requestNfcPermissionCore();
+  const enabled = await _requestNfcPermissionCore();
   _notifySketchReady();
+  return enabled;
 }
 
 function _notifySketchReady() {
@@ -839,6 +876,7 @@ function _notifySketchReady() {
 function _createPermissionButton(buttonText, statusText, onClickHandler) {
   // Remove existing button if present
   _removeExistingUI();
+  let activating = false;
   
   // Create button
   const button = document.createElement('button');
@@ -891,7 +929,8 @@ function _createPermissionButton(buttonText, statusText, onClickHandler) {
   
   // Add multiple event handlers to ensure responsiveness
   const handleButtonClick = async () => {
-    if (button.parentNode) {
+    if (!activating && button.parentNode) {
+      activating = true;
       button.style.display = 'none';
       status.style.display = 'block';
       
@@ -922,6 +961,7 @@ function _createPermissionButton(buttonText, statusText, onClickHandler) {
 function _createTapToEnable(message, onTapHandler) {
   // Remove existing UI if present
   _removeExistingUI();
+  let activating = false;
   
   // Create overlay
   const overlay = document.createElement('div');
@@ -960,7 +1000,8 @@ function _createTapToEnable(message, onTapHandler) {
   
   // Add multiple event handlers to ensure responsiveness
   const handleActivation = async () => {
-    if (overlay.parentNode) {
+    if (!activating && overlay.parentNode) {
+      activating = true;
       messageDiv.textContent = 'Enabling...';
       await onTapHandler();
       if (overlay.parentNode) {
@@ -1074,6 +1115,7 @@ function _createCanvasToEnable(message, onActivateHandler) {
  */
 function _createBannerToEnable(message, position, onActivateHandler) {
   _removeExistingUI();
+  let activating = false;
   
   const banner = document.createElement('div');
   banner.id = 'permissionBanner';
@@ -1110,7 +1152,8 @@ function _createBannerToEnable(message, position, onActivateHandler) {
   });
   
   const handleActivation = async () => {
-    if (!banner.parentNode) return;
+    if (activating || !banner.parentNode) return;
+    activating = true;
     
     banner.textContent = 'Enabling...';
     banner.style.pointerEvents = 'none';

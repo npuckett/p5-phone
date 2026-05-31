@@ -20,7 +20,11 @@ function draw() {
 
   if (!window.nfcEnabled) {
     textSize(24);
-    text('Waiting for NFC...', width / 2, height / 2);
+    text('Waiting for NFC...', width / 2, height / 2 - 40);
+
+    textSize(14);
+    fill(window.nfcError ? color(255, 180, 120) : color(180));
+    text(nfcStatusText(), width / 2, height / 2 + 20, width - 40);
     return;
   }
 
@@ -33,6 +37,12 @@ function draw() {
   textSize(14);
   fill(180);
   text('Tags scanned: ' + scanCount, width / 2, 70);
+
+  if (window.nfcError) {
+    textSize(13);
+    fill(255, 180, 120);
+    text(window.nfcError, width / 2, 100, width - 40);
+  }
 
   // Tag info
   if (tagInfo) {
@@ -57,4 +67,20 @@ function nfcRead(message, serialNumber) {
       tagInfo += '\nData: ' + record.data;
     }
   }
+}
+
+function nfcStatusText() {
+  if (window.nfcError) {
+    return window.nfcError;
+  }
+
+  if (window.nfcStatus === 'starting' || window.nfcStatus === 'requesting-permission') {
+    return 'Starting NFC. If Chrome asks, tap Allow.';
+  }
+
+  if (window.nfcStatus === 'unsupported') {
+    return 'Use Android Chrome 89+ on an HTTPS page.';
+  }
+
+  return 'Tap the screen to start NFC scanning.';
 }
