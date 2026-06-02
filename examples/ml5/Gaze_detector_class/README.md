@@ -207,8 +207,14 @@ function setup() {
       flipped: false
     };
     
-    faceMesh = await ml5.faceMesh(options);
+    faceMesh = await loadMl5Model((modelLoaded) => ml5.faceMesh(options, modelLoaded));
     faceMesh.detectStart(cam.videoElement, gotFaces);
+  });
+}
+
+function loadMl5Model(createModel) {
+  return new Promise((resolve) => {
+    let model = createModel(() => resolve(model));
   });
 }
 

@@ -128,11 +128,17 @@ class GazeDetector {
     };
     
     // Create FaceMesh model
-    this.faceMesh = await ml5.faceMesh(options);
+    this.faceMesh = await this._loadMl5Model((modelLoaded) => ml5.faceMesh(options, modelLoaded));
     this.faceMesh.detectStart(this.cam.videoElement, (results) => {
       this.faces = results;
     });
     this.ready = true;
+  }
+
+  _loadMl5Model(createModel) {
+    return new Promise((resolve) => {
+      let model = createModel(() => resolve(model));
+    });
   }
   
   /**
@@ -142,7 +148,7 @@ class GazeDetector {
   update() {
     // Draw video feed if enabled
     if (this.showVideo && this.cam && this.cam.ready) {
-      image(this.cam, 0, 0);
+      this._drawCamera();
     }
     
     // Process face data if detected
@@ -243,6 +249,20 @@ class GazeDetector {
     let mapped = this.cam.mapKeypoint(keypoint);
     
     return mapped;
+  }
+
+  _drawCamera() {
+    const videoElement = this.cam.videoElement;
+    if (!videoElement || videoElement.readyState < 2) return;
+
+    const dims = this.cam.getDimensions();
+    push();
+    if (this.cam.mirror) {
+      translate(width, 0);
+      scale(-1, 1);
+    }
+    drawingContext.drawImage(videoElement, dims.x, dims.y, dims.width, dims.height);
+    pop();
   }
   
   // ============================================
