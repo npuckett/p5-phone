@@ -1,115 +1,110 @@
 // MINIMAL VERSION - Sound Amplitude
 // No visual feedback - data displayed in debug panel only
-// Demonstrates: Reading audio amplitude levels in real-time with p5.Amplitude
+// Demonstrates: reading generated audio amplitude levels with p5.Amplitude
 
-// Global variables for audio
-let audioTrack;
+let tone;
 let amplitude;
+let isPlaying = false;
 let currentLevel = 0;
 let peakLevel = 0;
-let threshold = 0.2;  // Threshold for "loud" detection
+let threshold = 0.2;
 
-async function setup()
+function setup()
 {
-    // Load audio file
-    audioTrack = await loadSound('tracks/audio1.mp3');
-
     createCanvas(windowWidth, windowHeight);
 
-    // Show debug panel FIRST
     showDebug();
-
-    // Enable sound with tap permission
     enableSoundTap();
-
-    // Lock mobile gestures
     lockGestures();
 
-    // Create amplitude analyzer
-    amplitude = new p5.Amplitude();
-    amplitude.setInput(audioTrack);
-
-    // Set audio to loop
-    audioTrack.loop();
-    audioTrack.pause();
-
-    debug("Sound Amplitude - Minimal Version");
-    debug("Touch & hold to play and analyze audio");
-    debug("Amplitude Threshold: " + threshold);
+    debug('Sound Amplitude - Minimal Version');
+    debug('Touch and hold to play and analyze audio');
+    debug('Amplitude Threshold: ' + threshold);
 }
 
 function draw()
 {
-    // Check if sound system is enabled
     if (window.soundEnabled)
     {
-        // Get current amplitude level
-        currentLevel = amplitude.getLevel();
+        if (amplitude)
+        {
+            currentLevel = amplitude.getLevel();
+        }
+        else
+        {
+            currentLevel = 0;
+        }
 
-        // Track peak level
         if (currentLevel > peakLevel)
         {
             peakLevel = currentLevel;
         }
 
-        // Output amplitude data to debug panel
-        debug("--- Audio Amplitude ---");
-        debug("Is Playing: " + audioTrack.isPlaying());
-        debug("Current Level: " + nf(currentLevel, 1, 3));
-        debug("Peak Level: " + nf(peakLevel, 1, 3));
-        debug("Percentage: " + int(currentLevel * 100) + "%");
-
-        // Check against threshold
-        if (currentLevel > threshold)
-        {
-            debug("STATUS: LOUD! (Above threshold)");
-        }
-        else
-        {
-            debug("STATUS: Quiet (Below threshold)");
-        }
-
-        // Add visual bar representation using text
-        let barLength = int(currentLevel * 30);
-        let bar = "";
-        for (let i = 0; i < barLength; i++)
-        {
-            bar = bar + "▮";
-        }
-        debug("Level: " + bar);
-
-        debug("Touch & hold to play audio");
+        debug('--- Audio Amplitude ---');
+        debug('Is Playing: ' + isPlaying);
+        debug('Current Level: ' + nf(currentLevel, 1, 3));
+        debug('Peak Level: ' + nf(peakLevel, 1, 3));
+        debug('Percentage: ' + int(currentLevel * 100) + '%');
+        debug('STATUS: ' + (currentLevel > threshold ? 'LOUD (Above threshold)' : 'Quiet (Below threshold)'));
+        debug('Level: ' + makeLevelBar(currentLevel));
+        debug('Touch and hold to play audio');
     }
     else
     {
-        debug("Waiting for audio permissions...");
-        debug("Touch the screen to enable audio");
+        debug('Waiting for audio permissions...');
+        debug('Touch the screen to enable audio');
     }
 }
 
-// Play audio when touched
+function ensureToneStarted()
+{
+    if (tone)
+    {
+        return;
+    }
+
+    tone = new p5.Oscillator(320, 'triangle');
+    amplitude = new p5.Amplitude();
+    tone.connect(amplitude);
+    tone.amp(0);
+    tone.start();
+}
+
 function mousePressed()
 {
     if (window.soundEnabled)
     {
-        if (!audioTrack.isPlaying())
-        {
-            audioTrack.play();
-            debug("--- Touch: PLAYING ---");
-        }
+        ensureToneStarted();
+        isPlaying = true;
+        tone.amp(0.45, 0.06);
+        debug('--- Touch: PLAYING ---');
     }
 
-    return false;  // Prevents default behavior
+    return false;
 }
 
-// Pause audio when touch ends
 function mouseReleased()
 {
-    if (window.soundEnabled)
+    if (tone)
     {
-        audioTrack.pause();
-        debug("--- Touch: PAUSED ---");
+        tone.amp(0, 0.08);
     }
 
-    return false;  // Prevents default behavior
+    isPlaying = false;
+    debug('--- Touch: PAUSED ---');
+
+    return false;
+}
+
+function makeLevelBar(level)
+{
+    let barLength = int(constrain(level, 0, 1) * 30);
+    let bar = '';
+
+    for (let index = 0; index < barLength; index++)
+    {
+        bar = bar + '#';
+    }
+
+    return bar;
 }

@@ -4,6 +4,7 @@
 
 // Global variables for microphone
 let mic;
+let micAmplitude;
 let micLevel = 0;
 let micMultiplier = 3;  // Increase sensitivity
 let threshold = 0.3;    // Threshold for loud sound detection
@@ -16,7 +17,8 @@ function setup()
     showDebug();
 
     mic = new p5.AudioIn();
-    muteMicMonitoring();
+    micAmplitude = new p5.Amplitude();
+    routeMicToAnalyzer();
     
     // Enable microphone with tap permission
     enableMicTap();
@@ -37,10 +39,10 @@ function draw()
     // Check if microphone is enabled
     if (window.micEnabled)
     {
-        muteMicMonitoring();
+        routeMicToAnalyzer();
 
         // Get current microphone level (0.0 to 1.0)
-        micLevel = mic.getLevel() * micMultiplier;
+        micLevel = micAmplitude.getLevel() * micMultiplier;
         
         // Constrain to 0-1 range
         micLevel = constrain(micLevel, 0, 1);
@@ -76,10 +78,11 @@ function draw()
     }
 }
 
-function muteMicMonitoring()
+function routeMicToAnalyzer()
 {
-    if (mic && mic.disconnect)
+    if (mic && mic.disconnect && micAmplitude)
     {
         mic.disconnect();
+        mic.connect(micAmplitude);
     }
 }

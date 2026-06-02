@@ -135,17 +135,49 @@ function drawActiveState()
     fill(255, 204, 102, 210);
     circle(width/2, height/2, pulseSize * 0.45);
 
-    drawMeter('Pitch', currentFrequency, 120, 880, height - 150, 'Hz');
-    drawMeter('Volume', currentVolume, 0, 0.35, height - 90, '');
+    drawTiltMap();
+    drawMeter('Pitch from forward/back tilt', currentFrequency, 120, 880, height - 150, 'Hz');
+    drawMeter('Volume from side tilt', currentVolume, 0, 0.35, height - 90, '');
 
     fill(255);
     textSize(24);
-    text('Tilt to shape the tone', width/2, 56);
+    text('Motion Synth', width/2, 44);
 
     fill(210);
     textSize(15);
-    text('Forward/back changes pitch. Side tilt changes volume.', width/2, 88);
-    text('Motion energy: ' + nf(movementEnergy, 1, 2), width/2, 116);
+    text('Forward/back changes pitch. Side tilt changes volume.', width/2, 74);
+    text('rotationX: ' + nf(rotationX, 1, 1) + '   rotationY: ' + nf(rotationY, 1, 1) + '   motion: ' + nf(movementEnergy, 1, 2), width/2, 102);
+}
+
+function drawTiltMap()
+{
+    let mapWidth = min(width - 70, 300);
+    let mapHeight = min(190, max(135, height * 0.28));
+    let x = width/2 - mapWidth/2;
+    let y = height/2 - mapHeight/2;
+
+    let dotX = map(constrain(rotationY, -45, 45), -45, 45, x + 24, x + mapWidth - 24);
+    let dotY = map(constrain(rotationX, -45, 45), -45, 45, y + mapHeight - 24, y + 24);
+
+    noStroke();
+    fill(18, 22, 28, 205);
+    rect(x, y, mapWidth, mapHeight, 8);
+
+    stroke(255, 255, 255, 70);
+    strokeWeight(1);
+    line(x + mapWidth/2, y + 28, x + mapWidth/2, y + mapHeight - 28);
+    line(x + 28, y + mapHeight/2, x + mapWidth - 28, y + mapHeight/2);
+
+    noStroke();
+    fill(225);
+    textSize(12);
+    text('higher pitch', x + mapWidth/2, y + 16);
+    text('lower pitch', x + mapWidth/2, y + mapHeight - 14);
+    text('quiet', x + 30, y + mapHeight/2 - 16);
+    text('louder', x + mapWidth - 34, y + mapHeight/2 - 16);
+
+    fill(255, 204, 102);
+    circle(dotX, dotY, 28);
 }
 
 function drawMeter(label, value, low, high, y, unit)

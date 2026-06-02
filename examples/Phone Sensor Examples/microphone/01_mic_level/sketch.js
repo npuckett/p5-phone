@@ -4,6 +4,7 @@
 
 // Global variables - easy to adjust for different use cases
 let mic;
+let micAmplitude;
 let micLevel = 0;
 let micMultiplier = 5; // Multiplier to amplify mic sensitivity
 let threshold = 0.3; // Threshold for background color change (0.0 - 1.0)
@@ -22,7 +23,8 @@ function setup()
     
     // Create microphone input (global variable for library to use)
     mic = new p5.AudioIn();
-    muteMicMonitoring();
+    micAmplitude = new p5.Amplitude();
+    routeMicToAnalyzer();
     
     textAlign(CENTER, CENTER);
     textSize(16);
@@ -41,10 +43,10 @@ function draw()
     // Check if microphone is available
     if (window.micEnabled) 
     {
-        muteMicMonitoring();
+        routeMicToAnalyzer();
 
         // Get current microphone level (0.0 to 1.0) and apply multiplier
-        micLevel = mic.getLevel() * micMultiplier;
+        micLevel = micAmplitude.getLevel() * micMultiplier;
         
         // Check if level exceeds threshold and change background
         if (micLevel > threshold) 
@@ -119,10 +121,11 @@ function mouseReleased()
     return false;
 }
 
-function muteMicMonitoring()
+function routeMicToAnalyzer()
 {
-    if (mic && mic.disconnect)
+    if (mic && mic.disconnect && micAmplitude)
     {
         mic.disconnect();
+        mic.connect(micAmplitude);
     }
 }

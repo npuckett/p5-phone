@@ -2,209 +2,153 @@
 // DUAL AUDIO PLAYBACK EXAMPLE (TOUCH VERSION)
 // ==============================================
 // This example shows how to enable audio playback
-// on mobile devices and play different sounds
-// based on screen touch zones
-//
-// CONCEPTS COVERED:
-// - Audio playback on mobile (enableSoundTap)
-// - Loading audio files
-// - Touch zone detection
-// - Audio visualization with amplitude
-// - Mobile gesture locking
+// on mobile devices and play different generated
+// tones based on screen touch zones.
 // ==============================================
 
-// Global variables to store our audio files
-// We declare these at the top so they can be accessed by all functions
-let audioTrack1;
-let audioTrack2;
+let tone1;
+let tone2;
+let tone1Active = false;
+let tone2Active = false;
+let tone1Level = 0;
+let tone2Level = 0;
 
-// Global variables for audio level detection
-// Amplitude analyzes the volume level of audio in real-time
-let amplitude1;
-let amplitude2;
-
-// ==============================================
-// SETUP FUNCTION - Runs once when page loads
-// ==============================================
-// setup() waits for sound files to load before configuring the sketch
-async function setup()
+function setup()
 {
-    // Load both audio files from the tracks folder
-    // The paths are relative to where our HTML file is located
-    audioTrack1 = await loadSound('tracks/audio1.mp3');
-    audioTrack2 = await loadSound('tracks/audio2.mp3');
-
-    // Create a canvas that fills the entire screen
     createCanvas(windowWidth, windowHeight);
-
-    // Lock mobile gestures to prevent scrolling, zooming, etc.
     lockGestures();
-
-    // Enable audio playback on mobile devices
-    // This creates a tap-to-start overlay for iOS/mobile browsers
     enableSoundTap();
 
-    // Set the background to a dark color
     background(50);
-
-    // Set text properties for displaying instructions
     textAlign(CENTER, CENTER);
     textSize(16);
-    fill(255);
-
-    // Set the volume of both audio tracks (0.0 to 1.0)
-    audioTrack1.setVolume(0.7);
-    audioTrack2.setVolume(0.7);
-
-    // Set both tracks to loop continuously
-    audioTrack1.loop();
-    audioTrack2.loop();
-    // Pause them initially (they will start looped when played)
-    audioTrack1.pause();
-    audioTrack2.pause();
-
-    // Create amplitude objects to analyze audio levels for both tracks
-    amplitude1 = new p5.Amplitude();
-    amplitude2 = new p5.Amplitude();
-    // Connect the amplitude analyzers to our audio tracks
-    amplitude1.setInput(audioTrack1);
-    amplitude2.setInput(audioTrack2);
 }
 
-// ==============================================
-// DRAW FUNCTION - Runs continuously (like a loop)
-// ==============================================
 function draw()
 {
-    // Clear the background each frame
     background(50);
-
-    // Draw the split screen zones
     drawSplitScreen();
 
-    // window.soundEnabled is set by enableSoundTap() after user interaction
     if (window.soundEnabled)
     {
-        // Draw audio visualizers once sound is enabled
         drawVisualizers();
     }
     else
     {
-        fill(255, 255, 0); // yellow text
+        fill(255, 255, 0);
         textSize(24);
-        text("Touch anywhere to start", width/2, height/2);
+        text('Touch anywhere to start', width / 2, height / 2);
     }
 }
 
-// ==============================================
-// HELPER FUNCTIONS
-// ==============================================
+function ensureTonesStarted()
+{
+    if (tone1 && tone2)
+    {
+        return;
+    }
+
+    tone1 = new p5.Oscillator(220, 'sine');
+    tone2 = new p5.Oscillator(330, 'triangle');
+    tone1.amp(0);
+    tone2.amp(0);
+    tone1.start();
+    tone2.start();
+}
 
 function drawSplitScreen()
 {
-    // Top half - Audio 1 zone (light blue)
     noStroke();
     fill(150, 200, 255);
-    rect(0, 0, width, height/2);
+    rect(0, 0, width, height / 2);
 
-    // Bottom half - Audio 2 zone (light green)
     fill(150, 255, 200);
-    rect(0, height/2, width, height/2);
+    rect(0, height / 2, width, height / 2);
 
-    // Draw a horizontal line to divide the canvas in half
     stroke(255);
     strokeWeight(2);
-    line(0, height/2, width, height/2);
+    line(0, height / 2, width, height / 2);
     noStroke();
 
-    // Draw labels if audio has been enabled
-    if (window.soundEnabled)
-    {
-        fill(50);
-        textSize(20);
-        text("AUDIO 1", width/2, height/4 - 60);
-        text("Touch & hold to play", width/2, height/4 - 35);
+    fill(50);
+    textSize(20);
+    text('LOW TONE', width / 2, height / 4 - 60);
+    text(window.soundEnabled ? 'Touch and hold to play' : 'Enable sound first', width / 2, height / 4 - 35);
 
-        text("AUDIO 2", width/2, (height/4) * 3 - 60);
-        text("Touch & hold to play", width/2, (height/4) * 3 - 35);
-    }
+    text('HIGH TONE', width / 2, (height / 4) * 3 - 60);
+    text(window.soundEnabled ? 'Touch and hold to play' : 'Enable sound first', width / 2, (height / 4) * 3 - 35);
 }
 
 function drawVisualizers()
 {
-    // Visual audio level feedback for track 1
-    if (audioTrack1.isPlaying())
-    {
-        let level1 = amplitude1.getLevel();
-        let circleSize1 = map(level1, 0, 0.3, 30, 200);
-        fill(255, 150, 100, 200); // Orange, semi-transparent
-        noStroke();
-        ellipse(width/2, height/4, circleSize1, circleSize1);
-    }
+    tone1Level = lerp(tone1Level, tone1Active ? 1 : 0, 0.18);
+    tone2Level = lerp(tone2Level, tone2Active ? 1 : 0, 0.18);
 
-    // Visual audio level feedback for track 2
-    if (audioTrack2.isPlaying())
-    {
-        let level2 = amplitude2.getLevel();
-        let circleSize2 = map(level2, 0, 0.3, 30, 200);
-        fill(255, 100, 200, 200); // Magenta, semi-transparent
-        noStroke();
-        ellipse(width/2, 3*height/4, circleSize2, circleSize2);
-    }
+    let pulse1 = 90 + 36 * sin(frameCount * 0.16);
+    let pulse2 = 90 + 36 * sin(frameCount * 0.2);
+
+    fill(255, 150, 100, 210);
+    noStroke();
+    circle(width / 2, height / 4, tone1Level * pulse1);
+
+    fill(255, 100, 200, 210);
+    circle(width / 2, 3 * height / 4, tone2Level * pulse2);
 }
 
-// ==============================================
-// INPUT EVENT FUNCTIONS
-// ==============================================
-
-// mousePressed() runs when a touch begins
-// This function starts playing audio based on which zone is touched
 function mousePressed()
 {
-    // Only process if sound system is enabled
     if (window.soundEnabled)
     {
-        // Get the first touch point
-        if (touches.length > 0)
-        {
-            let touchY = touches[0].y;
+        ensureTonesStarted();
 
-            // Check if touch is in top half (Audio 1 zone)
-            if (touchY < height/2)
-            {
-                if (!audioTrack1.isPlaying())
-                {
-                    audioTrack1.play();
-                }
-            }
-            // Check if touch is in bottom half (Audio 2 zone)
-            else
-            {
-                if (!audioTrack2.isPlaying())
-                {
-                    audioTrack2.play();
-                }
-            }
+        if (getPrimaryY() < height / 2)
+        {
+            tone1Active = true;
+            tone2Active = false;
+            tone1.amp(0.35, 0.04);
+            tone2.amp(0, 0.04);
+        }
+        else
+        {
+            tone1Active = false;
+            tone2Active = true;
+            tone1.amp(0, 0.04);
+            tone2.amp(0.35, 0.04);
         }
     }
 
-    // Prevent default touch behavior
     return false;
 }
 
-// mouseReleased() runs when a touch is released
-// This function stops the audio when touch is released
 function mouseReleased()
 {
-    // Only process if sound system is enabled
-    if (window.soundEnabled)
+    tone1Active = false;
+    tone2Active = false;
+
+    if (tone1)
     {
-        // Pause both audio tracks when touch is released
-        audioTrack1.pause();
-        audioTrack2.pause();
+        tone1.amp(0, 0.08);
     }
 
-    // Prevent default touch behavior
+    if (tone2)
+    {
+        tone2.amp(0, 0.08);
+    }
+
     return false;
 }
 
+function getPrimaryY()
+{
+    if (touches.length > 0)
+    {
+        return touches[0].y;
+    }
+
+    return mouseY;
+}
+
+function windowResized()
+{
+    resizeCanvas(windowWidth, windowHeight);
+}

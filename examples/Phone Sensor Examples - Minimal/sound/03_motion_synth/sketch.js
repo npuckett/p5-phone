@@ -12,11 +12,6 @@ function setup()
     showDebug();
     lockGestures();
 
-    oscillator = new p5.Oscillator('sine');
-    oscillator.freq(frequency);
-    oscillator.amp(0);
-    oscillator.start();
-
     startButton = createButton('Enable motion sound');
     startButton.id('motion-sound-start');
     startButton.position(20, 20);
@@ -37,6 +32,7 @@ function draw()
     if (window.soundEnabled && window.sensorsEnabled)
     {
         startButton.hide();
+        ensureSynthStarted();
 
         frequency = map(constrain(rotationX, -90, 90), -90, 90, 120, 880);
         volume = map(abs(constrain(rotationY, -90, 90)), 0, 90, 0.05, 0.35);
@@ -49,12 +45,31 @@ function draw()
         debug('rotationY: ' + nf(rotationY, 1, 2));
         debug('frequency: ' + int(frequency) + ' Hz');
         debug('volume: ' + int(volume * 100) + '%');
+        debug('forward/back tilt changes pitch');
+        debug('side tilt changes volume');
     }
     else
     {
-        oscillator.amp(0, 0.1);
+        if (oscillator)
+        {
+            oscillator.amp(0, 0.1);
+        }
+
         debug('Waiting for sound and motion sensors...');
     }
+}
+
+function ensureSynthStarted()
+{
+    if (oscillator)
+    {
+        return;
+    }
+
+    oscillator = new p5.Oscillator('sine');
+    oscillator.freq(frequency);
+    oscillator.amp(0);
+    oscillator.start();
 }
 
 function mousePressed()
