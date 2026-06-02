@@ -2,7 +2,13 @@
 // Demonstrates: deviceMoved() and setMoveThreshold()
 
 let moveCount = 0;
-let moveThreshold = 0.5;
+let moveThreshold = 5;
+let lastMoveTime = 0;
+let lastAcceptedAccelerationX = 0;
+let lastAcceptedAccelerationY = 0;
+let lastAcceptedAccelerationZ = 0;
+
+const moveDebounceMs = 450;
 
 function setup()
 {
@@ -33,9 +39,19 @@ function draw()
 
 function deviceMoved()
 {
-    if (window.sensorsEnabled)
+    let now = millis();
+    let accelerationDelta = dist(
+        accelerationX, accelerationY, accelerationZ,
+        lastAcceptedAccelerationX, lastAcceptedAccelerationY, lastAcceptedAccelerationZ
+    );
+
+    if (window.sensorsEnabled && (lastMoveTime === 0 || now - lastMoveTime > moveDebounceMs) && accelerationDelta >= moveThreshold)
     {
         moveCount++;
+        lastMoveTime = now;
+        lastAcceptedAccelerationX = accelerationX;
+        lastAcceptedAccelerationY = accelerationY;
+        lastAcceptedAccelerationZ = accelerationZ;
         debug('deviceMoved() fired: ' + moveCount);
     }
 }

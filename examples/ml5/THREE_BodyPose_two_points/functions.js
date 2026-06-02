@@ -420,7 +420,9 @@ function updateTextOverlay() {
   
   // Draw status at top
   let statusText = '';
-  if (!videoElement || !videoElement.srcObject) {
+  if (initErrorMessage) {
+    statusText = initErrorMessage;
+  } else if (!videoElement || !videoElement.srcObject) {
     statusText = 'Starting camera...';
   } else if (poses.length === 0) {
     statusText = 'Show your body to start tracking';

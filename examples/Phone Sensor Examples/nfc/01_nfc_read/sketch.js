@@ -77,12 +77,10 @@ function drawTagState() {
   text('Current tag ID', width / 2, centerY - 104);
 
   fill(255);
-  setFittingTextSize(currentTag.serialNumber, width - 38, 34, 18);
-  text(currentTag.serialNumber, width / 2, centerY - 58, width - 38);
+  drawFittedCenterText(currentTag.serialNumber, width / 2, centerY - 58, width - 38, 30, 10);
 
   fill(tagAlias ? color(116, 255, 174) : color(255, 210, 140));
-  textSize(tagAlias ? 34 : 28);
-  text(tagAlias || 'Unnamed tag', width / 2, centerY + 14, width - 44);
+  drawFittedCenterText(tagAlias || 'Unnamed tag', width / 2, centerY + 14, width - 44, tagAlias ? 34 : 28, 14);
 
   fill(170);
   textSize(16);
@@ -253,6 +251,12 @@ function setFittingTextSize(textValue, maxWidth, maxSize, minSize) {
     fittedSize--;
     textSize(fittedSize);
   }
+}
+
+function drawFittedCenterText(textValue, centerX, centerY, maxWidth, maxSize, minSize) {
+  textAlign(CENTER, CENTER);
+  setFittingTextSize(textValue, maxWidth, maxSize, minSize);
+  text(textValue, centerX, centerY);
 }
 
 function pluralSuffix(count) {

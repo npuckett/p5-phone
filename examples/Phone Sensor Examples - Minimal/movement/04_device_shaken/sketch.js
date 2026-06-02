@@ -2,7 +2,10 @@
 // Demonstrates: deviceShaken() and setShakeThreshold()
 
 let shakeCount = 0;
-let shakeThreshold = 30;
+let shakeThreshold = 60;
+let lastShakeTime = 0;
+
+const shakeDebounceMs = 700;
 
 function setup()
 {
@@ -33,9 +36,12 @@ function draw()
 
 function deviceShaken()
 {
-    if (window.sensorsEnabled)
+    let now = millis();
+
+    if (window.sensorsEnabled && (lastShakeTime === 0 || now - lastShakeTime > shakeDebounceMs))
     {
         shakeCount++;
+        lastShakeTime = now;
         debug('deviceShaken() fired: ' + shakeCount);
     }
 }

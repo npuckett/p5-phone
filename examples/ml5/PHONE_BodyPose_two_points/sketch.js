@@ -103,7 +103,7 @@ function setup() {
   enableCameraTap();
   
   // Wait for camera to initialize, then create model and start detection
-  cam.onReady(() => {
+  cam.onReady(async () => {
     // Configure ML5 BodyPose (BlazePose) AFTER camera is ready
     let options = {
       runtime: 'mediapipe',               // Use MediaPipe runtime
@@ -115,9 +115,8 @@ function setup() {
     };
     
     // Create BodyPose model and start detection when ready
-    bodypose = ml5.bodyPose('BlazePose', options, () => {
-      bodypose.detectStart(cam.videoElement, gotPoses);
-    });
+    bodypose = await ml5.bodyPose('BlazePose', options);
+    bodypose.detectStart(cam.videoElement, gotPoses);
   });
 }
 

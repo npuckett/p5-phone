@@ -5,9 +5,11 @@
 // Use setShakeThreshold() to control how strong a shake must be.
 
 let shakeCount = 0;
-let shakeThreshold = 30;
+let shakeThreshold = 60;
 let lastShakeTime = 0;
 let flashColor;
+
+const shakeDebounceMs = 700;
 
 function setup()
 {
@@ -98,16 +100,18 @@ function drawButton(centerX, centerY, buttonWidth, buttonHeight, label)
 
 function applyShakeThreshold()
 {
-    shakeThreshold = constrain(shakeThreshold, 5, 100);
+    shakeThreshold = constrain(shakeThreshold, 20, 150);
     setShakeThreshold(shakeThreshold);
 }
 
 function deviceShaken()
 {
-    if (window.sensorsEnabled)
+    let now = millis();
+
+    if (window.sensorsEnabled && (lastShakeTime === 0 || now - lastShakeTime > shakeDebounceMs))
     {
         shakeCount++;
-        lastShakeTime = millis();
+        lastShakeTime = now;
     }
 }
 
@@ -119,12 +123,12 @@ function mousePressed()
 
         if (isInsideButton(width / 2 - 64, buttonY, 96, 44))
         {
-            shakeThreshold -= 5;
+            shakeThreshold -= 10;
             applyShakeThreshold();
         }
         else if (isInsideButton(width / 2 + 64, buttonY, 96, 44))
         {
-            shakeThreshold += 5;
+            shakeThreshold += 10;
             applyShakeThreshold();
         }
     }

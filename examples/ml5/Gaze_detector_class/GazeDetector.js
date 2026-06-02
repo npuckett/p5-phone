@@ -111,8 +111,8 @@ class GazeDetector {
     enableCameraTap();  // Enable tap to toggle video
     
     // Wait for camera to be ready before creating model
-    this.cam.onReady(() => {
-      this._initializeFaceMesh();
+    this.cam.onReady(async () => {
+      await this._initializeFaceMesh();
     });
   }
   
@@ -120,7 +120,7 @@ class GazeDetector {
    * PRIVATE: Initialize FaceMesh model
    * Called automatically after camera is ready
    */
-  _initializeFaceMesh() {
+  async _initializeFaceMesh() {
     let options = {
       maxFaces: 1,            // Only detect 1 face
       refineLandmarks: false, // Faster without refinement
@@ -128,13 +128,11 @@ class GazeDetector {
     };
     
     // Create FaceMesh model
-    this.faceMesh = ml5.faceMesh(options, () => {
-      // Start detection when model is ready
-      this.faceMesh.detectStart(this.cam.videoElement, (results) => {
-        this.faces = results;
-      });
-      this.ready = true;
+    this.faceMesh = await ml5.faceMesh(options);
+    this.faceMesh.detectStart(this.cam.videoElement, (results) => {
+      this.faces = results;
     });
+    this.ready = true;
   }
   
   /**

@@ -13,7 +13,6 @@
 // ==============================================
 
 let oscillator;
-let amplitude;
 let startButton;
 let currentFrequency = 220;
 let currentVolume = 0;
@@ -26,14 +25,6 @@ function setup()
 {
     createCanvas(windowWidth, windowHeight);
     lockGestures();
-
-    oscillator = new p5.Oscillator('sine');
-    oscillator.freq(currentFrequency);
-    oscillator.amp(0);
-    oscillator.start();
-
-    amplitude = new p5.Amplitude();
-    amplitude.setInput(oscillator);
 
     createStartButton();
     enableSoundOn('#motion-sound-start');
@@ -49,14 +40,31 @@ function draw()
     if (window.soundEnabled && window.sensorsEnabled)
     {
         startButton.hide();
+        ensureSynthStarted();
         updateSynthFromMotion();
         drawActiveState();
     }
     else
     {
-        oscillator.amp(0, 0.1);
+        if (oscillator)
+        {
+            oscillator.amp(0, 0.1);
+        }
         drawWaitingState();
     }
+}
+
+function ensureSynthStarted()
+{
+    if (oscillator)
+    {
+        return;
+    }
+
+    oscillator = new p5.Oscillator('sine');
+    oscillator.freq(currentFrequency);
+    oscillator.amp(0);
+    oscillator.start();
 }
 
 function createStartButton()
@@ -116,7 +124,7 @@ function drawWaitingState()
 
 function drawActiveState()
 {
-    let level = amplitude.getLevel();
+    let level = currentVolume * (0.86 + 0.14 * sin(frameCount * 0.08));
     let pulseSize = map(level, 0, 0.35, 120, min(width, height) * 0.65);
     let energySize = map(movementEnergy, 0, 8, 12, 90);
 

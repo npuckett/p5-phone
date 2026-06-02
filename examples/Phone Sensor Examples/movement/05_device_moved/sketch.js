@@ -5,9 +5,14 @@
 // Use setMoveThreshold() to control how much movement triggers the event.
 
 let moveCount = 0;
-let moveThreshold = 0.5;
+let moveThreshold = 5;
 let lastMoveTime = 0;
 let trail = [];
+let lastAcceptedAccelerationX = 0;
+let lastAcceptedAccelerationY = 0;
+let lastAcceptedAccelerationZ = 0;
+
+const moveDebounceMs = 450;
 
 function setup()
 {
@@ -48,7 +53,7 @@ function drawActiveState()
     fill(80);
     textSize(18);
     text('Move count', width / 2, height / 2 + 10);
-    text('Threshold: ' + moveThreshold.toFixed(1), width / 2, height / 2 + 48);
+    text('Threshold: ' + moveThreshold.toFixed(0), width / 2, height / 2 + 48);
 
     drawThresholdButtons();
 
@@ -127,16 +132,25 @@ function drawButton(centerX, centerY, buttonWidth, buttonHeight, label)
 
 function applyMoveThreshold()
 {
-    moveThreshold = constrain(moveThreshold, 0.1, 5);
+    moveThreshold = constrain(moveThreshold, 1, 20);
     setMoveThreshold(moveThreshold);
 }
 
 function deviceMoved()
 {
-    if (window.sensorsEnabled)
+    let now = millis();
+    let accelerationDelta = dist(
+        accelerationX, accelerationY, accelerationZ,
+        lastAcceptedAccelerationX, lastAcceptedAccelerationY, lastAcceptedAccelerationZ
+    );
+
+    if (window.sensorsEnabled && (lastMoveTime === 0 || now - lastMoveTime > moveDebounceMs) && accelerationDelta >= moveThreshold)
     {
         moveCount++;
-        lastMoveTime = millis();
+        lastMoveTime = now;
+        lastAcceptedAccelerationX = accelerationX;
+        lastAcceptedAccelerationY = accelerationY;
+        lastAcceptedAccelerationZ = accelerationZ;
     }
 }
 
@@ -148,12 +162,12 @@ function mousePressed()
 
         if (isInsideButton(width / 2 - 64, buttonY, 96, 44))
         {
-            moveThreshold -= 0.1;
+            moveThreshold -= 1;
             applyMoveThreshold();
         }
         else if (isInsideButton(width / 2 + 64, buttonY, 96, 44))
         {
-            moveThreshold += 0.1;
+            moveThreshold += 1;
             applyMoveThreshold();
         }
     }

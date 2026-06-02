@@ -76,6 +76,8 @@ let showData = true;        // Toggle measurement visualization
 let textSprite;             // Three.js sprite for text overlay
 let textCanvas;             // Canvas for rendering text
 let textContext;            // 2D context for text rendering
+let initErrorMessage = '';  // Visible startup error for the text overlay
+let animationStarted = false;
 
 // Two-variable method: Define which points to track and store their data
 let facePointIndex1 = 234;      // Left eye outer corner
@@ -114,12 +116,18 @@ async function init() {
   
   // Setup Three.js scene, camera, and renderer
   setupThreeJS();
-  
-  // Setup camera and load model
-  await setupCamera();
-  await loadFaceMeshModel();
-  
-  console.log('Initialization complete');
+
+  try {
+    // Setup camera and load model
+    await setupCamera();
+    await loadFaceMeshModel();
+
+    console.log('Initialization complete');
+  } catch (error) {
+    console.error('Initialization error:', error);
+    initErrorMessage = 'Camera error: ' + error.message;
+    startAnimation();
+  }
 }
 
 /**
@@ -146,7 +154,14 @@ async function loadFaceMeshModel() {
   console.log('Detection started');
   
   // Start animation loop
-  animate();
+  startAnimation();
+}
+
+function startAnimation() {
+  if (!animationStarted) {
+    animationStarted = true;
+    animate();
+  }
 }
 
 /**

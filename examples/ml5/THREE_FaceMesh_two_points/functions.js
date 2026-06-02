@@ -419,7 +419,9 @@ function updateTextOverlay() {
   
   // Draw status at top
   let statusText = '';
-  if (!videoElement || !videoElement.srcObject) {
+  if (initErrorMessage) {
+    statusText = initErrorMessage;
+  } else if (!videoElement || !videoElement.srcObject) {
     statusText = 'Starting camera...';
   } else if (faces.length === 0) {
     statusText = 'Show your face to start tracking';

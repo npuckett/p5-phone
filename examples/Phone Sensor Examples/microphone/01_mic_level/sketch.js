@@ -22,6 +22,7 @@ function setup()
     
     // Create microphone input (global variable for library to use)
     mic = new p5.AudioIn();
+    muteMicMonitoring();
     
     textAlign(CENTER, CENTER);
     textSize(16);
@@ -40,6 +41,8 @@ function draw()
     // Check if microphone is available
     if (window.micEnabled) 
     {
+        muteMicMonitoring();
+
         // Get current microphone level (0.0 to 1.0) and apply multiplier
         micLevel = mic.getLevel() * micMultiplier;
         
@@ -114,4 +117,12 @@ function mouseReleased()
 {
     // Touch positions will be updated in draw() function
     return false;
+}
+
+function muteMicMonitoring()
+{
+    if (mic && mic.disconnect)
+    {
+        mic.disconnect();
+    }
 }

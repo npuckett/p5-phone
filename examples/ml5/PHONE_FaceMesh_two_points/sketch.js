@@ -95,7 +95,7 @@ function setup() {
   enableCameraTap();
   
   // Wait for camera to initialize, then create model and start detection
-  cam.onReady(() => {
+  cam.onReady(async () => {
     // Configure ML5 FaceMesh AFTER camera is ready
     let options = {
       maxFaces: 1,           // Only detect 1 face
@@ -105,9 +105,8 @@ function setup() {
     };
     
     // Create FaceMesh model and start detection when ready
-    faceMesh = ml5.faceMesh(options, () => {
-      faceMesh.detectStart(cam.videoElement, gotFaces);
-    });
+    faceMesh = await ml5.faceMesh(options);
+    faceMesh.detectStart(cam.videoElement, gotFaces);
   });
 }
 

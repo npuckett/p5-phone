@@ -94,7 +94,7 @@ function setup() {
   enableCameraTap();
   
   // Wait for camera to initialize, then create model and start detection
-  cam.onReady(() => {
+  cam.onReady(async () => {
     // Configure ML5 HandPose AFTER camera is ready
     let options = {
       maxHands: 1,           // Only detect 1 hand
@@ -103,9 +103,8 @@ function setup() {
     };
     
     // Create HandPose model and start detection when ready
-    handpose = ml5.handPose(options, () => {
-      handpose.detectStart(cam.videoElement, gotHands);
-    });
+    handpose = await ml5.handPose(options);
+    handpose.detectStart(cam.videoElement, gotHands);
   });
 }
 

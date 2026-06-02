@@ -200,16 +200,15 @@ function setup() {
   cam = createPhoneCamera('user', true, 'fitHeight');
   enableCameraTap();
   
-  cam.onReady(() => {
+  cam.onReady(async () => {
     let options = {
       maxFaces: 1,
       refineLandmarks: false,
       flipped: false
     };
     
-    faceMesh = ml5.faceMesh(options, () => {
-      faceMesh.detectStart(cam.videoElement, gotFaces);
-    });
+    faceMesh = await ml5.faceMesh(options);
+    faceMesh.detectStart(cam.videoElement, gotFaces);
   });
 }
 

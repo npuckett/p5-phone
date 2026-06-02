@@ -14,6 +14,9 @@ function setup()
     
     // Show debug panel FIRST
     showDebug();
+
+    mic = new p5.AudioIn();
+    muteMicMonitoring();
     
     // Enable microphone with tap permission
     enableMicTap();
@@ -32,8 +35,10 @@ function draw()
     // No visual feedback in minimal version
     
     // Check if microphone is enabled
-    if (mic && mic.enabled) 
+    if (window.micEnabled)
     {
+        muteMicMonitoring();
+
         // Get current microphone level (0.0 to 1.0)
         micLevel = mic.getLevel() * micMultiplier;
         
@@ -68,5 +73,13 @@ function draw()
     {
         debug("Waiting for microphone permissions...");
         debug("Tap the screen to enable microphone");
+    }
+}
+
+function muteMicMonitoring()
+{
+    if (mic && mic.disconnect)
+    {
+        mic.disconnect();
     }
 }
