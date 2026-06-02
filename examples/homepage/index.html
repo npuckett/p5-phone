@@ -1,1538 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>p5-phone - Mobile Hardware Access Library</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #ffffff;
-            color: #000000;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Header Image */
-        .header-image {
-            width: 100%;
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin-bottom: 1rem;
-            border: 2px solid #000;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            color: #666;
-            margin-bottom: 1rem;
-            font-weight: 400;
-        }
-
-        .credit {
-            font-size: 0.9rem;
-            color: #666;
-            font-style: italic;
-            margin-bottom: 2rem;
-        }
-
-        .credit a {
-            color: #000;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .credit a:hover {
-            text-decoration: underline;
-        }
-
-        /* Tab Navigation */
-        .tab-nav {
-            display: flex;
-            flex-wrap: wrap;
-            border-bottom: 2px solid #000;
-            margin-bottom: 2rem;
-            gap: 0;
-        }
-
-        .tab-button {
-            background: #fff;
-            border: 2px solid #000;
-            border-bottom: none;
-            padding: 1rem 2rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-            position: relative;
-            bottom: -2px;
-            margin-right: -2px;
-        }
-
-        .tab-button:hover {
-            background: #f0f0f0;
-        }
-
-        .tab-button.active {
-            background: #000;
-            color: #fff;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Methods Tab Styles */
-        .method-section {
-            margin-bottom: 3rem;
-        }
-
-        /* Table of Contents */
-        .toc {
-            background: #f5f5f5;
-            border: 2px solid #000;
-            padding: 1.5rem;
-            margin-bottom: 3rem;
-        }
-
-        .toc h3 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            margin-top: 0;
-        }
-
-        .toc h4 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            margin-top: 1.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #666;
-        }
-
-        .toc h4:first-of-type {
-            margin-top: 0;
-        }
-
-        .toc-section {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem 2rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .toc-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .toc ul {
-            list-style: none;
-            margin-left: 0;
-            display: contents;
-        }
-
-        .toc ul li {
-            margin-bottom: 0.5rem;
-        }
-
-        .toc a {
-            color: #000;
-            text-decoration: none;
-            font-weight: 500;
-            transition: padding-left 0.2s;
-            display: inline-block;
-        }
-
-        .toc a:hover {
-            text-decoration: underline;
-            padding-left: 0.5rem;
-        }
-
-        .method-section h2 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #000;
-        }
-
-        .method-section h3 {
-            font-size: 1.4rem;
-            font-weight: 600;
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .method-section h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-top: 1.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .method-section p {
-            margin-bottom: 1rem;
-        }
-
-        .method-section ul {
-            margin-left: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .method-section ul li {
-            margin-bottom: 0.5rem;
-        }
-
-        .method-section a {
-            color: #000;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .method-section a:hover {
-            text-decoration: underline;
-        }
-
-        .method-section a code {
-            background: #f5f5f5;
-            padding: 0.2rem 0.4rem;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            transition: background 0.2s, border-color 0.2s;
-        }
-
-        .method-section a:hover code {
-            background: #e0e0e0;
-            border-color: #000;
-        }
-
-        .method-section code {
-            background: #f5f5f5;
-            padding: 0.2rem 0.4rem;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        pre {
-            background: #f5f5f5;
-            border: 2px solid #000;
-            padding: 1.5rem;
-            overflow-x: auto;
-            margin-bottom: 1.5rem;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            line-height: 1.4;
-        }
-
-        pre code {
-            background: none;
-            border: none;
-            padding: 0;
-        }
-
-        /* Code box with copy button */
-        .code-box {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .code-box h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .code-box pre {
-            margin-bottom: 0;
-        }
-
-        .copy-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #000;
-            color: #fff;
-            border: 2px solid #000;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            transition: background 0.2s, color 0.2s;
-        }
-
-        .copy-button:hover {
-            background: #fff;
-            color: #000;
-        }
-
-        .copy-button.copied {
-            background: #4CAF50;
-            border-color: #4CAF50;
-        }
-
-        table {
-            width: fit-content;
-            max-width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 1.5rem;
-            border: 2px solid #000;
-            overflow-x: auto;
-            display: block;
-        }
-
-        table th,
-        table td {
-            border: 1px solid #000;
-            padding: 0.75rem;
-            text-align: left;
-        }
-
-        table th {
-            background: #000;
-            color: #fff;
-            font-weight: 600;
-        }
-
-        table td code {
-            background: #f5f5f5;
-            padding: 0.2rem 0.4rem;
-            border: 1px solid #ddd;
-        }
-
-        /* Examples Tab Styles */
-        .section {
-            margin-bottom: 4rem;
-        }
-
-        .section-title {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #000;
-        }
-
-        .examples-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 2rem;
-        }
-
-        .example-card {
-            border: 2px solid #000;
-            padding: 1.5rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            background: #fff;
-        }
-
-        .example-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 8px 8px 0 #000;
-        }
-
-        .example-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .example-description {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
-
-        .example-link {
-            display: inline-block;
-            color: #000;
-            text-decoration: none;
-            font-weight: 600;
-            padding: 0.5rem 1rem;
-            border: 2px solid #000;
-            transition: background 0.2s, color 0.2s;
-            margin-bottom: 1rem;
-            margin-right: 0.5rem;
-        }
-
-        .example-link:hover {
-            background: #000;
-            color: #fff;
-        }
-
-        .github-link {
-            display: inline-block;
-            color: #666;
-            text-decoration: none;
-            font-size: 0.9rem;
-            padding: 0.5rem 1rem;
-            border: 1px solid #666;
-            transition: background 0.2s, color 0.2s;
-            margin-bottom: 1rem;
-            margin-right: 0.5rem;
-        }
-
-        .github-link:hover {
-            background: #666;
-            color: #fff;
-        }
-
-        .links-group {
-            margin-bottom: 1rem;
-        }
-
-        .link-label {
-            font-size: 0.75rem;
-            color: #999;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 0.5rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .qr-code {
-            margin-top: 1rem;
-            text-align: center;
-        }
-
-        .qr-code canvas {
-            border: 2px solid #000;
-            padding: 10px;
-            background: white;
-        }
-
-        footer {
-            margin-top: 4rem;
-            padding-top: 2rem;
-            border-top: 2px solid #000;
-            text-align: center;
-            color: #666;
-        }
-
-        footer a {
-            color: #000;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
-
-            .tab-button {
-                padding: 0.75rem 1rem;
-                font-size: 1rem;
-            }
-
-            .examples-grid {
-                grid-template-columns: 1fr;
-            }
-
-            pre {
-                font-size: 0.8rem;
-                padding: 1rem;
-            }
-
-            table {
-                font-size: 0.85rem;
-            }
-
-            table th,
-            table td {
-                padding: 0.5rem;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5-phone</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="scripts/api-data.js" defer></script>
+  <script src="scripts/examples-data.js" defer></script>
+  <script src="scripts/render.js" defer></script>
+  <script src="scripts/navigation.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <img src="../../p5-phone.png" alt="p5-phone library illustration" class="header-image">
-        <p class="credit">Illustration by <a href="https://angelatorchio.com/" target="_blank">Angela Torchio</a></p>
+  <a class="skip-link" href="#main-content">Skip to content</a>
 
-        <!-- Tab Navigation -->
-        <div class="tab-nav">
-            <button class="tab-button active" onclick="openTab('methods')">Guide</button>
-            <button class="tab-button" onclick="openTab('examples')">Examples</button>
+  <header class="mobile-header">
+    <a class="brand compact" href="#start" aria-label="p5-phone docs home">
+      <span class="brand-title"><span>P5</span><span>Phone</span></span>
+    </a>
+    <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-sidebar" data-menu-button>Menu</button>
+  </header>
+
+  <aside class="sidebar" id="site-sidebar" data-sidebar>
+    <div class="sidebar-inner">
+      <a class="brand" href="#start" aria-label="p5-phone docs home">
+        <span class="brand-title"><span>P5</span><span>Phone</span></span>
+      </a>
+      <p class="sidebar-summary">Mobile hardware access for p5.js sketches.</p>
+      <nav class="sidebar-nav" aria-label="Docs sections">
+        <a href="#start">Start</a>
+        <a href="#quick-start">Quick Start</a>
+        <div class="nav-group">
+          <a href="#api">API</a>
+          <div class="nav-subheads" aria-label="API subsections">
+            <a href="#api-core">Core Setup</a>
+            <a href="#api-motion">Motion Sensors</a>
+            <a href="#api-audio">Audio</a>
+            <a href="#api-camera">Camera</a>
+            <a href="#api-nfc">NFC</a>
+            <a href="#api-vibration">Vibration</a>
+            <a href="#api-debug">Debug</a>
+            <a href="#api-status">Status</a>
+          </div>
         </div>
+        <div class="nav-group">
+          <a href="#examples">Examples</a>
+          <div class="nav-subheads" aria-label="Example categories">
+            <a href="#examples-start">Start</a>
+            <a href="#examples-input">Input</a>
+            <a class="nav-subitem" href="#examples-input-touch">Touch</a>
+            <a class="nav-subitem" href="#examples-input-movement">Movement</a>
+            <a class="nav-subitem" href="#examples-input-microphone">Microphone</a>
+            <a class="nav-subitem" href="#examples-input-speech">Speech</a>
+            <a class="nav-subitem" href="#examples-input-nfc">NFC</a>
+            <a class="nav-subitem" href="#examples-input-camera">Camera</a>
+            <a href="#examples-output">Output</a>
+            <a class="nav-subitem" href="#examples-output-sound">Sound</a>
+            <a class="nav-subitem" href="#examples-output-vibration">Vibration</a>
+            <a href="#examples-reference">Reference</a>
+            <a class="nav-subitem" href="#examples-reference-ui-styles">UI Styles</a>
+            <a class="nav-subitem" href="#examples-reference-phone-and-gif">Phone and GIF</a>
+            <a class="nav-subitem" href="#examples-reference-ux-compare">UX Compare</a>
+          </div>
+        </div>
+        <a href="#compatibility">Compatibility</a>
+      </nav>
+      <div class="sidebar-actions">
+        <a href="../homepage-v1/">Previous Docs</a>
+        <a href="../../README.md">README</a>
+        <a href="https://github.com/npuckett/p5-phone" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+    </div>
+  </aside>
 
-        <!-- Guide Tab Content -->
-        <div id="methods" class="tab-content active">
-            <!-- Table of Contents -->
-            <div class="toc">
-                <h4>Getting Started</h4>
-                <div class="toc-section">
-                    <ul>
-                        <li><a href="#cdn">Linking to the Library</a></li>
-                        <li><a href="#basic-setup">Basic Setup</a></li>
-                    </ul>
-                </div>
+  <div class="backdrop" data-backdrop></div>
 
-                <h4>API</h4>
-                <div class="toc-section">
-                    <ul>
-                        <li><a href="#lock-gestures">lockGestures()</a></li>
-                        <li><a href="#motion-sensor">Motion Sensor Activation</a></li>
-                        <li><a href="#microphone">Microphone Activation</a></li>
-                        <li><a href="#sound-activation">Sound Activation</a></li>
-                        <li><a href="#speech-recognition">Speech Recognition</a></li>
-                        <li><a href="#vibration">Vibration Motor (Android)</a></li>
-                        <li><a href="#camera-activation">Camera/Video Functions</a></li>
-                        <li><a href="#camera-ml5-methods">PhoneCamera ML5 Methods</a></li>
-                        <li><a href="#camera-properties">PhoneCamera Properties</a></li>
-                        <li><a href="#debug-system">Debug System</a></li>
-                    </ul>
-                </div>
-            </div>
+  <main id="main-content" class="main-content">
+    <section id="start" class="hero-section content-section">
+      <figure class="hero-media">
+        <img src="../../p5-phone.png" alt="p5-phone library illustration" class="hero-image">
+        <figcaption class="image-credit">Illustration by <a href="https://angelatorchio.com/" target="_blank" rel="noreferrer">Angela Torchio</a></figcaption>
+      </figure>
+      <div class="signal-grid" aria-label="Docs priorities">
+        <div>
+          <strong>Static</strong>
+          <span>No framework, no build step, GitHub Pages friendly.</span>
+        </div>
+        <div>
+          <strong>Phone-first</strong>
+          <span>Every runnable example keeps a QR code.</span>
+        </div>
+        <div>
+          <strong>Current API</strong>
+          <span>Reference data is checked against <code>src/p5-phone.js</code>.</span>
+        </div>
+      </div>
+    </section>
 
-            <div class="method-section">
-                <p style="margin-bottom: 2rem;"><strong>GitHub Repository:</strong> <a href="https://github.com/npuckett/p5-phone" target="_blank">https://github.com/npuckett/p5-phone</a></p>
-            </div>
-
-            <div class="method-section" id="overview">
-                <h2>Overview</h2>
-                <p>P5-phone bridges the gap between the existing software functions inside p5.js and the realities of contemporary mobile browsers to enable phones to be used for experimental interactions. This is done both through addition and subtraction. Firstly, it streamlines gaining access to phone sensors so that their data can be used inside p5. Secondly, it disables default gestures so that you can create your own.</p>
-                <ul>
-                    <li>Simplifies accessing phone hardware from the browser (accelerometers, gyroscopes, microphone, vibration motor)</li>
-                    <li>Simplifies disabling default phone gestures (Zoom, refresh, back, etc)</li>
-                    <li>Simplifies enabling audio output</li>
-                    <li>Simplifies using an on-screen console to display errors and debug info</li>
-                </ul>
-            </div>
-
-            <div class="method-section" id="cdn">
-                <h2>Linking to the Library</h2>
-                
-                <div class="code-box">
-                    <h4>Minified version (recommended)</h4>
-                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
-                    <button class="copy-button" onclick="copyCode(this, '&lt;script src=&quot;https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js&quot;&gt;&lt;/script&gt;')">Copy</button>
-                </div>
-
-                <div class="code-box">
-                    <h4>Development version (larger, with comments)</h4>
-                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.js"&gt;&lt;/script&gt;</code></pre>
-                    <button class="copy-button" onclick="copyCode(this, '&lt;script src=&quot;https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.js&quot;&gt;&lt;/script&gt;')">Copy</button>
-                </div>
-            </div>
-
-            <div class="method-section" id="browser-compatibility">
-                <h2>Browser Compatibility</h2>
-                <ul>
-                    <li>iOS 13+ (Safari)</li>
-                    <li>Android 7+ (Chrome)</li>
-                    <li>Chrome 80+</li>
-                    <li>Safari 13+</li>
-                    <li>Firefox 75+</li>
-                </ul>
-            </div>
-
-            <div class="method-section" id="p5js-commands">
-                <h2>Accessing Phone Hardware in p5.js</h2>
-                <p>p5.js has several existing commands that are specific to phone hardware. However, it requires extra steps to use them effectively. To use the Touch based commands, you need to disable the default gestures on your phone browser. For Motion and Microphone date you need to provide specific permissions for your browser to read the data.</p>
-                
-                <h3>Touch/Pointer Events</h3>
-                <ul>
-                    <li><a href="https://p5js.org/reference/p5/mousePressed/" target="_blank"><code>mousePressed()</code></a> - Called when a press/touch begins (works in both p5.js 1.x and 2.0)</li>
-                    <li><a href="https://p5js.org/reference/p5/mouseReleased/" target="_blank"><code>mouseReleased()</code></a> - Called when a press/touch ends (works in both p5.js 1.x and 2.0)</li>
-                </ul>
-
-                <h3>Device Motion & Orientation</h3>
-                <ul>
-                    <li><a href="https://p5js.org/reference/p5/rotationX/" target="_blank"><code>rotationX</code></a> - Device tilt forward/backward</li>
-                    <li><a href="https://p5js.org/reference/p5/rotationY/" target="_blank"><code>rotationY</code></a> - Device tilt left/right</li>
-                    <li><a href="https://p5js.org/reference/p5/rotationZ/" target="_blank"><code>rotationZ</code></a> - Device rotation around screen</li>
-                    <li><a href="https://p5js.org/reference/p5/accelerationX/" target="_blank"><code>accelerationX</code></a> - Acceleration left/right</li>
-                    <li><a href="https://p5js.org/reference/p5/accelerationY/" target="_blank"><code>accelerationY</code></a> - Acceleration up/down</li>
-                    <li><a href="https://p5js.org/reference/p5/accelerationZ/" target="_blank"><code>accelerationZ</code></a> - Acceleration forward/back</li>
-                    <li><a href="https://p5js.org/reference/p5/deviceShaken/" target="_blank"><code>deviceShaken()</code></a> - Shake detection event</li>
-                    <li><a href="https://p5js.org/reference/p5/deviceMoved/" target="_blank"><code>deviceMoved()</code></a> - Movement detection event</li>
-                    <li><a href="https://p5js.org/reference/p5/setShakeThreshold/" target="_blank"><code>setShakeThreshold()</code></a> - Set shake detection sensitivity</li>
-                    <li><a href="https://p5js.org/reference/p5/setMoveThreshold/" target="_blank"><code>setMoveThreshold()</code></a> - Set movement detection sensitivity</li>
-                </ul>
-
-                <h3>Audio Input (requires p5.sound)</h3>
-                <ul>
-                    <li><a href="https://p5js.org/reference/p5.sound/p5.AudioIn/" target="_blank"><code>p5.AudioIn()</code></a> - Audio input object</li>
-                    <li><a href="https://p5js.org/reference/p5.sound/p5.AudioIn/getLevel/" target="_blank"><code>getLevel()</code></a> - Current audio input level</li>
-                </ul>
-            </div>
-
-            <div class="method-section" id="basic-setup">
-                <h2>Basic Setup</h2>
-                
-                <h3>Index HTML</h3>
-                <pre><code>&lt;!DOCTYPE html&gt;
-&lt;html lang="en"&gt;
-&lt;head&gt;
-  &lt;meta charset="UTF-8"&gt;
-  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
-  &lt;title&gt;Mobile p5.js App&lt;/title&gt;
-  
-  &lt;style&gt;
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-  &lt;/style&gt;
-  
-    &lt;script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"&gt;&lt;/script&gt;
-    &lt;script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"&gt;&lt;/script&gt;
-  &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;
-&lt;/head&gt;
-&lt;body&gt;
-  &lt;script src="sketch.js"&gt;&lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;</code></pre>
-
-                <h3>sketch.js</h3>
-                <pre><code>let mic;
-
-function setup() {
-  // Show debug panel FIRST to catch setup errors
-  showDebug();
-  
+    <section id="quick-start" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Start</span>
+        <h2>Quick Start</h2>
+        <p>Use p5.js, load p5-phone, lock gestures, then enable the capability your sketch needs from a user tap.</p>
+      </div>
+      <div class="quickstart-snippets">
+        <article>
+          <h3>Designed for p5.js 2.x</h3>
+          <pre><code>&lt;script
+  src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;
+&lt;/script&gt;</code></pre>
+        </article>
+      </div>
+      <pre><code>function setup() {
   createCanvas(windowWidth, windowHeight);
-  
-  // Lock mobile gestures to prevent browser interference
   lockGestures();
-  
-  // Enable motion sensors with tap-to-start
   enableGyroTap('Tap to enable motion sensors');
-  
-  // Enable microphone with tap-to-start
-  mic = new p5.AudioIn();
-  enableMicTap('Tap to enable microphone');
 }
 
 function draw() {
-  background(220);
-  
-  // Always check status before using hardware features
-  if (window.sensorsEnabled) {
-    // Use device rotation and acceleration
-    fill(255, 0, 0);
-    circle(width/2 + rotationY * 5, height/2 + rotationX * 5, 50);
-  }
-  
-  if (window.micEnabled) {
-    // Use microphone input
-    let level = mic.getLevel();
-    fill(0, 255, 0);
-    rect(10, 10, level * 200, 20);
-  }
-}
+  background(245);
+  textAlign(CENTER, CENTER);
 
-// Prevent default touch behavior
-function mousePressed() {
+  if (window.sensorsEnabled) {
+    circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
+  } else {
+    text('Tap to enable motion sensors', width / 2, height / 2);
+  }
+}</code></pre>
+
+      <div class="note-band">
+        <strong>Permission pattern:</strong> put code that uses phone hardware inside a positive enabled check. Write sketches as <code>if (window.sensorsEnabled) { ... }</code>, <code>if (window.micEnabled) { ... }</code>, or the matching status flag for the capability you enabled.
+      </div>
+
+      <div class="starter-grid" aria-label="Positive permission examples">
+        <article class="starter-card">
+          <h3>Motion Sensors</h3>
+          <pre><code>if (window.sensorsEnabled) {
+  circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
+}</code></pre>
+        </article>
+
+        <article class="starter-card">
+          <h3>Microphone</h3>
+          <pre><code>if (window.micEnabled) {
+  let level = mic.getLevel();
+  circle(width / 2, height / 2, level * 500);
+}</code></pre>
+        </article>
+
+        <article class="starter-card">
+          <h3>Sound Output</h3>
+          <pre><code>function mousePressed() {
+  if (window.soundEnabled) {
+    mySound.play();
+  }
   return false;
 }</code></pre>
-            </div>
+        </article>
 
-            <div class="method-section" id="api-reference">
-                <h2>API Reference</h2>
-                
-                <h3>Core Functions</h3>
-                
-                <h4 id="lock-gestures">Block Default Gestures</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Function</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>lockGestures()</code></td>
-                            <td>Prevent browser gestures (call in setup()). Blocks: pinch-to-zoom, pull-to-refresh, swipe navigation, long-press context menus, text selection, double-tap zoom</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <article class="starter-card">
+          <h3>NFC</h3>
+          <pre><code>if (window.nfcEnabled) {
+  if (isNfcTag('shirt')) {
+    drawShirtEffect();
+  }
+}</code></pre>
+        </article>
 
-                <h4 id="motion-sensor">Motion Sensor Activation</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Function</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>enableGyroTap(message)</code></td>
-                            <td>Tap anywhere to enable motion sensors. Once enabled (when window.sensorsEnabled is true), provides access to: <code>rotationX</code>, <code>rotationY</code>, <code>rotationZ</code>, <code>accelerationX</code>, <code>accelerationY</code>, <code>accelerationZ</code>, <code>deviceShaken</code>, <code>deviceMoved</code></td>
-                        </tr>
-                        <tr>
-                            <td><code>enableGyroButton(text)</code></td>
-                            <td>Button-based sensor activation. Once enabled (when window.sensorsEnabled is true), provides access to: <code>rotationX</code>, <code>rotationY</code>, <code>rotationZ</code>, <code>accelerationX</code>, <code>accelerationY</code>, <code>accelerationZ</code>, <code>deviceShaken</code>, <code>deviceMoved</code></td>
-                        </tr>
-                    </tbody>
-                </table>
+        <article class="starter-card">
+          <h3>Vibration</h3>
+          <pre><code>function mousePressed() {
+  if (window.vibrationEnabled) {
+    vibrate(50);
+  }
+  return false;
+}</code></pre>
+        </article>
 
-                <h4 id="microphone">Microphone Activation</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Function</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>enableMicTap(message)</code></td>
-                            <td>Tap anywhere to enable microphone (requires p5.sound library). Once enabled (when window.micEnabled is true), use with <code>mic.getLevel()</code> and other p5.AudioIn methods</td>
-                        </tr>
-                        <tr>
-                            <td><code>enableMicButton(text)</code></td>
-                            <td>Button-based microphone activation (requires p5.sound library). Once enabled (when window.micEnabled is true), use with <code>mic.getLevel()</code> and other p5.AudioIn methods</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <article class="starter-card">
+          <h3>Camera</h3>
+          <pre><code>if (cam.ready) {
+  cam.draw();
+}</code></pre>
+        </article>
+      </div>
 
-                <h4 id="sound-activation">Sound Output Activation</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Function</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>enableSoundTap(message)</code></td>
-                            <td>Tap anywhere to enable sound playback (no microphone input)</td>
-                        </tr>
-                        <tr>
-                            <td><code>enableSoundButton(text)</code></td>
-                            <td>Button-based sound activation (no microphone input)</td>
-                        </tr>
-                    </tbody>
-                </table>
+      <div class="note-band">
+        <strong>p5.js 2.0 note:</strong> use <code>mousePressed()</code>, <code>mouseDragged()</code>, and <code>mouseReleased()</code> for touch or pointer input. The older <code>touchStarted()</code>, <code>touchMoved()</code>, and <code>touchEnded()</code> callbacks are p5.js 1.x only.
+      </div>
+    </section>
 
-                <h4 id="speech-recognition">Speech Recognition</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Function</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>enableSpeechTap(message)</code></td>
-                            <td>Enable speech recognition support (requires <a href="https://github.com/IDMNYU/p5.js-speech" target="_blank">p5.js-speech library</a>). Activates audio context without creating p5.AudioIn to avoid microphone hardware conflicts on mobile devices</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <section id="api" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Reference</span>
+        <h2>API</h2>
+        <p>Grouped by the job you are trying to do. The permission table keeps the five UI styles visible, and each category lists the p5 APIs that become practical after p5-phone handles the mobile browser setup.</p>
+      </div>
+      <div id="permission-matrix" class="matrix-wrap" aria-live="polite"></div>
+      <div id="api-sections" class="api-sections" aria-live="polite"></div>
+    </section>
 
-                <h4 id="vibration">Vibration Motor (Android Only)</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Function</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>enableVibrationTap(message)</code></td>
-                            <td>Tap anywhere to enable vibration motor (Android only - not supported on iOS)</td>
-                        </tr>
-                        <tr>
-                            <td><code>enableVibrationButton(text)</code></td>
-                            <td>Button-based vibration activation (Android only - not supported on iOS)</td>
-                        </tr>
-                        <tr>
-                            <td><code>vibrate(pattern)</code></td>
-                            <td>Trigger vibration with duration (ms) or pattern array. Example: <code>vibrate(50)</code> or <code>vibrate([100, 50, 100])</code></td>
-                        </tr>
-                        <tr>
-                            <td><code>stopVibration()</code></td>
-                            <td>Stop any ongoing vibration</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <section id="examples" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Examples</span>
+        <h2>Example Catalog</h2>
+        <p>Reordered around starter sketches, input, output, ML5, and lower-priority comparison material. Each card has room for a full example, minimal version, Web Editor link, source link, and QR code.</p>
+      </div>
+      <div class="filter-panel" aria-label="Example filters">
+        <label>Search <input id="example-search" type="search" placeholder="motion, NFC, face, sound"></label>
+        <label>Type <select id="category-filter"></select></label>
+        <label>Level <select id="level-filter"></select></label>
+        <label>p5 version <select id="version-filter"></select></label>
+      </div>
+      <div class="catalog-status" id="catalog-status"></div>
+      <div id="example-results" class="example-results" aria-live="polite"></div>
+    </section>
 
-                <h4 id="camera-activation">Camera/Video Functions</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Function</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>createPhoneCamera(mode, mirror, displayMode)</code></td>
-                            <td>Create a camera optimized for phone use. Returns a PhoneCamera instance with automatic coordinate mapping for ML5 models (BodyPose, FaceMesh, HandPose, ObjectDetection). Parameters: <code>mode</code> ('user' for front camera, 'environment' for back camera), <code>mirror</code> (boolean, flip horizontally), <code>displayMode</code> ('fitHeight', 'fitWidth', 'cover', 'contain', or 'fixed'). Use with ML5 models for automatic coordinate mapping between video and canvas space.</td>
-                        </tr>
-                        <tr>
-                            <td><code>enableCameraTap(message)</code></td>
-                            <td>Tap anywhere to enable camera permissions. Automatically initializes all PhoneCamera instances. Required for iOS camera access.</td>
-                        </tr>
-                        <tr>
-                            <td><code>enableCameraButton(text)</code></td>
-                            <td>Button-based camera activation. Creates a button that enables camera permissions when clicked.</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <section id="compatibility" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Support</span>
+        <h2>Compatibility</h2>
+        <p>Plan mobile sketches by platform first. Browser permissions and hardware support matter more than the p5.js version for most phone behavior.</p>
+      </div>
 
-                <h4 id="camera-ml5-methods">PhoneCamera ML5 Integration Methods</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Method</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>cam.mapPoint(x, y)</code></td>
-                            <td>Map a simple point from video coordinates to canvas display coordinates. Handles scaling and mirroring automatically. Returns <code>{x, y}</code> object. Use for drawing custom points on top of scaled video.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.mapKeypoint(keypoint)</code></td>
-                            <td>Map an ML5 keypoint object to display coordinates. Handles scaling and mirroring automatically. Preserves all keypoint properties (z, confidence, etc.). Returns mapped keypoint object. Use with ML5 BodyPose, FaceMesh, or HandPose keypoints.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.mapKeypoints(keypoints)</code></td>
-                            <td>Map an array of ML5 keypoints to display coordinates. Handles scaling and mirroring automatically. Returns array of mapped keypoints. Use when processing multiple keypoints at once.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.mapBox(box)</code></td>
-                            <td>Map an ML5 bounding box or object detection result to display coordinates. Handles scaling and mirroring automatically. Preserves label, confidence, and other detection properties.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.mapBoxes(boxes)</code></td>
-                            <td>Map an array of ML5 bounding boxes or object detection results to display coordinates. Use with ObjectDetection results before drawing rectangles.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.onReady(callback)</code></td>
-                            <td>Set a callback function to run when the video is fully ready for ML5 detection. Use this before initializing ML5 models to ensure the video element has loaded. Example: <code>cam.onReady(() => { /* create ML5 model here */ })</code></td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.getDimensions()</code></td>
-                            <td>Get dimension information for the current display mode. Returns <code>{x, y, width, height, scaleX, scaleY}</code> object. Use for custom coordinate calculations or understanding the video layout.</td>
-                        </tr>
-                    </tbody>
-                </table>
+      <div class="compat-grid">
+        <article class="compat-panel">
+          <h3>iOS Safari</h3>
+          <ul>
+            <li>Motion sensors, microphone, sound, speech, and camera must start from a user tap or button.</li>
+            <li>Motion permission uses Apple-specific sensor prompts, so the enable helpers are important.</li>
+            <li>Web NFC and vibration are not available in Safari on iPhone.</li>
+            <li>Use <code>mousePressed()</code>, <code>mouseDragged()</code>, and <code>mouseReleased()</code> for touch-compatible sketches.</li>
+          </ul>
+        </article>
 
-                <h4 id="camera-properties">PhoneCamera Properties</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Property</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>cam.videoElement</code></td>
-                            <td>Read-only. Returns the native HTML video element for use with ML5 libraries. Pass this to ML5 model constructors.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.ready</code></td>
-                            <td>Read-only. Boolean indicating if camera is ready for use.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.width</code></td>
-                            <td>Read-only. Current display width of the video on canvas.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.height</code></td>
-                            <td>Read-only. Current display height of the video on canvas.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.active</code></td>
-                            <td>Read-write. Camera facing mode: 'user' (front) or 'environment' (back). Changing this switches the camera.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.mirror</code></td>
-                            <td>Read-write. Boolean to control horizontal mirroring of the video.</td>
-                        </tr>
-                        <tr>
-                            <td><code>cam.mode</code></td>
-                            <td>Read-write. Display mode: 'fitWidth', 'fitHeight', 'cover', 'contain', or 'fixed'.</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <article class="compat-panel">
+          <h3>Android Chrome</h3>
+          <ul>
+            <li>Motion sensors usually work without the iOS-style sensor permission prompt.</li>
+            <li>Microphone, sound, speech, and camera still need a user gesture and browser permission.</li>
+            <li>Web NFC is Android Chrome only and requires HTTPS with NDEF-formatted tags.</li>
+            <li>Vibration is available on many Android devices through <code>vibrate()</code>.</li>
+          </ul>
+        </article>
+      </div>
 
-                <h4>Status Variables</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Variable</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>window.sensorsEnabled</code></td>
-                            <td>Boolean: true when motion sensors are active</td>
-                        </tr>
-                        <tr>
-                            <td><code>window.micEnabled</code></td>
-                            <td>Boolean: true when microphone is active</td>
-                        </tr>
-                        <tr>
-                            <td><code>window.soundEnabled</code></td>
-                            <td>Boolean: true when sound output is active</td>
-                        </tr>
-                        <tr>
-                            <td><code>window.vibrationEnabled</code></td>
-                            <td>Boolean: true when vibration is available (Android only)</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h4 id="debug-system">Debug System</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Function</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>showDebug()</code></td>
-                            <td>Show on-screen debug panel</td>
-                        </tr>
-                        <tr>
-                            <td><code>hideDebug()</code></td>
-                            <td>Hide debug panel</td>
-                        </tr>
-                        <tr>
-                            <td><code>toggleDebug()</code></td>
-                            <td>Toggle panel visibility</td>
-                        </tr>
-                        <tr>
-                            <td><code>debug(...args)</code></td>
-                            <td>Console.log with on-screen display</td>
-                        </tr>
-                        <tr>
-                            <td><code>debugError(...args)</code></td>
-                            <td>Display errors with red styling</td>
-                        </tr>
-                        <tr>
-                            <td><code>debugWarn(...args)</code></td>
-                            <td>Display warnings with yellow styling</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Examples Tab Content -->
-        <div id="examples" class="tab-content">
-            <!-- Blank Template -->
-            <div class="section">
-                <h2 class="section-title">Getting Started</h2>
-                <div class="examples-grid">
-                    <div class="example-card">
-                        <div class="example-title">Blank Template</div>
-                        <p class="example-description">Basic setup from the README - a starting point for your own projects</p>
-                        <a href="https://editor.p5js.org/creationcomputation/sketches/R-c_HpeUg" target="_blank" class="example-link">Web Editor →</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/blankTemplate" target="_blank" class="github-link">View Code</a>
-                    </div>
-                </div>
-            </div>
-
-        <!-- Touch Examples -->
-        <div class="section">
-            <h2 class="section-title">Touch Interactions</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">01. Basic Touch</div>
-                    <p class="example-description">Detect touch events and track duration</p>
-                    <a href="../Phone Sensor Examples/touch/01_touch_basic/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/zIRMsYKRN" target="_blank" class="example-link">Web Editor →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/touch/01_touch_basic" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/touch/01_touch_basic" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-touch-01"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">02. Touch Zones</div>
-                    <p class="example-description">Screen divided into 4 interactive zones</p>
-                    <a href="../Phone Sensor Examples/touch/02_touch_zones/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/PkhKKZWMC" target="_blank" class="example-link">Web Editor →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/touch/02_touch_zones" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/touch/02_touch_zones" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-touch-02"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">03. Touch Count</div>
-                    <p class="example-description">Count simultaneous touch points</p>
-                    <a href="../Phone Sensor Examples/touch/03_touch_count/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/g-9HeBb8B" target="_blank" class="example-link">Web Editor →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/touch/03_touch_count" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/touch/03_touch_count" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-touch-03"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">04. Touch Distance</div>
-                    <p class="example-description">Measure distance between two touches</p>
-                    <a href="../Phone Sensor Examples/touch/04_touch_distance/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/s6icb8y_o" target="_blank" class="example-link">Web Editor →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/touch/04_touch_distance" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/touch/04_touch_distance" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-touch-04"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">05. Touch Angle</div>
-                    <p class="example-description">Calculate angle between two touch points</p>
-                    <a href="../Phone Sensor Examples/touch/05_touch_angle/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/IPYIo8_FV" target="_blank" class="example-link">Web Editor →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/touch/05_touch_angle" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/touch/05_touch_angle" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-touch-05"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Movement Examples -->
-        <div class="section">
-            <h2 class="section-title">Device Motion</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">01. Orientation</div>
-                    <p class="example-description">Basic device orientation detection</p>
-                    <a href="../Phone Sensor Examples/movement/01_orientation_basic/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/Sf_um9wYw" target="_blank" class="example-link">Web Editor →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/movement/01_orientation_basic" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/movement/01_orientation_basic" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-movement-01"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">02. Rotational Velocity</div>
-                    <p class="example-description">Calculate rotation speed using sensors</p>
-                    <a href="../Phone Sensor Examples/movement/02_rotational_velocity/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/IDSid9rOX" target="_blank" class="example-link">Web Editor →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/movement/02_rotational_velocity" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/movement/02_rotational_velocity" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-movement-02"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">03. Acceleration</div>
-                    <p class="example-description">Display device acceleration data</p>
-                    <a href="../Phone Sensor Examples/movement/03_acceleration/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/xaxOYgK9q" target="_blank" class="example-link">Web Editor →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/movement/03_acceleration" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/movement/03_acceleration" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-movement-03"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">04. Device Shaken</div>
-                    <p class="example-description">Count shakes with deviceShaken() and setShakeThreshold()</p>
-                    <a href="../Phone Sensor Examples/movement/04_device_shaken/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/movement/04_device_shaken" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/movement/04_device_shaken" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-movement-04"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">05. Device Moved</div>
-                    <p class="example-description">Respond to movement with deviceMoved() and setMoveThreshold()</p>
-                    <a href="../Phone Sensor Examples/movement/05_device_moved/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/movement/05_device_moved" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/movement/05_device_moved" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-movement-05"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">06. Device Orientation</div>
-                    <p class="example-description">Detect portrait and landscape with deviceOrientation</p>
-                    <a href="../Phone Sensor Examples/movement/06_device_orientation/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/movement/06_device_orientation" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/movement/06_device_orientation" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-movement-06"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Microphone Examples -->
-        <div class="section">
-            <h2 class="section-title">Audio Input</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">01. Microphone Level</div>
-                    <p class="example-description">Visualize audio input with threshold</p>
-                    <a href="../Phone Sensor Examples/microphone/01_mic_level/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://editor.p5js.org/creationcomputation/sketches/ySuEk7s6-" target="_blank" class="example-link">Web Editor →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/microphone/01_mic_level" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/microphone/01_mic_level" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-mic-01"></div>
-                </div>
-                <div class="example-card">
-                    <div class="example-title">02. Speech Recognition</div>
-                    <p class="example-description">Touch-to-talk speech recognition using Web Speech API</p>
-                    <a href="../Phone Sensor Examples/microphone/02_speech_recognition/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/microphone/02_speech_recognition" target="_blank" class="github-link">Full Version</a>
-                    </div>
-                    <div class="qr-code" id="qr-mic-02"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sound Playback Examples -->
-        <div class="section">
-            <h2 class="section-title">Audio Playback</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">01. Sound Basic</div>
-                    <p class="example-description">Play/pause audio with touch control</p>
-                    <a href="../Phone Sensor Examples/sound/01_dual_audio/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/sound/01_dual_audio" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/sound/01_sound_basic" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-sound-01"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">02. Volume by Touches</div>
-                    <p class="example-description">Control audio volume with multiple touches</p>
-                    <a href="../Phone Sensor Examples/sound/02_volume_touches/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/sound/02_volume_touches" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/sound/02_sound_amplitude" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-sound-02"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">03. Motion Synth</div>
-                    <p class="example-description">Generate sound from phone tilt and movement</p>
-                    <a href="../Phone Sensor Examples/sound/03_motion_synth/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/sound/03_motion_synth" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/sound/03_motion_synth" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-sound-03"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Vibration Examples -->
-        <div class="section">
-            <h2 class="section-title">Vibration Motor (Android Only)</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">01. Haptic Feedback</div>
-                    <p class="example-description">Touch zones with different vibration patterns (Android only)</p>
-                    <a href="../Phone Sensor Examples/vibration/01_haptic_feedback/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/vibration/01_haptic_feedback" target="_blank" class="github-link">Full Version</a>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/vibration/01_haptic_feedback" target="_blank" class="github-link">Minimal</a>
-                    </div>
-                    <div class="qr-code" id="qr-vibration-01"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- NFC Examples -->
-        <div class="section">
-            <h2 class="section-title">NFC Tags (Android Only)</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">01. Tag Identifier</div>
-                    <p class="example-description">Scan NFC tags, name them, and copy their IDs into sketches</p>
-                    <a href="../Phone Sensor Examples/nfc/01_nfc_read/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/nfc/01_nfc_read" target="_blank" class="github-link">Full Version</a>
-                    </div>
-                    <div class="qr-code" id="qr-nfc-01"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">02. Two Tag Effects</div>
-                    <p class="example-description">Use shirt and table tag aliases in simple if statements</p>
-                    <a href="../Phone Sensor Examples/nfc/02_two_tag_effects/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <div class="links-group">
-                        <div class="link-label">View on GitHub:</div>
-                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/nfc/02_two_tag_effects" target="_blank" class="github-link">Full Version</a>
-                    </div>
-                    <div class="qr-code" id="qr-nfc-02"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ML5 Machine Learning Examples -->
-        <div class="section">
-            <h2 class="section-title">ML5 Machine Learning Examples</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">Gaze Detector Class</div>
-                    <p class="example-description">Eye gaze tracking with ml5.js FaceMesh</p>
-                    <a href="../ml5/Gaze_detector_class/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/Gaze_detector_class" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ml5-gaze"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">PHONE BodyPose Two Points</div>
-                    <p class="example-description">Body tracking with phone sensors and ml5.js BodyPose</p>
-                    <a href="../ml5/PHONE_BodyPose_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/PHONE_BodyPose_two_points" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ml5-phone-bodypose"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">PHONE FaceMesh Two Points</div>
-                    <p class="example-description">Face tracking with phone sensors and ml5.js FaceMesh</p>
-                    <a href="../ml5/PHONE_FaceMesh_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/PHONE_FaceMesh_two_points" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ml5-phone-facemesh"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">PHONE HandPose Two Points</div>
-                    <p class="example-description">Hand tracking with phone sensors and ml5.js HandPose</p>
-                    <a href="../ml5/PHONE_HandPose_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/PHONE_HandPose_two_points" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ml5-phone-handpose"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">PHONE Object Detection</div>
-                    <p class="example-description">COCO-SSD object detection with mapped phone-camera bounding boxes</p>
-                    <a href="../ml5/PHONE_ObjectDetection/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/PHONE_ObjectDetection" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ml5-phone-object-detection"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">THREE BodyPose Two Points</div>
-                    <p class="example-description">3D body tracking visualization with Three.js and ml5.js</p>
-                    <a href="../ml5/THREE_BodyPose_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/THREE_BodyPose_two_points" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ml5-three-bodypose"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">THREE FaceMesh Two Points</div>
-                    <p class="example-description">3D face tracking visualization with Three.js and ml5.js</p>
-                    <a href="../ml5/THREE_FaceMesh_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/THREE_FaceMesh_two_points" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ml5-three-facemesh"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">THREE HandPose Two Points</div>
-                    <p class="example-description">3D hand tracking visualization with Three.js and ml5.js</p>
-                    <a href="../ml5/THREE_HandPose_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/THREE_HandPose_two_points" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ml5-three-handpose"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Phone and GIF Examples -->
-        <div class="section">
-            <h2 class="section-title">Interactive GIF Examples</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">Fetch</div>
-                    <p class="example-description">Touch-controlled corgi fetching animation</p>
-                    <a href="../Phone and Gif/fetch/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20and%20Gif/fetch" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-gif-fetch"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Roll</div>
-                    <p class="example-description">Tilt-controlled pencil rolling animation</p>
-                    <a href="../Phone and Gif/roll/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20and%20Gif/roll" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-gif-roll"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Fly</div>
-                    <p class="example-description">Acceleration-controlled airplane window</p>
-                    <a href="../Phone and Gif/fly/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20and%20Gif/fly" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-gif-fly"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- UX Comparison Examples -->
-        <div class="section">
-            <h2 class="section-title">UX Comparison Examples</h2>
-            <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-title">Button vs Shake Detection</div>
-                    <p class="example-description">Compare clicking a button vs shaking your device to trigger actions</p>
-                    <a href="../UXcompare/button-vs-shake/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/UXcompare/button-vs-shake" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ux-button-shake"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Button vs Movement Detection</div>
-                    <p class="example-description">Compare button clicks vs device movement for interaction control</p>
-                    <a href="../UXcompare/button-vs-movement/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/UXcompare/button-vs-movement" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ux-button-movement"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Button vs Orientation</div>
-                    <p class="example-description">Compare button interface vs device orientation for control</p>
-                    <a href="../UXcompare/button-vs-orientation/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/UXcompare/button-vs-orientation" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ux-button-orientation"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Sliders vs Device Rotation</div>
-                    <p class="example-description">RGB color control: traditional sliders vs device rotation</p>
-                    <a href="../UXcompare/sliders-vs-rotation/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/UXcompare/sliders-vs-rotation" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ux-sliders-rotation"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Sliders vs Device Acceleration</div>
-                    <p class="example-description">RGB color control: traditional sliders vs device acceleration</p>
-                    <a href="../UXcompare/sliders-vs-acceleration/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/UXcompare/sliders-vs-acceleration" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ux-sliders-acceleration"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Slider vs Microphone</div>
-                    <p class="example-description">Volume control: traditional slider vs microphone input level</p>
-                    <a href="../UXcompare/slider-vs-microphone/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/UXcompare/slider-vs-microphone" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ux-slider-microphone"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Slider vs Multi-Touch</div>
-                    <p class="example-description">Value control: single slider vs multiple finger touches</p>
-                    <a href="../UXcompare/slider-vs-touches/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/UXcompare/slider-vs-touches" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ux-slider-touches"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Slider vs Distance</div>
-                    <p class="example-description">Value control: traditional slider vs finger distance measurement</p>
-                    <a href="../UXcompare/slider-vs-distance/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/UXcompare/slider-vs-distance" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ux-slider-distance"></div>
-                </div>
-
-                <div class="example-card">
-                    <div class="example-title">Slider vs Angle Control</div>
-                    <p class="example-description">Value control: linear slider vs multi-touch angle detection</p>
-                    <a href="../UXcompare/slider-vs-angle/index.html" class="example-link" target="_blank">Launch Example →</a>
-                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/UXcompare/slider-vs-angle" target="_blank" class="github-link">View Code</a>
-                    <div class="qr-code" id="qr-ux-slider-angle"></div>
-                </div>
-            </div>
-        </div>
-
-        <footer>
-            <p>Built with <a href="https://p5js.org/" target="_blank">p5.js</a> and <a href="https://github.com/npuckett/p5-phone" target="_blank">p5-phone</a></p>
-            <p>2025 Nick Puckett</p>
-        </footer>
-    </div>
-
-    <script>
-        // Copy to clipboard function
-        function copyCode(button, text) {
-            // Decode HTML entities
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = text;
-            const decodedText = tempDiv.textContent || tempDiv.innerText;
-            
-            // Copy to clipboard
-            navigator.clipboard.writeText(decodedText).then(function() {
-                // Change button text temporarily
-                const originalText = button.textContent;
-                button.textContent = 'Copied!';
-                button.classList.add('copied');
-                
-                setTimeout(function() {
-                    button.textContent = originalText;
-                    button.classList.remove('copied');
-                }, 2000);
-            }).catch(function(err) {
-                console.error('Failed to copy: ', err);
-            });
-        }
-
-        // Tab switching function
-        function openTab(tabName) {
-            // Hide all tab content
-            const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove('active');
-            }
-            
-            // Remove active class from all tab buttons
-            const tabButtons = document.getElementsByClassName('tab-button');
-            for (let i = 0; i < tabButtons.length; i++) {
-                tabButtons[i].classList.remove('active');
-            }
-            
-            // Show the selected tab and mark button as active
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        // Wait for QRCode library to load
-        window.addEventListener('load', function() {
-            // Generate QR codes for all examples
-            const baseURL = 'https://npuckett.github.io/p5-phone/examples/';
-            
-            const examples = [
-                { id: 'qr-touch-01', url: 'Phone%20Sensor%20Examples/touch/01_touch_basic/' },
-                { id: 'qr-touch-02', url: 'Phone%20Sensor%20Examples/touch/02_touch_zones/' },
-                { id: 'qr-touch-03', url: 'Phone%20Sensor%20Examples/touch/03_touch_count/' },
-                { id: 'qr-touch-04', url: 'Phone%20Sensor%20Examples/touch/04_touch_distance/' },
-                { id: 'qr-touch-05', url: 'Phone%20Sensor%20Examples/touch/05_touch_angle/' },
-                { id: 'qr-movement-01', url: 'Phone%20Sensor%20Examples/movement/01_orientation_basic/' },
-                { id: 'qr-movement-02', url: 'Phone%20Sensor%20Examples/movement/02_rotational_velocity/' },
-                { id: 'qr-movement-03', url: 'Phone%20Sensor%20Examples/movement/03_acceleration/' },
-                { id: 'qr-movement-04', url: 'Phone%20Sensor%20Examples/movement/04_device_shaken/' },
-                { id: 'qr-movement-05', url: 'Phone%20Sensor%20Examples/movement/05_device_moved/' },
-                { id: 'qr-movement-06', url: 'Phone%20Sensor%20Examples/movement/06_device_orientation/' },
-                { id: 'qr-mic-01', url: 'Phone%20Sensor%20Examples/microphone/01_mic_level/' },
-                { id: 'qr-mic-02', url: 'Phone%20Sensor%20Examples/microphone/02_speech_recognition/' },
-                { id: 'qr-sound-01', url: 'Phone%20Sensor%20Examples/sound/01_dual_audio/' },
-                { id: 'qr-sound-02', url: 'Phone%20Sensor%20Examples/sound/02_volume_touches/' },
-                { id: 'qr-sound-03', url: 'Phone%20Sensor%20Examples/sound/03_motion_synth/' },
-                { id: 'qr-vibration-01', url: 'Phone%20Sensor%20Examples/vibration/01_haptic_feedback/' },
-                { id: 'qr-nfc-01', url: 'Phone%20Sensor%20Examples/nfc/01_nfc_read/' },
-                { id: 'qr-nfc-02', url: 'Phone%20Sensor%20Examples/nfc/02_two_tag_effects/' },
-                { id: 'qr-ml5-gaze', url: 'ml5/Gaze_detector_class/' },
-                { id: 'qr-ml5-phone-bodypose', url: 'ml5/PHONE_BodyPose_two_points/' },
-                { id: 'qr-ml5-phone-facemesh', url: 'ml5/PHONE_FaceMesh_two_points/' },
-                { id: 'qr-ml5-phone-handpose', url: 'ml5/PHONE_HandPose_two_points/' },
-                { id: 'qr-ml5-phone-object-detection', url: 'ml5/PHONE_ObjectDetection/' },
-                { id: 'qr-ml5-three-bodypose', url: 'ml5/THREE_BodyPose_two_points/' },
-                { id: 'qr-ml5-three-facemesh', url: 'ml5/THREE_FaceMesh_two_points/' },
-                { id: 'qr-ml5-three-handpose', url: 'ml5/THREE_HandPose_two_points/' },
-                { id: 'qr-gif-fetch', url: 'Phone%20and%20Gif/fetch/' },
-                { id: 'qr-gif-roll', url: 'Phone%20and%20Gif/roll/' },
-                { id: 'qr-gif-fly', url: 'Phone%20and%20Gif/fly/' },
-                { id: 'qr-ux-button-shake', url: 'UXcompare/button-vs-shake/' },
-                { id: 'qr-ux-button-movement', url: 'UXcompare/button-vs-movement/' },
-                { id: 'qr-ux-button-orientation', url: 'UXcompare/button-vs-orientation/' },
-                { id: 'qr-ux-sliders-rotation', url: 'UXcompare/sliders-vs-rotation/' },
-                { id: 'qr-ux-sliders-acceleration', url: 'UXcompare/sliders-vs-acceleration/' },
-                { id: 'qr-ux-slider-microphone', url: 'UXcompare/slider-vs-microphone/' },
-                { id: 'qr-ux-slider-touches', url: 'UXcompare/slider-vs-touches/' },
-                { id: 'qr-ux-slider-distance', url: 'UXcompare/slider-vs-distance/' },
-                { id: 'qr-ux-slider-angle', url: 'UXcompare/slider-vs-angle/' }
-            ];
-
-            examples.forEach(example => {
-                const container = document.getElementById(example.id);
-                if (container) {
-                    const fullURL = baseURL + example.url;
-                    container.innerHTML = ''; // Clear any existing content
-                    new QRCode(container, {
-                        text: fullURL,
-                        width: 150,
-                        height: 150,
-                        colorDark: '#000000',
-                        colorLight: '#ffffff',
-                        correctLevel: QRCode.CorrectLevel.M
-                    });
-                }
-            });
-        });
-    </script>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Capability</th><th>iOS Safari</th><th>Android Chrome</th><th>Desktop browsers</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Motion sensors</td><td>Supported after a tap permission flow.</td><td>Supported; permission request is usually a no-op.</td><td>Limited or unavailable on most laptops and desktops.</td></tr>
+            <tr><td>Touch input</td><td>Supported through touch and pointer events.</td><td>Supported through touch and pointer events.</td><td>Use mouse or pointer callbacks for testing.</td></tr>
+            <tr><td>Microphone and sound</td><td>Supported after user gesture and permission.</td><td>Supported after user gesture and permission.</td><td>Supported after browser permission.</td></tr>
+            <tr><td>Speech recognition</td><td>Browser support varies; test on the target device.</td><td>Supported in Chrome where Web Speech is available.</td><td>Browser support varies.</td></tr>
+            <tr><td>NFC</td><td>Not supported.</td><td>Supported in Chrome on HTTPS.</td><td>Not supported.</td></tr>
+            <tr><td>Camera and ML5</td><td>Supported after camera permission.</td><td>Supported after camera permission.</td><td>Supported after camera permission.</td></tr>
+            <tr><td>Vibration</td><td>Not supported.</td><td>Supported on many phones.</td><td>Limited or unavailable.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

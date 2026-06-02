@@ -147,14 +147,36 @@
 
   function groupExamples(examples) {
     return examples.reduce((groups, example) => {
-      if (!groups[example.category]) groups[example.category] = [];
-      groups[example.category].push(example);
+      const category = example.category || 'Other';
+      const subcategory = example.subcategory || category;
+      if (!groups[category]) groups[category] = {};
+      if (!groups[category][subcategory]) groups[category][subcategory] = [];
+      groups[category][subcategory].push(example);
       return groups;
     }, {});
   }
 
-  function exampleGroupId(category) {
-    return 'examples-' + String(category).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  function slug(value) {
+    return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  function exampleGroupId(category, subcategory) {
+    const base = 'examples-' + slug(category);
+    return subcategory ? base + '-' + slug(subcategory) : base;
+  }
+
+  function orderedSubcategories(category, groupedCategory) {
+    const preferredOrder = {
+      Start: ['Starter'],
+      Input: ['Touch', 'Movement', 'Microphone', 'Speech', 'NFC', 'Camera'],
+      Output: ['Sound', 'Vibration'],
+      Reference: ['UI Styles', 'Phone and GIF', 'UX Compare']
+    };
+    const available = Object.keys(groupedCategory || {});
+    const preferred = preferredOrder[category] || [];
+    return preferred
+      .filter(subcategory => available.includes(subcategory))
+      .concat(available.filter(subcategory => !preferred.includes(subcategory)).sort());
   }
 
   function renderExamples() {
@@ -172,15 +194,24 @@
 
     const filtered = examples.filter(example => exampleMatches(example, filters));
     const grouped = groupExamples(filtered);
-    const categoryOrder = ['Start', 'Input', 'Output', 'ML5', 'Reference'];
+    const categoryOrder = ['Start', 'Input', 'Output', 'Reference'];
     const groupsHtml = categoryOrder
       .filter(category => grouped[category])
-      .map(category => `
-        <section class="example-group" id="${escapeHtml(exampleGroupId(category))}">
-          <h3>${escapeHtml(category)}</h3>
-          <div class="example-grid">${grouped[category].map(renderExampleCard).join('')}</div>
-        </section>
-      `).join('');
+      .map(category => {
+        const subgroups = orderedSubcategories(category, grouped[category]).map(subcategory => `
+          <section class="example-subgroup" id="${escapeHtml(exampleGroupId(category, subcategory))}">
+            <h4>${escapeHtml(category === 'Start' && subcategory === 'Starter' ? 'Start' : subcategory)}</h4>
+            <div class="example-grid">${grouped[category][subcategory].map(renderExampleCard).join('')}</div>
+          </section>
+        `).join('');
+
+        return `
+          <section class="example-group" id="${escapeHtml(exampleGroupId(category))}">
+            <h3>${escapeHtml(category)}</h3>
+            ${subgroups}
+          </section>
+        `;
+      }).join('');
 
     status.textContent = filtered.length + ' of ' + examples.length + ' examples shown';
     target.innerHTML = groupsHtml || '<p>No examples match those filters.</p>';
