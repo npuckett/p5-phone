@@ -20,6 +20,11 @@ let movementEnergy = 0;
 let previousAccelerationX = 0;
 let previousAccelerationY = 0;
 let previousAccelerationZ = 0;
+const synthTiltRange = 30;
+const minFrequency = 90;
+const maxFrequency = 1200;
+const minVolume = 0.02;
+const maxVolume = 0.9;
 
 function setup()
 {
@@ -94,8 +99,10 @@ function positionStartButton()
 
 function updateSynthFromMotion()
 {
-    currentFrequency = map(constrain(rotationX, -60, 60), -60, 60, 90, 1200);
-    currentVolume = map(abs(constrain(rotationY, -45, 45)), 0, 45, 0.12, 0.8);
+    let pitchTilt = constrain(rotationX, -synthTiltRange, synthTiltRange);
+    let volumeTilt = constrain(rotationY, -synthTiltRange, synthTiltRange);
+    currentFrequency = map(pitchTilt, -synthTiltRange, synthTiltRange, minFrequency, maxFrequency);
+    currentVolume = map(volumeTilt, -synthTiltRange, synthTiltRange, minVolume, maxVolume);
 
     let deltaX = abs(accelerationX - previousAccelerationX);
     let deltaY = abs(accelerationY - previousAccelerationY);
@@ -125,7 +132,7 @@ function drawWaitingState()
 function drawActiveState()
 {
     let level = currentVolume * (0.86 + 0.14 * sin(frameCount * 0.08));
-    let pulseSize = map(level, 0, 0.8, 120, min(width, height) * 0.82);
+    let pulseSize = map(level, 0, maxVolume, 120, min(width, height) * 0.82);
     let energySize = map(movementEnergy, 0, 8, 12, 90);
 
     noStroke();
@@ -136,8 +143,8 @@ function drawActiveState()
     circle(width/2, height/2, pulseSize * 0.45);
 
     drawTiltMap();
-    drawMeter('Pitch from forward/back tilt', currentFrequency, 90, 1200, height - 150, 'Hz');
-    drawMeter('Volume from side tilt', currentVolume, 0, 0.8, height - 90, '');
+    drawMeter('Pitch from forward/back tilt', currentFrequency, minFrequency, maxFrequency, height - 150, 'Hz');
+    drawMeter('Volume from side tilt', currentVolume, minVolume, maxVolume, height - 90, '');
 
     fill(255);
     textSize(24);
@@ -156,8 +163,8 @@ function drawTiltMap()
     let x = width/2 - mapWidth/2;
     let y = height/2 - mapHeight/2;
 
-    let dotX = map(constrain(rotationY, -45, 45), -45, 45, x + 24, x + mapWidth - 24);
-    let dotY = map(constrain(rotationX, -45, 45), -45, 45, y + mapHeight - 24, y + 24);
+    let dotX = map(constrain(rotationY, -synthTiltRange, synthTiltRange), -synthTiltRange, synthTiltRange, x + 24, x + mapWidth - 24);
+    let dotY = map(constrain(rotationX, -synthTiltRange, synthTiltRange), -synthTiltRange, synthTiltRange, y + mapHeight - 24, y + 24);
 
     noStroke();
     fill(18, 22, 28, 205);

@@ -5,6 +5,11 @@ let oscillator;
 let startButton;
 let frequency = 220;
 let volume = 0;
+const synthTiltRange = 30;
+const minFrequency = 90;
+const maxFrequency = 1200;
+const minVolume = 0.02;
+const maxVolume = 0.9;
 
 function setup()
 {
@@ -34,8 +39,10 @@ function draw()
         startButton.hide();
         ensureSynthStarted();
 
-        frequency = map(constrain(rotationX, -60, 60), -60, 60, 90, 1200);
-        volume = map(abs(constrain(rotationY, -45, 45)), 0, 45, 0.12, 0.8);
+        let pitchTilt = constrain(rotationX, -synthTiltRange, synthTiltRange);
+        let volumeTilt = constrain(rotationY, -synthTiltRange, synthTiltRange);
+        frequency = map(pitchTilt, -synthTiltRange, synthTiltRange, minFrequency, maxFrequency);
+        volume = map(volumeTilt, -synthTiltRange, synthTiltRange, minVolume, maxVolume);
 
         oscillator.freq(frequency, 0.04);
         oscillator.amp(volume, 0.04);
