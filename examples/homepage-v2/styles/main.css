@@ -8,8 +8,8 @@
   --accent-green: #0b8f6a;
   --accent-blue: #315fbd;
   --accent-yellow: #d39b1f;
-  --code-bg: #101214;
-  --code-ink: #eef4f1;
+  --code-bg: #ffffff;
+  --code-ink: #171717;
   --sidebar-width: 292px;
   --section-padding-x: clamp(24px, 5vw, 72px);
 }
@@ -19,8 +19,8 @@ html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.55; }
 a { color: inherit; }
 code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 0.94em; }
-pre { margin: 0 0 18px; overflow-x: auto; border-radius: 8px; background: var(--code-bg); color: var(--code-ink); padding: 18px; border: 1px solid #252a2d; }
-pre code { color: inherit; font-size: 0.9rem; }
+pre { margin: 0 0 18px; overflow-x: auto; border-radius: 8px; background: var(--code-bg); color: var(--code-ink); padding: 18px; border: 1px solid var(--line); }
+pre code { color: inherit; font-size: 0.9rem; white-space: pre-wrap; overflow-wrap: anywhere; }
 table { width: 100%; border-collapse: collapse; background: var(--surface); }
 th, td { border: 1px solid var(--line); padding: 12px; text-align: left; vertical-align: top; }
 th { background: #eceee8; font-size: 0.82rem; text-transform: uppercase; }
@@ -64,8 +64,10 @@ h3 { font-size: 1.2rem; margin-bottom: 12px; }
 .signal-grid div, .faq-grid div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
 .signal-grid strong { display: block; font-size: 1.05rem; margin-bottom: 6px; }
 .signal-grid span, .faq-grid p { color: var(--muted); }
-.starter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 18px 0; }
-.starter-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+.quickstart-snippets { display: grid; grid-template-columns: 1fr; gap: 18px; margin: 34px 0 18px; }
+.quickstart-snippets article { min-width: 0; }
+.starter-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 18px 0; }
+.starter-card { display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); gap: 16px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
 .starter-card pre { margin-bottom: 0; }
 .compat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0 0 22px; }
 .compat-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
@@ -78,6 +80,13 @@ h3 { font-size: 1.2rem; margin-bottom: 12px; }
 .api-section, .example-group { margin-bottom: 38px; }
 .api-section-header { margin-bottom: 14px; }
 .api-section-header p { max-width: 720px; color: var(--muted); margin: 8px 0 0; }
+.related-api-panel { margin: 0 0 16px; padding: 16px; background: #f3f6f2; border: 1px solid var(--line); border-radius: 8px; }
+.related-api-panel h4 { margin: 0 0 10px; font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.related-api-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; }
+.related-api-list a { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; text-decoration: none; }
+.related-api-list a:hover { border-color: var(--line-strong); }
+.related-api-list code { color: var(--accent-blue); font-weight: 750; overflow-wrap: anywhere; }
+.related-api-list span { color: var(--muted); font-size: 0.88rem; }
 .api-grid, .example-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .api-card, .example-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
 .api-card h4, .example-card h4 { margin: 0 0 8px; font-size: 1.05rem; }
@@ -110,6 +119,7 @@ h3 { font-size: 1.2rem; margin-bottom: 12px; }
   .content-section { padding: 44px var(--section-padding-x); }
   .hero-section { min-height: calc(100vh - 64px); }
   .signal-grid, .split-layout, .faq-grid, .compat-grid, .filter-panel { grid-template-columns: 1fr; }
+  .starter-card { grid-template-columns: 1fr; gap: 6px; }
 }
 
 @media (max-width: 560px) {

@@ -95,19 +95,13 @@
         <h2>Quick Start</h2>
         <p>Use p5.js, load p5-phone, lock gestures, then enable the capability your sketch needs from a user tap.</p>
       </div>
-      <div class="split-layout">
-        <div>
-            <h3>p5.js 2.2 default</h3>
-            <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"&gt;&lt;/script&gt;
-        &lt;script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"&gt;&lt;/script&gt;
-&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
-        </div>
-        <div>
-            <h3>Asset loading support</h3>
-            <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"&gt;&lt;/script&gt;
-        &lt;script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"&gt;&lt;/script&gt;
-&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
-        </div>
+      <div class="quickstart-snippets">
+        <article>
+          <h3>Designed for p5.js 2.x</h3>
+          <pre><code>&lt;script
+  src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;
+&lt;/script&gt;</code></pre>
+        </article>
       </div>
       <pre><code>function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -192,7 +186,7 @@ function draw() {
       <div class="section-heading">
         <span class="eyebrow">Reference</span>
         <h2>API</h2>
-        <p>Grouped by the job you are trying to do. The permission table keeps the five UI styles visible without repeating them throughout the page.</p>
+        <p>Grouped by the job you are trying to do. The permission table keeps the five UI styles visible, and each category lists the p5 APIs that become practical after p5-phone handles the mobile browser setup.</p>
       </div>
       <div id="permission-matrix" class="matrix-wrap" aria-live="polite"></div>
       <div id="api-sections" class="api-sections" aria-live="polite"></div>

@@ -47,6 +47,24 @@
     `;
   }
 
+  function renderRelatedApis(apis) {
+    if (!apis || apis.length === 0) return '';
+
+    return `
+      <div class="related-api-panel">
+        <h4>Related p5 APIs</h4>
+        <div class="related-api-list">
+          ${apis.map(api => `
+            <a href="${escapeHtml(api.href)}" target="_blank" rel="noreferrer">
+              <code>${escapeHtml(api.label)}</code>
+              <span>${escapeHtml(api.summary)}</span>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   function renderApi() {
     const sections = window.P5PHONE_API_SECTIONS || [];
     const target = document.getElementById('api-sections');
@@ -68,6 +86,7 @@
             <h3>${escapeHtml(section.title)}</h3>
             <p>${escapeHtml(section.description)}</p>
           </div>
+          ${renderRelatedApis(section.relatedApis)}
           <div class="api-grid">${cards}</div>
         </section>
       `;
