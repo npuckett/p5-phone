@@ -7,6 +7,7 @@ let backgroundColor;
 function setup() 
 {
     createCanvas(windowWidth, windowHeight);
+    lockGestures();
     backgroundColor = color(50, 50, 50);
     textAlign(CENTER, CENTER);
     textSize(16);

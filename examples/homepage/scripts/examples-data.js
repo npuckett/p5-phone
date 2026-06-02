@@ -12,7 +12,7 @@ window.P5PHONE_EXAMPLES = [
     description: 'Small baseline sketch for starting a mobile p5-phone project.',
     path: 'blankTemplate/',
     sourcePath: 'examples/blankTemplate',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/R-c_HpeUg',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/X9JmobuuM',
     capabilities: ['setup', 'lockGestures']
   },
   {
@@ -26,7 +26,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/touch/01_touch_basic/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/touch/01_touch_basic/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/touch/01_touch_basic',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/zIRMsYKRN',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/kfcPPs1a3',
     capabilities: ['touch']
   },
   {
@@ -40,7 +40,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/touch/02_touch_zones/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/touch/02_touch_zones/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/touch/02_touch_zones',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/PkhKKZWMC',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/lZWVCIGVoD',
     capabilities: ['touch']
   },
   {
@@ -54,7 +54,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/touch/03_touch_count/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/touch/03_touch_count/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/touch/03_touch_count',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/g-9HeBb8B',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/dWJJTZ9qEh',
     capabilities: ['touch']
   },
   {
@@ -68,7 +68,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/touch/04_touch_distance/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/touch/04_touch_distance/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/touch/04_touch_distance',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/s6icb8y_o',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/5HUoDmiyG',
     capabilities: ['touch']
   },
   {
@@ -82,7 +82,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/touch/05_touch_angle/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/touch/05_touch_angle/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/touch/05_touch_angle',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/IPYIo8_FV',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/M6N0chnCq',
     capabilities: ['touch']
   },
   {
@@ -96,7 +96,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/movement/01_orientation_basic/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/movement/01_orientation_basic/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/movement/01_orientation_basic',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/Sf_um9wYw',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/-_pUgcYmW',
     capabilities: ['motion', 'orientation']
   },
   {
@@ -110,7 +110,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/movement/02_rotational_velocity/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/movement/02_rotational_velocity/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/movement/02_rotational_velocity',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/IDSid9rOX',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/fij6LZwPQ',
     capabilities: ['motion', 'gyroscope']
   },
   {
@@ -124,7 +124,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/movement/03_acceleration/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/movement/03_acceleration/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/movement/03_acceleration',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/xaxOYgK9q',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/AsM63da8sJ',
     capabilities: ['motion', 'accelerometer']
   },
   {
@@ -138,6 +138,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/movement/04_device_shaken/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/movement/04_device_shaken/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/movement/04_device_shaken',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/FgraGpDkn',
     capabilities: ['motion', 'deviceShaken', 'threshold']
   },
   {
@@ -151,6 +152,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/movement/05_device_moved/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/movement/05_device_moved/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/movement/05_device_moved',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/0UdVXvdcN',
     capabilities: ['motion', 'deviceMoved', 'threshold']
   },
   {
@@ -164,6 +166,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/movement/06_device_orientation/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/movement/06_device_orientation/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/movement/06_device_orientation',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/ayDVWysQ2',
     capabilities: ['motion', 'deviceOrientation']
   },
   {
@@ -177,7 +180,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/microphone/01_mic_level/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/microphone/01_mic_level/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/microphone/01_mic_level',
-    webEditor: 'https://editor.p5js.org/creationcomputation/sketches/ySuEk7s6-',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/fuWalYu-L',
     capabilities: ['microphone', 'p5.sound']
   },
   {
@@ -190,6 +193,7 @@ window.P5PHONE_EXAMPLES = [
     description: 'Touch-to-talk speech recognition using the Web Speech API.',
     path: 'Phone%20Sensor%20Examples/microphone/02_speech_recognition/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/microphone/02_speech_recognition',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/kMjBzPtoYL',
     capabilities: ['speech', 'microphone']
   },
   {
@@ -202,6 +206,7 @@ window.P5PHONE_EXAMPLES = [
     description: 'Scan physical NFC tags, name them, and copy IDs into sketches.',
     path: 'Phone%20Sensor%20Examples/nfc/01_nfc_read/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/nfc/01_nfc_read',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/MZX0c5c7z',
     capabilities: ['nfc', 'aliases']
   },
   {
@@ -214,6 +219,7 @@ window.P5PHONE_EXAMPLES = [
     description: 'Use shirt and table aliases in simple if statements.',
     path: 'Phone%20Sensor%20Examples/nfc/02_two_tag_effects/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/nfc/02_two_tag_effects',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/KRlioaHzLv',
     capabilities: ['nfc', 'aliases']
   },
   {
@@ -227,6 +233,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/sound/01_dual_audio/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/sound/01_sound_basic/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/sound/01_dual_audio',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/x8Mix5h19D',
     capabilities: ['sound', 'p5.sound']
   },
   {
@@ -240,6 +247,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/sound/02_volume_touches/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/sound/02_sound_amplitude/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/sound/02_volume_touches',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/bfJNTE16Ni',
     capabilities: ['sound', 'touch']
   },
   {
@@ -253,6 +261,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/sound/03_motion_synth/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/sound/03_motion_synth/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/sound/03_motion_synth',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/i17rxtwHM',
     capabilities: ['sound', 'motion', 'p5.sound', 'generated audio']
   },
   {
@@ -266,6 +275,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/vibration/01_haptic_feedback/',
     minimalPath: 'Phone%20Sensor%20Examples%20-%20Minimal/vibration/01_haptic_feedback/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/vibration/01_haptic_feedback',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/jolA5eA_M',
     capabilities: ['vibration', 'touch']
   },
   {
@@ -275,10 +285,11 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'Camera',
     family: 'PhoneCamera + ML5 Examples',
     level: 'Advanced',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'BodyPose tracking with PhoneCamera coordinate mapping.',
     path: 'ml5/PHONE_BodyPose_two_points/',
     sourcePath: 'examples/ml5/PHONE_BodyPose_two_points',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/hXHfWAYSN',
     capabilities: ['camera', 'ml5', 'bodypose']
   },
   {
@@ -288,10 +299,11 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'Camera',
     family: 'PhoneCamera + ML5 Examples',
     level: 'Advanced',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'FaceMesh tracking with PhoneCamera coordinate mapping.',
     path: 'ml5/PHONE_FaceMesh_two_points/',
     sourcePath: 'examples/ml5/PHONE_FaceMesh_two_points',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/DLnD9LIMG',
     capabilities: ['camera', 'ml5', 'facemesh']
   },
   {
@@ -301,10 +313,11 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'Camera',
     family: 'PhoneCamera + ML5 Examples',
     level: 'Advanced',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'HandPose tracking with PhoneCamera coordinate mapping.',
     path: 'ml5/PHONE_HandPose_two_points/',
     sourcePath: 'examples/ml5/PHONE_HandPose_two_points',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/aBF5_M0jN3',
     capabilities: ['camera', 'ml5', 'handpose']
   },
   {
@@ -314,11 +327,12 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'Camera',
     family: 'PhoneCamera + ML5 Examples',
     level: 'Advanced',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'Reusable gaze tracking class built on ML5 FaceMesh.',
     path: 'ml5/Gaze_detector_class/',
     sourcePath: 'examples/ml5/Gaze_detector_class',
-    capabilities: ['camera', 'ml5', 'facemesh']
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/y3aGKwPIx_',
+    capabilities: ['camera', 'ml5', 'facemesh', 'gaze']
   },
   {
     id: 'three-bodypose',
@@ -327,10 +341,11 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'Camera',
     family: 'Three.js + ML5 Examples',
     level: 'Advanced',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'BodyPose data driving a Three.js scene.',
     path: 'ml5/THREE_BodyPose_two_points/',
     sourcePath: 'examples/ml5/THREE_BodyPose_two_points',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/L-ch91hH8',
     capabilities: ['camera', 'ml5', 'three.js']
   },
   {
@@ -340,10 +355,11 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'Camera',
     family: 'Three.js + ML5 Examples',
     level: 'Advanced',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'FaceMesh data driving a Three.js scene.',
     path: 'ml5/THREE_FaceMesh_two_points/',
     sourcePath: 'examples/ml5/THREE_FaceMesh_two_points',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/Olii4GsA6',
     capabilities: ['camera', 'ml5', 'three.js']
   },
   {
@@ -353,10 +369,11 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'Camera',
     family: 'Three.js + ML5 Examples',
     level: 'Advanced',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'HandPose data driving a Three.js scene.',
     path: 'ml5/THREE_HandPose_two_points/',
     sourcePath: 'examples/ml5/THREE_HandPose_two_points',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/El8kyGBLL',
     capabilities: ['camera', 'ml5', 'three.js']
   },
   {
@@ -369,6 +386,7 @@ window.P5PHONE_EXAMPLES = [
     description: 'Permission activation from a top or bottom banner.',
     path: 'UIStyles/banner-style/',
     sourcePath: 'examples/UIStyles/banner-style',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/cE3a0kZPa',
     capabilities: ['permission UI']
   },
   {
@@ -381,6 +399,7 @@ window.P5PHONE_EXAMPLES = [
     description: 'Permission activation through the canvas itself.',
     path: 'UIStyles/canvas-style/',
     sourcePath: 'examples/UIStyles/canvas-style',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/5IwCEIxI-',
     capabilities: ['permission UI']
   },
   {
@@ -393,6 +412,7 @@ window.P5PHONE_EXAMPLES = [
     description: 'Bind permission activation to your own HTML element.',
     path: 'UIStyles/custom-element/',
     sourcePath: 'examples/UIStyles/custom-element',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/dzTJBBH_94',
     capabilities: ['permission UI']
   },
   {
@@ -401,10 +421,11 @@ window.P5PHONE_EXAMPLES = [
     category: 'Reference',
     subcategory: 'Phone and GIF',
     level: 'Intermediate',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'Combine motion interaction with animated GIF assets.',
     path: 'Phone%20and%20Gif/fetch/',
     sourcePath: 'examples/Phone%20and%20Gif/fetch',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/iFWnkkrpK',
     capabilities: ['motion', 'gif']
   },
   {
@@ -413,10 +434,11 @@ window.P5PHONE_EXAMPLES = [
     category: 'Reference',
     subcategory: 'Phone and GIF',
     level: 'Intermediate',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'Motion interaction with simple collision behavior.',
     path: 'Phone%20and%20Gif/collision/',
     sourcePath: 'examples/Phone%20and%20Gif/collision',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/hYTeGTQFO',
     capabilities: ['motion', 'gif']
   },
   {
@@ -425,10 +447,11 @@ window.P5PHONE_EXAMPLES = [
     category: 'Reference',
     subcategory: 'Phone and GIF',
     level: 'Intermediate',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'Use phone motion to fly animated GIF elements.',
     path: 'Phone%20and%20Gif/fly/',
     sourcePath: 'examples/Phone%20and%20Gif/fly',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/9QJ58vzOU',
     capabilities: ['motion', 'gif']
   },
   {
@@ -437,10 +460,11 @@ window.P5PHONE_EXAMPLES = [
     category: 'Reference',
     subcategory: 'Phone and GIF',
     level: 'Intermediate',
-    p5: '1.x',
+    p5: '1.x and 2.0',
     description: 'Use device angle to roll animated GIF elements.',
     path: 'Phone%20and%20Gif/roll/',
     sourcePath: 'examples/Phone%20and%20Gif/roll',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/FgHXAZajKF',
     capabilities: ['motion', 'gif']
   },
   {

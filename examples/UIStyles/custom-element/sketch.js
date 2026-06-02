@@ -3,7 +3,7 @@ function setup() {
   lockGestures();
 
   // Custom element: bind permission activation to your own HTML button
-  enableSensorOn('#start-btn');
+  enableGyroOn('#start-btn');
 }
 
 function draw() {

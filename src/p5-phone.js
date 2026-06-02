@@ -1678,6 +1678,8 @@ window.toggleDebug = toggleDebug;
 window.lockGestures = lockGestures;
 window.enableGyroTap = enableGyroTap;
 window.enableGyroButton = enableGyroButton;
+window.enableSensorTap = enableGyroTap;
+window.enableSensorButton = enableGyroButton;
 window.enableMicTap = enableMicTap;
 window.enableMicButton = enableMicButton;
 window.enableSoundTap = enableSoundTap;
@@ -1699,6 +1701,7 @@ window.enableAllButton = enableAllButton;
 
 // Canvas-first-touch style
 window.enableGyroCanvas = enableGyroCanvas;
+window.enableSensorCanvas = enableGyroCanvas;
 window.enableMicCanvas = enableMicCanvas;
 window.enableSoundCanvas = enableSoundCanvas;
 window.enableSpeechCanvas = enableSpeechCanvas;
@@ -1709,6 +1712,7 @@ window.enableCameraCanvas = enableCameraCanvas;
 
 // Banner style
 window.enableGyroBanner = enableGyroBanner;
+window.enableSensorBanner = enableGyroBanner;
 window.enableMicBanner = enableMicBanner;
 window.enableSoundBanner = enableSoundBanner;
 window.enableSpeechBanner = enableSpeechBanner;
@@ -1719,6 +1723,7 @@ window.enableCameraBanner = enableCameraBanner;
 
 // Custom element binding
 window.enableGyroOn = enableGyroOn;
+window.enableSensorOn = enableGyroOn;
 window.enableMicOn = enableMicOn;
 window.enableSoundOn = enableSoundOn;
 window.enableSpeechOn = enableSpeechOn;
@@ -2534,6 +2539,8 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.lockGestures = lockGestures;
   p5.prototype.enableGyroTap = enableGyroTap;
   p5.prototype.enableGyroButton = enableGyroButton;
+  p5.prototype.enableSensorTap = enableGyroTap;
+  p5.prototype.enableSensorButton = enableGyroButton;
   p5.prototype.enableMicTap = enableMicTap;
   p5.prototype.enableMicButton = enableMicButton;
   p5.prototype.enableSoundTap = enableSoundTap;
@@ -2555,6 +2562,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   
   // Canvas-first-touch style
   p5.prototype.enableGyroCanvas = enableGyroCanvas;
+  p5.prototype.enableSensorCanvas = enableGyroCanvas;
   p5.prototype.enableMicCanvas = enableMicCanvas;
   p5.prototype.enableSoundCanvas = enableSoundCanvas;
   p5.prototype.enableSpeechCanvas = enableSpeechCanvas;
@@ -2565,6 +2573,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   
   // Banner style
   p5.prototype.enableGyroBanner = enableGyroBanner;
+  p5.prototype.enableSensorBanner = enableGyroBanner;
   p5.prototype.enableMicBanner = enableMicBanner;
   p5.prototype.enableSoundBanner = enableSoundBanner;
   p5.prototype.enableSpeechBanner = enableSpeechBanner;
@@ -2575,6 +2584,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   
   // Custom element binding
   p5.prototype.enableGyroOn = enableGyroOn;
+  p5.prototype.enableSensorOn = enableGyroOn;
   p5.prototype.enableMicOn = enableMicOn;
   p5.prototype.enableSoundOn = enableSoundOn;
   p5.prototype.enableSpeechOn = enableSpeechOn;
@@ -2620,6 +2630,8 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.lockGestures = lockGestures;
       this.enableGyroTap = enableGyroTap;
       this.enableGyroButton = enableGyroButton;
+      this.enableSensorTap = enableGyroTap;
+      this.enableSensorButton = enableGyroButton;
       this.enableMicTap = enableMicTap;
       this.enableMicButton = enableMicButton;
       this.enableSoundTap = enableSoundTap;
@@ -2641,6 +2653,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
 
       // Canvas-first-touch style
       this.enableGyroCanvas = enableGyroCanvas;
+      this.enableSensorCanvas = enableGyroCanvas;
       this.enableMicCanvas = enableMicCanvas;
       this.enableSoundCanvas = enableSoundCanvas;
       this.enableSpeechCanvas = enableSpeechCanvas;
@@ -2651,6 +2664,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
 
       // Banner style
       this.enableGyroBanner = enableGyroBanner;
+      this.enableSensorBanner = enableGyroBanner;
       this.enableMicBanner = enableMicBanner;
       this.enableSoundBanner = enableSoundBanner;
       this.enableSpeechBanner = enableSpeechBanner;
@@ -2661,6 +2675,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
 
       // Custom element binding
       this.enableGyroOn = enableGyroOn;
+      this.enableSensorOn = enableGyroOn;
       this.enableMicOn = enableMicOn;
       this.enableSoundOn = enableSoundOn;
       this.enableSpeechOn = enableSpeechOn;

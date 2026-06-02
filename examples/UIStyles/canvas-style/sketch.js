@@ -3,7 +3,7 @@ function setup() {
   lockGestures();
 
   // Canvas style: message drawn on the canvas until user taps it
-  enableSensorCanvas('Tap the canvas to begin');
+  enableGyroCanvas('Tap the canvas to begin');
 }
 
 function draw() {
