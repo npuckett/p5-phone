@@ -34,11 +34,11 @@ function draw()
         startButton.hide();
         ensureSynthStarted();
 
-        frequency = map(constrain(rotationX, -90, 90), -90, 90, 120, 880);
-        volume = map(abs(constrain(rotationY, -90, 90)), 0, 90, 0.05, 0.35);
+        frequency = map(constrain(rotationX, -60, 60), -60, 60, 90, 1200);
+        volume = map(abs(constrain(rotationY, -45, 45)), 0, 45, 0.12, 0.8);
 
-        oscillator.freq(frequency, 0.08);
-        oscillator.amp(volume, 0.08);
+        oscillator.freq(frequency, 0.04);
+        oscillator.amp(volume, 0.04);
 
         debug('--- Motion Synth ---');
         debug('rotationX: ' + nf(rotationX, 1, 2));
@@ -66,7 +66,7 @@ function ensureSynthStarted()
         return;
     }
 
-    oscillator = new p5.Oscillator('sine');
+    oscillator = new p5.Oscillator('sawtooth');
     oscillator.freq(frequency);
     oscillator.amp(0);
     oscillator.start();

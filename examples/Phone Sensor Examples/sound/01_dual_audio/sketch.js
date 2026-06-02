@@ -95,13 +95,15 @@ function drawVisualizers()
     circle(width / 2, 3 * height / 4, tone2Level * pulse2);
 }
 
-function mousePressed()
+function mousePressed(event)
 {
     if (window.soundEnabled)
     {
         ensureTonesStarted();
 
-        if (getPrimaryY() < height / 2)
+        let touchY = getPrimaryY(event);
+
+        if (touchY < height / 2)
         {
             tone1Active = true;
             tone2Active = false;
@@ -138,14 +140,36 @@ function mouseReleased()
     return false;
 }
 
-function getPrimaryY()
+function getPrimaryY(event)
 {
-    if (touches.length > 0)
+    if (event)
     {
-        return touches[0].y;
+        let eventTouch = event.touches?.[0] ?? event.changedTouches?.[0];
+        let eventY = eventTouch?.clientY ?? eventTouch?.pageY ?? event.clientY ?? event.pageY;
+
+        if (Number.isFinite(eventY))
+        {
+            return eventY;
+        }
     }
 
-    return mouseY;
+    if (touches.length > 0)
+    {
+        let touchPoint = touches[0];
+        let y = touchPoint.y ?? touchPoint.winY ?? touchPoint.clientY ?? touchPoint.pageY;
+
+        if (Number.isFinite(y))
+        {
+            return y;
+        }
+    }
+
+    if (Number.isFinite(mouseY) && mouseY >= 0 && mouseY <= height)
+    {
+        return mouseY;
+    }
+
+    return height / 2;
 }
 
 function windowResized()

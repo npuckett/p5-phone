@@ -54,6 +54,9 @@ let handpose;           // ML5 HandPose model
 let hands = [];         // Detected hands
 let showVideo = true;   // Toggle video display
 let showData = true;    // Toggle measurement visualization (lines, arcs, text)
+let cameraButton;       // Button to toggle front/back camera
+let cameraSwitching = false;
+let lastCameraButtonPress = 0;
 
 // Two-variable method: Define which points to track and store their data
 let handPointIndex1 = 4;    // Thumb tip
@@ -89,6 +92,7 @@ function setup() {
   
   // Create camera: front camera, mirrored, fit to canvas height
   cam = createPhoneCamera('user', true, 'fitHeight');
+  createCameraButton();
   
   // Enable camera tap to toggle video
   enableCameraTap();
@@ -105,6 +109,71 @@ function setup() {
     // Create HandPose model and start detection when ready
     handpose = await ml5.handPose(options);
     handpose.detectStart(cam.videoElement, gotHands);
+  });
+}
+
+function createCameraButton() {
+  cameraButton = createButton('Back camera');
+  cameraButton.position(14, 14);
+  cameraButton.style('position', 'fixed');
+  cameraButton.style('z-index', '20');
+  cameraButton.style('padding', '12px 14px');
+  cameraButton.style('font-size', '15px');
+  cameraButton.style('font-weight', '700');
+  cameraButton.style('border', '0');
+  cameraButton.style('border-radius', '8px');
+  cameraButton.style('background', '#ffffff');
+  cameraButton.style('color', '#111111');
+  cameraButton.style('box-shadow', '0 4px 14px rgba(0, 0, 0, 0.25)');
+  cameraButton.mousePressed(switchCameraView);
+}
+
+async function switchCameraView() {
+  lastCameraButtonPress = Date.now();
+
+  if (!cam || cameraSwitching) {
+    return false;
+  }
+
+  cameraSwitching = true;
+  hands = [];
+
+  if (handpose && handpose.detectStop) {
+    handpose.detectStop();
+  }
+
+  let useBackCamera = cam.active !== 'environment';
+  cam.mirror = !useBackCamera;
+  cam.active = useBackCamera ? 'environment' : 'user';
+  cameraButton.html(useBackCamera ? 'Front camera' : 'Back camera');
+
+  await waitForCameraReady();
+
+  if (handpose && cam.videoElement) {
+    handpose.detectStart(cam.videoElement, gotHands);
+  }
+
+  cameraSwitching = false;
+  return false;
+}
+
+function waitForCameraReady() {
+  return new Promise((resolve) => {
+    let attempts = 0;
+    let checkReady = () => {
+      if (cam && cam.ready && cam.videoElement && cam.videoElement.readyState >= 2) {
+        resolve();
+      }
+      else if (attempts > 100) {
+        resolve();
+      }
+      else {
+        attempts = attempts + 1;
+        setTimeout(checkReady, 100);
+      }
+    };
+
+    checkReady();
   });
 }
 
@@ -357,7 +426,9 @@ function drawUI() {
   textSize(16);
   
   // Show status at top of screen
-  if (!cam.ready) {
+  if (cameraSwitching) {
+    text('Switching camera...', width/2, 20);
+  } else if (!cam.ready) {
     text('Starting camera...', width/2, 20);
   } else if (hands.length === 0) {
     text('Show your hand to start tracking', width/2, 20);
@@ -375,5 +446,10 @@ function drawUI() {
 // INTERACTION - Toggle video on touch
 // ==============================================
 function mousePressed() {
+  if (Date.now() - lastCameraButtonPress < 400) {
+    return false;
+  }
+
   showVideo = !showVideo;
+  return false;
 }

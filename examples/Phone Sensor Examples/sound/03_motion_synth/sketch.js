@@ -61,7 +61,7 @@ function ensureSynthStarted()
         return;
     }
 
-    oscillator = new p5.Oscillator('sine');
+    oscillator = new p5.Oscillator('sawtooth');
     oscillator.freq(currentFrequency);
     oscillator.amp(0);
     oscillator.start();
@@ -94,8 +94,8 @@ function positionStartButton()
 
 function updateSynthFromMotion()
 {
-    currentFrequency = map(constrain(rotationX, -90, 90), -90, 90, 120, 880);
-    currentVolume = map(abs(constrain(rotationY, -90, 90)), 0, 90, 0.05, 0.35);
+    currentFrequency = map(constrain(rotationX, -60, 60), -60, 60, 90, 1200);
+    currentVolume = map(abs(constrain(rotationY, -45, 45)), 0, 45, 0.12, 0.8);
 
     let deltaX = abs(accelerationX - previousAccelerationX);
     let deltaY = abs(accelerationY - previousAccelerationY);
@@ -106,8 +106,8 @@ function updateSynthFromMotion()
     previousAccelerationY = accelerationY;
     previousAccelerationZ = accelerationZ;
 
-    oscillator.freq(currentFrequency, 0.08);
-    oscillator.amp(currentVolume, 0.08);
+    oscillator.freq(currentFrequency, 0.04);
+    oscillator.amp(currentVolume, 0.04);
 }
 
 function drawWaitingState()
@@ -125,19 +125,19 @@ function drawWaitingState()
 function drawActiveState()
 {
     let level = currentVolume * (0.86 + 0.14 * sin(frameCount * 0.08));
-    let pulseSize = map(level, 0, 0.35, 120, min(width, height) * 0.65);
+    let pulseSize = map(level, 0, 0.8, 120, min(width, height) * 0.82);
     let energySize = map(movementEnergy, 0, 8, 12, 90);
 
     noStroke();
-    fill(70, 180, 220, 80);
+    fill(70, 180, 220, 105);
     circle(width/2, height/2, pulseSize + energySize);
 
-    fill(255, 204, 102, 210);
+    fill(255, 204, 102, 235);
     circle(width/2, height/2, pulseSize * 0.45);
 
     drawTiltMap();
-    drawMeter('Pitch from forward/back tilt', currentFrequency, 120, 880, height - 150, 'Hz');
-    drawMeter('Volume from side tilt', currentVolume, 0, 0.35, height - 90, '');
+    drawMeter('Pitch from forward/back tilt', currentFrequency, 90, 1200, height - 150, 'Hz');
+    drawMeter('Volume from side tilt', currentVolume, 0, 0.8, height - 90, '');
 
     fill(255);
     textSize(24);
