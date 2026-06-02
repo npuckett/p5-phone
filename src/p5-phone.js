@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.7.0
+ * p5-phone v1.9.2
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -2525,10 +2525,11 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
 // =========================================
 
 /**
- * Add functions to p5.js prototype for namespace support
- * This allows using both global functions and p5.prototype.functionName
+ * Add functions to p5.js prototype for namespace support in p5.js 1.x.
+ * p5.js 2.x uses p5.registerAddon() below; registering in both places
+ * creates duplicate globals during p5 2 global-mode binding.
  */
-if (typeof p5 !== 'undefined' && p5.prototype) {
+if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'function') {
   // Core permission functions
   p5.prototype.lockGestures = lockGestures;
   p5.prototype.enableGyroTap = enableGyroTap;
@@ -2609,73 +2610,79 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
  */
 if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
   p5.registerAddon(function(p5, fn, lifecycles) {
-    // Register all public functions on the prototype (fn === p5.prototype)
-    // Core permission functions
-    fn.lockGestures = lockGestures;
-    fn.enableGyroTap = enableGyroTap;
-    fn.enableGyroButton = enableGyroButton;
-    fn.enableMicTap = enableMicTap;
-    fn.enableMicButton = enableMicButton;
-    fn.enableSoundTap = enableSoundTap;
-    fn.enableSoundButton = enableSoundButton;
-    fn.enableSpeechTap = enableSpeechTap;
-    fn.enableSpeechButton = enableSpeechButton;
-    fn.enableVibrationTap = enableVibrationTap;
-    fn.enableVibrationButton = enableVibrationButton;
-    fn.vibrate = vibrate;
-    fn.stopVibration = stopVibration;
-    fn.enableNfcTap = enableNfcTap;
-    fn.enableNfcButton = enableNfcButton;
-    fn.stopNfc = stopNfc;
-    fn.setNfcTagAlias = setNfcTagAlias;
-    fn.getNfcTagAlias = getNfcTagAlias;
-    fn.isNfcTag = isNfcTag;
-    fn.enableAllTap = enableAllTap;
-    fn.enableAllButton = enableAllButton;
-    
-    // Canvas-first-touch style
-    fn.enableGyroCanvas = enableGyroCanvas;
-    fn.enableMicCanvas = enableMicCanvas;
-    fn.enableSoundCanvas = enableSoundCanvas;
-    fn.enableSpeechCanvas = enableSpeechCanvas;
-    fn.enableVibrationCanvas = enableVibrationCanvas;
-    fn.enableNfcCanvas = enableNfcCanvas;
-    fn.enableAllCanvas = enableAllCanvas;
-    fn.enableCameraCanvas = enableCameraCanvas;
-    
-    // Banner style
-    fn.enableGyroBanner = enableGyroBanner;
-    fn.enableMicBanner = enableMicBanner;
-    fn.enableSoundBanner = enableSoundBanner;
-    fn.enableSpeechBanner = enableSpeechBanner;
-    fn.enableVibrationBanner = enableVibrationBanner;
-    fn.enableNfcBanner = enableNfcBanner;
-    fn.enableAllBanner = enableAllBanner;
-    fn.enableCameraBanner = enableCameraBanner;
-    
-    // Custom element binding
-    fn.enableGyroOn = enableGyroOn;
-    fn.enableMicOn = enableMicOn;
-    fn.enableSoundOn = enableSoundOn;
-    fn.enableSpeechOn = enableSpeechOn;
-    fn.enableVibrationOn = enableVibrationOn;
-    fn.enableNfcOn = enableNfcOn;
-    fn.enableAllOn = enableAllOn;
-    fn.enableCameraOn = enableCameraOn;
-    
-    // Camera functions
-    fn.createPhoneCamera = createPhoneCamera;
-    fn.enableCameraButton = enableCameraButton;
-    fn.enableCameraTap = enableCameraTap;
-    
-    // Debug functions
-    fn.showDebug = showDebug;
-    fn.hideDebug = hideDebug;
-    fn.toggleDebug = toggleDebug;
-    fn.debug = debug;
-    fn.debugError = debugError;
-    fn.debugWarn = debugWarn;
-    
+    // In p5.js 2 global mode, p5 binds every prototype property onto window.
+    // p5-phone's top-level function declarations already create globals such
+    // as lockGestures, so adding those names to p5.prototype before binding
+    // causes "Cannot redefine property" errors. Attach instance methods after
+    // global binding but before setup() instead.
+    lifecycles.presetup = function() {
+      // Core permission functions
+      this.lockGestures = lockGestures;
+      this.enableGyroTap = enableGyroTap;
+      this.enableGyroButton = enableGyroButton;
+      this.enableMicTap = enableMicTap;
+      this.enableMicButton = enableMicButton;
+      this.enableSoundTap = enableSoundTap;
+      this.enableSoundButton = enableSoundButton;
+      this.enableSpeechTap = enableSpeechTap;
+      this.enableSpeechButton = enableSpeechButton;
+      this.enableVibrationTap = enableVibrationTap;
+      this.enableVibrationButton = enableVibrationButton;
+      this.vibrate = vibrate;
+      this.stopVibration = stopVibration;
+      this.enableNfcTap = enableNfcTap;
+      this.enableNfcButton = enableNfcButton;
+      this.stopNfc = stopNfc;
+      this.setNfcTagAlias = setNfcTagAlias;
+      this.getNfcTagAlias = getNfcTagAlias;
+      this.isNfcTag = isNfcTag;
+      this.enableAllTap = enableAllTap;
+      this.enableAllButton = enableAllButton;
+
+      // Canvas-first-touch style
+      this.enableGyroCanvas = enableGyroCanvas;
+      this.enableMicCanvas = enableMicCanvas;
+      this.enableSoundCanvas = enableSoundCanvas;
+      this.enableSpeechCanvas = enableSpeechCanvas;
+      this.enableVibrationCanvas = enableVibrationCanvas;
+      this.enableNfcCanvas = enableNfcCanvas;
+      this.enableAllCanvas = enableAllCanvas;
+      this.enableCameraCanvas = enableCameraCanvas;
+
+      // Banner style
+      this.enableGyroBanner = enableGyroBanner;
+      this.enableMicBanner = enableMicBanner;
+      this.enableSoundBanner = enableSoundBanner;
+      this.enableSpeechBanner = enableSpeechBanner;
+      this.enableVibrationBanner = enableVibrationBanner;
+      this.enableNfcBanner = enableNfcBanner;
+      this.enableAllBanner = enableAllBanner;
+      this.enableCameraBanner = enableCameraBanner;
+
+      // Custom element binding
+      this.enableGyroOn = enableGyroOn;
+      this.enableMicOn = enableMicOn;
+      this.enableSoundOn = enableSoundOn;
+      this.enableSpeechOn = enableSpeechOn;
+      this.enableVibrationOn = enableVibrationOn;
+      this.enableNfcOn = enableNfcOn;
+      this.enableAllOn = enableAllOn;
+      this.enableCameraOn = enableCameraOn;
+
+      // Camera functions
+      this.createPhoneCamera = createPhoneCamera;
+      this.enableCameraButton = enableCameraButton;
+      this.enableCameraTap = enableCameraTap;
+
+      // Debug functions
+      this.showDebug = showDebug;
+      this.hideDebug = hideDebug;
+      this.toggleDebug = toggleDebug;
+      this.debug = debug;
+      this.debugError = debugError;
+      this.debugWarn = debugWarn;
+    };
+
     console.log('✅ Mobile p5.js Permissions: registered as p5.js 2.0 addon');
   });
 }

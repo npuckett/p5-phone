@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [1.9.2] - 2026-06-02
+
+### Fixed
+- Fixed p5.js 2.x global-mode startup crashes caused by duplicate p5-phone addon registration of globals such as `lockGestures()`.
+- Kept p5.js 2.x instance-mode support by attaching p5-phone methods during the `presetup` lifecycle instead of registering colliding prototype globals.
+
 ### Changed
+- Updated the npm peer dependency range to advertise support for both p5.js 1.x and 2.x.
 - Updated examples and teaching snippets to use p5.js `2.2.3`, `p5.js-compatibility@0.2.0` preload support, and `p5.sound@0.3.0` where sound is required.
 - Converted image and sound asset-loading examples from `preload()` to `async setup()` with awaited `loadImage()` and `loadSound()` calls.
 
