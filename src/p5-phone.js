@@ -2176,8 +2176,13 @@ class PhoneCamera {
       return { x: 0, y: 0, width: 0, height: 0, scaleX: 1, scaleY: 1 };
     }
     
-    const videoWidth = this._video.width;
-    const videoHeight = this._video.height;
+    const videoElement = this.videoElement;
+    const videoWidth = (videoElement && videoElement.videoWidth) || this._video.width;
+    const videoHeight = (videoElement && videoElement.videoHeight) || this._video.height;
+
+    if (!videoWidth || !videoHeight) {
+      return { x: 0, y: 0, width: 0, height: 0, scaleX: 1, scaleY: 1 };
+    }
     
     // Get actual canvas DISPLAY dimensions (not drawing buffer dimensions)
     // In p5.js, the width/height globals represent the logical canvas size
@@ -2375,8 +2380,9 @@ class PhoneCamera {
    * Custom draw method for p5.image() compatibility
    * This allows image(cam, x, y) to work
    */
-  _draw() {
-    if (!this._ready || !this._video) return;
+  _draw(p5Instance = null) {
+    const videoElement = this.videoElement;
+    if (!this._ready || !this._video || !videoElement || videoElement.readyState < 2) return;
     
     const dims = this.getDimensions();
     
@@ -2396,21 +2402,37 @@ class PhoneCamera {
       this._drawDebugLogged = true;
     }
     
+    const context = (p5Instance && p5Instance.drawingContext) ||
+      (typeof drawingContext !== 'undefined' ? drawingContext : null);
+
+    if (!context || typeof context.drawImage !== 'function') return;
+
+    const pushState = (p5Instance && p5Instance.push) ? p5Instance.push.bind(p5Instance) :
+      (typeof push === 'function' ? push : null);
+    const popState = (p5Instance && p5Instance.pop) ? p5Instance.pop.bind(p5Instance) :
+      (typeof pop === 'function' ? pop : null);
+    const translateCanvas = (p5Instance && p5Instance.translate) ? p5Instance.translate.bind(p5Instance) :
+      (typeof translate === 'function' ? translate : null);
+    const scaleCanvas = (p5Instance && p5Instance.scale) ? p5Instance.scale.bind(p5Instance) :
+      (typeof scale === 'function' ? scale : null);
+
+    if (!pushState || !popState || !translateCanvas || !scaleCanvas) return;
+
     // Save current drawing state
-    push();
+    pushState();
     
     // Apply mirroring if needed
     if (this._mirror) {
       // Mirror by flipping around the center of the canvas
-      translate(canvasWidth, 0);
-      scale(-1, 1);
+      translateCanvas(canvasWidth, 0);
+      scaleCanvas(-1, 1);
       // Draw at the same logical position
-      image(this._video, dims.x, dims.y, dims.width, dims.height);
+      context.drawImage(videoElement, dims.x, dims.y, dims.width, dims.height);
     } else {
-      image(this._video, dims.x, dims.y, dims.width, dims.height);
+      context.drawImage(videoElement, dims.x, dims.y, dims.width, dims.height);
     }
     
-    pop();
+    popState();
   }
 }
 
@@ -2517,7 +2539,7 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
       
       // Always use auto-positioning for PhoneCamera
       // The camera calculates the correct position based on mode (fitHeight, fitWidth, etc)
-      cam._draw();
+      cam._draw(this);
     } else {
       // Not a PhoneCamera, use original image function
       originalImage.apply(this, args);

@@ -107,8 +107,14 @@ function setup() {
     };
     
     // Create HandPose model and start detection when ready
-    handpose = await ml5.handPose(options);
+    handpose = await loadMl5Model((modelLoaded) => ml5.handPose(options, modelLoaded));
     handpose.detectStart(cam.videoElement, gotHands);
+  });
+}
+
+function loadMl5Model(createModel) {
+  return new Promise((resolve) => {
+    let model = createModel(() => resolve(model));
   });
 }
 
@@ -185,7 +191,7 @@ function draw() {
   
   // Display the video feed
   if (showVideo && cam.ready) {
-    image(cam, 0, 0);  // PhoneCamera handles positioning and mirroring
+    drawPhoneCamera(cam);
   }
   
   // Update global point data and measure between the specified points
@@ -239,6 +245,20 @@ function draw() {
 // ==============================================
 function gotHands(results) {
   hands = results || [];
+}
+
+function drawPhoneCamera(phoneCamera) {
+  const videoElement = phoneCamera.videoElement;
+  if (!phoneCamera.ready || !videoElement || videoElement.readyState < 2) return;
+
+  const dims = phoneCamera.getDimensions();
+  push();
+  if (phoneCamera.mirror) {
+    translate(width, 0);
+    scale(-1, 1);
+  }
+  drawingContext.drawImage(videoElement, dims.x, dims.y, dims.width, dims.height);
+  pop();
 }
 
 // ==============================================
