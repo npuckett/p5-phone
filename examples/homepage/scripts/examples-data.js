@@ -206,7 +206,6 @@ window.P5PHONE_EXAMPLES = [
     description: 'Scan physical NFC tags, name them, and copy IDs into sketches.',
     path: 'Phone%20Sensor%20Examples/nfc/01_nfc_read/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/nfc/01_nfc_read',
-    webEditor: 'https://editor.p5js.org/npuckett/sketches/MZX0c5c7z',
     capabilities: ['nfc', 'aliases']
   },
   {
@@ -219,7 +218,6 @@ window.P5PHONE_EXAMPLES = [
     description: 'Use shirt and table aliases in simple if statements.',
     path: 'Phone%20Sensor%20Examples/nfc/02_two_tag_effects/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/nfc/02_two_tag_effects',
-    webEditor: 'https://editor.p5js.org/npuckett/sketches/KRlioaHzLv',
     capabilities: ['nfc', 'aliases']
   },
   {

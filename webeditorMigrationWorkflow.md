@@ -32,6 +32,7 @@ Work in small batches grouped by dependency shape:
 - Sound/mic examples: confirm `p5.sound@0.3.0` and no stale `tracks/` or `loadSound()` dependency unless assets will be uploaded.
 - ML5 examples: include helper files such as `GazeDetector.js` or `functions.js`.
 - GIF examples: create code-only projects with an empty `gifs/` folder when assets will be uploaded manually.
+- NFC examples: do not migrate to p5 Web Editor. Even full-page Web Editor previews are framed, which blocks Web NFC; these examples must be hosted directly on an HTTPS server.
 - Multi-page index pages: decide whether they belong in Web Editor at all before migrating.
 
 Before creating a batch, inventory missing or stale catalog links from `examples/homepage/scripts/examples-data.js` and confirm each local folder has the files needed for Web Editor.

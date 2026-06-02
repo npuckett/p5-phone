@@ -37,8 +37,6 @@ These sketches were created under `npuckett`, loaded in public full-preview page
 | device-orientation | Device Orientation | https://editor.p5js.org/npuckett/sketches/ayDVWysQ2 | https://editor.p5js.org/npuckett/full/ayDVWysQ2 | New link |
 | mic-level | Microphone Level | https://editor.p5js.org/npuckett/sketches/fuWalYu-L | https://editor.p5js.org/npuckett/full/fuWalYu-L | https://editor.p5js.org/creationcomputation/sketches/ySuEk7s6- |
 | speech-recognition | Speech Recognition | https://editor.p5js.org/npuckett/sketches/kMjBzPtoYL | https://editor.p5js.org/npuckett/full/kMjBzPtoYL | New link |
-| nfc-tag-identifier | NFC Tag Identifier | https://editor.p5js.org/npuckett/sketches/MZX0c5c7z | https://editor.p5js.org/npuckett/full/MZX0c5c7z | New link |
-| nfc-two-tag-effects | Two Tag Effects | https://editor.p5js.org/npuckett/sketches/KRlioaHzLv | https://editor.p5js.org/npuckett/full/KRlioaHzLv | New link |
 | sound-basic | Sound Basic | https://editor.p5js.org/npuckett/sketches/x8Mix5h19D | https://editor.p5js.org/npuckett/full/x8Mix5h19D | New generated-sound link; no tracks/loadSound asset dependency. |
 | volume-touches | Volume by Touches | https://editor.p5js.org/npuckett/sketches/bfJNTE16Ni | https://editor.p5js.org/npuckett/full/bfJNTE16Ni | New generated-sound link; no tracks/loadSound asset dependency. |
 | motion-synth | Motion Synth | https://editor.p5js.org/npuckett/sketches/i17rxtwHM | https://editor.p5js.org/npuckett/full/i17rxtwHM | New generated-sound link; no tracks/loadSound asset dependency. |
@@ -66,8 +64,12 @@ These sketches were created under `npuckett` with `index.html`, `sketch.js`, and
 
 ## Not migrated
 
+NFC examples are intentionally not linked to p5 Web Editor. Even the Web Editor full-page preview is contained inside a frame, which blocks Web NFC; host these examples directly on an HTTPS server instead.
+
 | Catalog id | Title | Reason |
 | --- | --- | --- |
+| nfc-tag-identifier | NFC Tag Identifier | Requires direct HTTPS hosting; do not add a p5 Web Editor link. |
+| nfc-two-tag-effects | Two Tag Effects | Requires direct HTTPS hosting; do not add a p5 Web Editor link. |
 | ux-compare | UX Compare Index | This is a multi-page reference index whose buttons point to external hosted demos, not a single editable p5 Web Editor sketch. |
 
 
