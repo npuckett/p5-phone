@@ -3,8 +3,8 @@
 // Requires Android Chrome 89+ over HTTPS. Not supported on iOS.
 
 const tagIds = {
-  shirt: '', // Paste the serial number for your shirt tag here.
-  table: ''  // Paste the serial number for your table tag here.
+  shirt: '04:d3:cf:41:c8:2a:81', // Paste the serial number for your shirt tag here.
+  table: '04:c4:6f:41:c8:2a:81'  // Paste the serial number for your table tag here.
 };
 
 let scanCount = 0;
