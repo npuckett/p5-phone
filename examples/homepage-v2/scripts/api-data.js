@@ -15,9 +15,10 @@ window.P5PHONE_API_SECTIONS = [
     title: 'Core Setup',
     description: 'Functions that most sketches use before enabling hardware access.',
     relatedApis: [
-      { label: 'mousePressed()', href: 'https://p5js.org/reference/p5/mousePressed/', summary: 'Touch-compatible press callback for p5.js 2.x sketches.' },
-      { label: 'mouseDragged()', href: 'https://p5js.org/reference/p5/mouseDragged/', summary: 'Touch-compatible drag callback for p5.js 2.x sketches.' },
-      { label: 'mouseReleased()', href: 'https://p5js.org/reference/p5/mouseReleased/', summary: 'Touch-compatible release callback for p5.js 2.x sketches.' }
+      { label: 'mousePressed()', href: 'https://beta.p5js.org/reference/p5/mousePressed/', summary: 'p5.js 2.x press callback for mouse, touch, and pointer input.' },
+      { label: 'mouseDragged()', href: 'https://beta.p5js.org/reference/p5/mouseDragged/', summary: 'p5.js 2.x drag callback for mouse, touch, and pointer input.' },
+      { label: 'mouseReleased()', href: 'https://beta.p5js.org/reference/p5/mouseReleased/', summary: 'p5.js 2.x release callback for mouse, touch, and pointer input.' },
+      { label: 'touches', href: 'https://beta.p5js.org/reference/p5/touches/', summary: 'Array of current touch points for multi-touch sketches.' }
     ],
     items: [
       { name: 'lockGestures', signature: 'lockGestures()', summary: 'Disables browser gestures that interfere with full-screen mobile sketches, including scroll, zoom, pull-to-refresh, context menu, and back-swipe behavior.', tags: ['setup', 'mobile'] },
@@ -29,17 +30,17 @@ window.P5PHONE_API_SECTIONS = [
     title: 'Motion Sensors',
     description: 'Enable orientation, acceleration, movement, and shake data. The public API still uses the historic Gyro name.',
     relatedApis: [
-      { label: 'rotationX', href: 'https://p5js.org/reference/p5/rotationX/', summary: 'Device tilt forward and backward.' },
-      { label: 'rotationY', href: 'https://p5js.org/reference/p5/rotationY/', summary: 'Device tilt left and right.' },
-      { label: 'rotationZ', href: 'https://p5js.org/reference/p5/rotationZ/', summary: 'Device rotation around the screen.' },
-      { label: 'accelerationX', href: 'https://p5js.org/reference/p5/accelerationX/', summary: 'Device acceleration left and right.' },
-      { label: 'accelerationY', href: 'https://p5js.org/reference/p5/accelerationY/', summary: 'Device acceleration up and down.' },
-      { label: 'accelerationZ', href: 'https://p5js.org/reference/p5/accelerationZ/', summary: 'Device acceleration forward and back.' },
-      { label: 'deviceOrientation', href: 'https://p5js.org/reference/p5/deviceOrientation/', summary: 'Current device orientation state.' },
-      { label: 'deviceMoved()', href: 'https://p5js.org/reference/p5/deviceMoved/', summary: 'Callback fired when movement crosses the move threshold.' },
-      { label: 'deviceShaken()', href: 'https://p5js.org/reference/p5/deviceShaken/', summary: 'Callback fired when shaking crosses the shake threshold.' },
-      { label: 'setMoveThreshold()', href: 'https://p5js.org/reference/p5/setMoveThreshold/', summary: 'Sets movement callback sensitivity.' },
-      { label: 'setShakeThreshold()', href: 'https://p5js.org/reference/p5/setShakeThreshold/', summary: 'Sets shake callback sensitivity.' }
+      { label: 'rotationX', href: 'https://beta.p5js.org/reference/p5/rotationX/', summary: 'Device tilt forward and backward.' },
+      { label: 'rotationY', href: 'https://beta.p5js.org/reference/p5/rotationY/', summary: 'Device tilt left and right.' },
+      { label: 'rotationZ', href: 'https://beta.p5js.org/reference/p5/rotationZ/', summary: 'Device rotation around the screen.' },
+      { label: 'accelerationX', href: 'https://beta.p5js.org/reference/p5/accelerationX/', summary: 'Device acceleration left and right.' },
+      { label: 'accelerationY', href: 'https://beta.p5js.org/reference/p5/accelerationY/', summary: 'Device acceleration up and down.' },
+      { label: 'accelerationZ', href: 'https://beta.p5js.org/reference/p5/accelerationZ/', summary: 'Device acceleration forward and back.' },
+      { label: 'deviceOrientation', href: 'https://beta.p5js.org/reference/p5/deviceOrientation/', summary: 'Current device orientation state.' },
+      { label: 'deviceMoved()', href: 'https://beta.p5js.org/reference/p5/deviceMoved/', summary: 'Callback fired when movement crosses the move threshold.' },
+      { label: 'deviceShaken()', href: 'https://beta.p5js.org/reference/p5/deviceShaken/', summary: 'Callback fired when shaking crosses the shake threshold.' },
+      { label: 'setMoveThreshold()', href: 'https://beta.p5js.org/reference/p5/setMoveThreshold/', summary: 'Sets movement callback sensitivity.' },
+      { label: 'setShakeThreshold()', href: 'https://beta.p5js.org/reference/p5/setShakeThreshold/', summary: 'Sets shake callback sensitivity.' }
     ],
     items: [
       { name: 'enableGyroTap', signature: 'enableGyroTap(message)', summary: 'Shows a full-screen tap overlay to request motion sensor permission.', tags: ['tap', 'sensors'] },
@@ -52,12 +53,14 @@ window.P5PHONE_API_SECTIONS = [
     title: 'Microphone, Sound, and Speech',
     description: 'Separate activation paths keep p5.AudioIn, audio playback, and speech recognition clear.',
     relatedApis: [
-      { label: 'p5.AudioIn', href: 'https://p5js.org/reference/p5.sound/p5.AudioIn/', summary: 'p5.sound microphone input object.' },
-      { label: 'getLevel()', href: 'https://p5js.org/reference/p5.AudioIn/getLevel/', summary: 'Reads the current microphone level.' },
-      { label: 'loadSound()', href: 'https://p5js.org/reference/p5/loadSound/', summary: 'Loads a sound file for playback.' },
-      { label: 'p5.SoundFile.play()', href: 'https://p5js.org/reference/p5.SoundFile/play/', summary: 'Starts sound-file playback after audio is unlocked.' },
-      { label: 'p5.Oscillator', href: 'https://p5js.org/reference/p5.sound/p5.Oscillator/', summary: 'Generated sound source for synth-style sketches.' },
-      { label: 'p5.SpeechRec', href: 'https://idmnyu.github.io/p5.js-speech/', summary: 'Speech-recognition helper from p5.js-speech.' }
+      { label: 'p5.AudioIn', href: 'https://beta.p5js.org/reference/p5.sound/p5.AudioIn/', summary: 'p5.sound microphone input source.' },
+      { label: 'p5.AudioIn.start()', href: 'https://beta.p5js.org/reference/p5.AudioIn/start/', summary: 'Starts microphone input after permission.' },
+      { label: 'p5.Amplitude', href: 'https://beta.p5js.org/reference/p5.sound/p5.Amplitude/', summary: 'p5.sound analyzer for audio level sketches.' },
+      { label: 'p5.Amplitude.getLevel()', href: 'https://beta.p5js.org/reference/p5.Amplitude/getLevel/', summary: 'Reads the current audio level in p5.sound 2.x docs.' },
+      { label: 'userStartAudio()', href: 'https://beta.p5js.org/reference/p5/userStartAudio/', summary: 'p5 audio-unlock helper that p5-phone wraps for mobile sketches.' },
+      { label: 'loadSound()', href: 'https://beta.p5js.org/reference/p5/loadSound/', summary: 'Loads a sound file for playback.' },
+      { label: 'p5.SoundFile.play()', href: 'https://beta.p5js.org/reference/p5.SoundFile/play/', summary: 'Starts sound-file playback after audio is unlocked.' },
+      { label: 'p5.Oscillator', href: 'https://beta.p5js.org/reference/p5.sound/p5.Oscillator/', summary: 'Generated sound source for synth-style sketches.' }
     ],
     items: [
       { name: 'enableMicTap', signature: 'enableMicTap(message)', summary: 'Requests microphone access from a tap. Use with p5.sound and p5.AudioIn.', tags: ['microphone', 'tap'] },
@@ -71,7 +74,7 @@ window.P5PHONE_API_SECTIONS = [
     title: 'Camera and PhoneCamera',
     description: 'PhoneCamera is optimized for ML5 sketches where video coordinates need to map onto a p5 canvas.',
     relatedApis: [
-      { label: 'createCapture()', href: 'https://p5js.org/reference/p5/createCapture/', summary: 'p5.js video-capture helper when you do not need PhoneCamera mapping.' }
+      { label: 'createCapture()', href: 'https://beta.p5js.org/reference/p5/createCapture/', summary: 'p5.js video-capture helper when you do not need PhoneCamera mapping.' }
     ],
     items: [
       { name: 'createPhoneCamera', signature: "createPhoneCamera(active = 'user', mirror = true, mode = 'fitHeight')", summary: 'Creates a PhoneCamera instance. active is user or environment; mode can be fitHeight, fitWidth, cover, contain, or fixed.', tags: ['camera', 'ml5'] },
