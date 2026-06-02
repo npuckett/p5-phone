@@ -90,8 +90,10 @@ window.speechEnabled = false;
 window.nfcEnabled = false;
 window.nfcError = '';
 window.nfcStatus = 'idle';
+window.nfcTagAliases = {};
 window.lastNfcMessage = null;
 window.lastNfcSerialNumber = null;
+window.lastNfcAlias = '';
 
 // Internal state
 let _micInstance = null;
@@ -563,6 +565,76 @@ function stopNfc() {
   console.log('NFC scanning stopped');
 }
 
+function _normalizeNfcText(value) {
+  return value == null ? '' : String(value).trim();
+}
+
+function _normalizeNfcTagId(serialNumber) {
+  return _normalizeNfcText(serialNumber).toLowerCase();
+}
+
+function _nfcTextMatches(firstValue, secondValue) {
+  const firstText = _normalizeNfcText(firstValue).toLowerCase();
+  const secondText = _normalizeNfcText(secondValue).toLowerCase();
+  return firstText !== '' && firstText === secondText;
+}
+
+/**
+ * Give an NFC tag a human-friendly alias.
+ * Pass an empty alias to remove the stored name for a tag.
+ */
+function setNfcTagAlias(serialNumber, alias) {
+  const tagId = _normalizeNfcTagId(serialNumber);
+  const tagAlias = _normalizeNfcText(alias);
+
+  if (!tagId) {
+    console.warn('p5-phone: setNfcTagAlias() needs an NFC serial number');
+    return '';
+  }
+
+  if (!tagAlias) {
+    delete window.nfcTagAliases[tagId];
+  } else {
+    window.nfcTagAliases[tagId] = tagAlias;
+  }
+
+  if (_normalizeNfcTagId(window.lastNfcSerialNumber) === tagId) {
+    window.lastNfcAlias = tagAlias;
+    if (window.lastNfcMessage) {
+      window.lastNfcMessage.alias = tagAlias;
+    }
+  }
+
+  return tagAlias;
+}
+
+/**
+ * Get the human-friendly alias for an NFC tag serial number.
+ */
+function getNfcTagAlias(serialNumber = window.lastNfcSerialNumber) {
+  const tagId = _normalizeNfcTagId(serialNumber);
+  return tagId ? (window.nfcTagAliases[tagId] || '') : '';
+}
+
+/**
+ * Check whether the most recently read NFC tag matches an alias or serial number.
+ * Optionally pass a serial number from nfcRead(message, serialNumber) as the second argument.
+ */
+function isNfcTag(aliasOrSerialNumber, serialNumber = window.lastNfcSerialNumber) {
+  const tagId = _normalizeNfcTagId(serialNumber);
+  const targetText = _normalizeNfcText(aliasOrSerialNumber);
+
+  if (!tagId || !targetText) {
+    return false;
+  }
+
+  if (tagId === _normalizeNfcTagId(targetText)) {
+    return true;
+  }
+
+  return _nfcTextMatches(getNfcTagAlias(serialNumber), targetText);
+}
+
 // =========================================
 // INTERNAL PERMISSION HANDLERS
 // =========================================
@@ -749,9 +821,11 @@ async function _requestNfcPermissionCore() {
         records.push(entry);
       }
 
-      const message = { serialNumber: serialNumber, records: records };
+      const alias = getNfcTagAlias(serialNumber);
+      const message = { serialNumber: serialNumber, alias: alias, records: records };
       window.lastNfcMessage = message;
       window.lastNfcSerialNumber = serialNumber;
+      window.lastNfcAlias = alias;
       window.nfcStatus = 'tag-read';
       window.nfcError = '';
 
@@ -1617,6 +1691,9 @@ window.stopVibration = stopVibration;
 window.enableNfcTap = enableNfcTap;
 window.enableNfcButton = enableNfcButton;
 window.stopNfc = stopNfc;
+window.setNfcTagAlias = setNfcTagAlias;
+window.getNfcTagAlias = getNfcTagAlias;
+window.isNfcTag = isNfcTag;
 window.enableAllTap = enableAllTap;
 window.enableAllButton = enableAllButton;
 
@@ -2220,6 +2297,70 @@ class PhoneCamera {
     
     return keypoints.map(kp => this.mapKeypoint(kp));
   }
+
+  /**
+   * Map an ML5 bounding box object to display coordinates
+   * Handles scaling and mirroring automatically
+   * Preserves labels, confidence, and any other detection properties
+   * @param {object} box - ML5 box/detection { x, y, width, height, ... }
+   * @returns {object} - Box with mapped x, y, width, and height
+   */
+  mapBox(box) {
+    if (!box) {
+      console.warn('PhoneCamera.mapBox: invalid box', box);
+      return box;
+    }
+
+    const boxX = typeof box.x !== 'undefined' ? box.x : box.xMin;
+    const boxY = typeof box.y !== 'undefined' ? box.y : box.yMin;
+    const boxWidth = typeof box.width !== 'undefined' ? box.width : box.xMax - box.xMin;
+    const boxHeight = typeof box.height !== 'undefined' ? box.height : box.yMax - box.yMin;
+    const numericX = Number(boxX);
+    const numericY = Number(boxY);
+    const numericWidth = Number(boxWidth);
+    const numericHeight = Number(boxHeight);
+
+    if (!Number.isFinite(numericX) ||
+        !Number.isFinite(numericY) ||
+        !Number.isFinite(numericWidth) ||
+        !Number.isFinite(numericHeight)) {
+      console.warn('PhoneCamera.mapBox: invalid box', box);
+      return box;
+    }
+
+    const topLeft = this.mapPoint(numericX, numericY);
+    const bottomRight = this.mapPoint(numericX + numericWidth, numericY + numericHeight);
+    const mappedX = Math.min(topLeft.x, bottomRight.x);
+    const mappedY = Math.min(topLeft.y, bottomRight.y);
+    const mappedWidth = Math.abs(bottomRight.x - topLeft.x);
+    const mappedHeight = Math.abs(bottomRight.y - topLeft.y);
+
+    return {
+      ...box,
+      x: mappedX,
+      y: mappedY,
+      width: mappedWidth,
+      height: mappedHeight,
+      xMin: mappedX,
+      yMin: mappedY,
+      xMax: mappedX + mappedWidth,
+      yMax: mappedY + mappedHeight
+    };
+  }
+
+  /**
+   * Map an array of ML5 bounding boxes to display coordinates
+   * @param {array} boxes - Array of ML5 boxes/detections
+   * @returns {array} - Array of boxes with mapped coordinates
+   */
+  mapBoxes(boxes) {
+    if (!Array.isArray(boxes)) {
+      console.warn('PhoneCamera.mapBoxes: expected array, got', typeof boxes);
+      return boxes;
+    }
+
+    return boxes.map(box => this.mapBox(box));
+  }
   
   // ========================================
   // CANVAS DRAWING INTEGRATION
@@ -2405,6 +2546,9 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
   p5.prototype.enableNfcTap = enableNfcTap;
   p5.prototype.enableNfcButton = enableNfcButton;
   p5.prototype.stopNfc = stopNfc;
+  p5.prototype.setNfcTagAlias = setNfcTagAlias;
+  p5.prototype.getNfcTagAlias = getNfcTagAlias;
+  p5.prototype.isNfcTag = isNfcTag;
   p5.prototype.enableAllTap = enableAllTap;
   p5.prototype.enableAllButton = enableAllButton;
   
@@ -2483,6 +2627,9 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
     fn.enableNfcTap = enableNfcTap;
     fn.enableNfcButton = enableNfcButton;
     fn.stopNfc = stopNfc;
+    fn.setNfcTagAlias = setNfcTagAlias;
+    fn.getNfcTagAlias = getNfcTagAlias;
+    fn.isNfcTag = isNfcTag;
     fn.enableAllTap = enableAllTap;
     fn.enableAllButton = enableAllButton;
     

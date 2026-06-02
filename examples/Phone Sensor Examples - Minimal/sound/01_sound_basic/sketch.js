@@ -7,38 +7,35 @@ let audioTrack;
 let isPlaying = false;
 let playCount = 0;
 
-function preload() 
+async function setup()
 {
     // Load audio file
-    audioTrack = loadSound('tracks/audio1.mp3');
-}
+    audioTrack = await loadSound('tracks/audio1.mp3');
 
-function setup() 
-{
     createCanvas(windowWidth, windowHeight);
-    
+
     // Show debug panel FIRST
     showDebug();
-    
+
     // Enable sound with tap permission
     enableSoundTap();
-    
+
     // Lock mobile gestures
     lockGestures();
-    
+
     // Set audio to loop
     audioTrack.loop();
     audioTrack.pause();
-    
+
     debug("Sound Basic - Minimal Version");
     debug("Touch to play/pause audio");
     debug("Waiting for audio permissions...");
 }
 
-function draw() 
+function draw()
 {
     // Check if sound system is enabled
-    if (window.soundEnabled) 
+    if (window.soundEnabled)
     {
         // Output audio state to debug panel
         debug("--- Audio Status ---");
@@ -47,19 +44,19 @@ function draw()
         debug("Current Time: " + audioTrack.currentTime().toFixed(2) + "s");
         debug("Duration: " + audioTrack.duration().toFixed(2) + "s");
         debug("Volume: " + int(audioTrack.getVolume() * 100) + "%");
-        
-        if (audioTrack.isPlaying()) 
+
+        if (audioTrack.isPlaying())
         {
             debug("STATUS: PLAYING ▶");
         }
-        else 
+        else
         {
             debug("STATUS: PAUSED ⏸");
         }
-        
+
         debug("Touch anywhere to toggle play/pause");
     }
-    else 
+    else
     {
         debug("Waiting for audio permissions...");
         debug("Touch the screen to enable audio");
@@ -67,17 +64,17 @@ function draw()
 }
 
 // Toggle play/pause on touch
-function mousePressed() 
+function mousePressed()
 {
-    if (window.soundEnabled) 
+    if (window.soundEnabled)
     {
-        if (audioTrack.isPlaying()) 
+        if (audioTrack.isPlaying())
         {
             audioTrack.pause();
             isPlaying = false;
             debug("--- Touch: PAUSED ---");
         }
-        else 
+        else
         {
             audioTrack.play();
             isPlaying = true;
@@ -85,12 +82,12 @@ function mousePressed()
             debug("--- Touch: PLAYING ---");
         }
     }
-    
+
     return false;  // Prevents default behavior
 }
 
 // Prevent default touch behavior
-function mouseReleased() 
+function mouseReleased()
 {
     return false;  // Prevents default behavior
 }

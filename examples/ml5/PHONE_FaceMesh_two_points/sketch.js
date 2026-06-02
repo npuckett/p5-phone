@@ -101,7 +101,7 @@ function setup() {
       maxFaces: 1,           // Only detect 1 face
       refineLandmarks: false,// Skip detailed landmarks (faster)
       runtime: 'mediapipe',  // Use MediaPipe runtime
-      flipHorizontal: false  // Don't flip in ML5 - cam.mapKeypoint() handles mirroring
+      flipped: false         // Don't flip in ML5 - cam.mapKeypoint() handles mirroring
     };
     
     // Create FaceMesh model and start detection when ready

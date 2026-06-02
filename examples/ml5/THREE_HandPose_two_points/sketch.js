@@ -116,7 +116,7 @@ async function loadHandPoseModel() {
   const options = {
     maxHands: 1,           // Only detect 1 hand (like p5.js example)
     runtime: 'mediapipe',  // Use MediaPipe runtime
-    flipHorizontal: false  // Handle mirroring in coordinate mapping
+    flipped: false         // Handle mirroring in coordinate mapping
   };
   
   // AWAIT the promise to get the actual handPose object

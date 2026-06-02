@@ -8,7 +8,7 @@ applyTo: "**/sketch.js"
 p5-phone provides mobile hardware access for p5.js sketches. Include it via CDN:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"></script>
 ```
 
 ## Essential Pattern
@@ -25,11 +25,13 @@ function setup() {
 }
 
 function draw() {
-  if (!window.sensorsEnabled) return; // Wait for permission
   background(220);
-  // rotationX, rotationY, rotationZ — device orientation
-  // accelerationX, accelerationY, accelerationZ — device acceleration
-  // rotationRateAlpha/Beta/Gamma — gyroscope angular velocity
+
+  if (window.sensorsEnabled) {
+    // rotationX, rotationY, rotationZ — device orientation
+    // accelerationX, accelerationY, accelerationZ — device acceleration
+    // rotationRateAlpha/Beta/Gamma — gyroscope angular velocity
+  }
 }
 ```
 
@@ -54,6 +56,10 @@ Check these to know if permissions have been granted:
 - `window.micEnabled` — microphone active
 - `window.speechEnabled` — speech recognition active
 - `window.nfcEnabled` — NFC scanning active (Android only)
+- `window.lastNfcSerialNumber` — most recently read NFC tag ID
+- `window.lastNfcAlias` — alias for the most recently read NFC tag, if set
+
+Prefer wrapping hardware-dependent code in positive checks, such as `if (window.sensorsEnabled) { ... }` or `if (window.micEnabled) { ... }`.
 
 ## Callback
 
@@ -76,14 +82,16 @@ function setup() {
   enableMicTap('Tap to enable microphone');
 }
 function draw() {
-  if (!window.micEnabled) return;
-  let level = mic.getLevel();
   background(220);
-  circle(width/2, height/2, level * 500);
+
+  if (window.micEnabled) {
+    let level = mic.getLevel();
+    circle(width/2, height/2, level * 500);
+  }
 }
 ```
 
-Requires p5.sound: `<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/addons/p5.sound.min.js"></script>`
+Requires p5.sound: `<script src="https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js"></script>`
 
 ## Debug Console
 
@@ -99,7 +107,8 @@ debugError('error');   // Red error
 - iOS requires a **user tap** before granting sensor/mic access — cannot auto-trigger.
 - Always serve over **HTTPS** — sensors and mic are blocked on HTTP.
 - Call `lockGestures()` in `setup()` to prevent browser default touch behaviors.
-- **NFC** is Android-only (Chrome 89+). Define `nfcRead(message, serialNumber)` in your sketch to receive tag data. Use `stopNfc()` to stop scanning.
+- **NFC** is Android-only (Chrome 89+). Define `nfcRead(message, serialNumber)` in your sketch to receive tag data. Use `setNfcTagAlias(id, alias)` and `isNfcTag(aliasOrId)` for named tag workflows. Use `stopNfc()` to stop scanning.
+- **PhoneCamera + ML5**: Use `cam.mapKeypoint()` / `cam.mapKeypoints()` for landmark models and `cam.mapBox()` / `cam.mapBoxes()` for object-detection boxes. Set ML5 `flipped: false` when available because PhoneCamera handles mirroring.
 - `enableSpeech*` only activates the audio context — create your own `p5.SpeechRec` object after.
 - `enableAll*` combines sensors + microphone (not speech or camera).
 
@@ -128,8 +137,9 @@ function mousePressed() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mobile p5.js App</title>
   <style>body { margin: 0; padding: 0; overflow: hidden; }</style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>

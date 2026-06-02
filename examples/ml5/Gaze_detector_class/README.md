@@ -204,7 +204,7 @@ function setup() {
     let options = {
       maxFaces: 1,
       refineLandmarks: false,
-      flipHorizontal: false
+      flipped: false
     };
     
     faceMesh = ml5.faceMesh(options, () => {

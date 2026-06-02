@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5-phone</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="scripts/api-data.js" defer></script>
+  <script src="scripts/examples-data.js" defer></script>
+  <script src="scripts/render.js" defer></script>
+  <script src="scripts/navigation.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="mobile-header">
+    <a class="brand compact" href="#start" aria-label="p5-phone docs home">
+      <span class="brand-mark">p5</span>
+      <span>p5-phone</span>
+    </a>
+    <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-sidebar" data-menu-button>Menu</button>
+  </header>
+
+  <aside class="sidebar" id="site-sidebar" data-sidebar>
+    <div class="sidebar-inner">
+      <a class="brand" href="#start" aria-label="p5-phone docs home">
+        <span class="brand-mark">p5</span>
+        <span>p5-phone</span>
+      </a>
+      <p class="sidebar-summary">Mobile hardware access for p5.js sketches.</p>
+      <nav class="sidebar-nav" aria-label="Docs sections">
+        <a href="#start">Start</a>
+        <a href="#quick-start">Quick Start</a>
+        <div class="nav-group">
+          <a href="#api">API</a>
+          <div class="nav-subheads" aria-label="API subsections">
+            <a href="#api-core">Core Setup</a>
+            <a href="#api-motion">Motion Sensors</a>
+            <a href="#api-audio">Audio</a>
+            <a href="#api-camera">Camera</a>
+            <a href="#api-nfc">NFC</a>
+            <a href="#api-vibration">Vibration</a>
+            <a href="#api-debug">Debug</a>
+            <a href="#api-status">Status</a>
+          </div>
+        </div>
+        <div class="nav-group">
+          <a href="#examples">Examples</a>
+          <div class="nav-subheads" aria-label="Example categories">
+            <a href="#examples-start">Start</a>
+            <a href="#examples-input">Input</a>
+            <a href="#examples-output">Output</a>
+            <a href="#examples-ml5">ML5</a>
+            <a href="#examples-reference">Reference</a>
+          </div>
+        </div>
+        <a href="#compatibility">Compatibility</a>
+      </nav>
+      <div class="sidebar-actions">
+        <a href="../homepage/">Current Docs</a>
+        <a href="../../README.md">README</a>
+        <a href="https://github.com/npuckett/p5-phone" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="backdrop" data-backdrop></div>
+
+  <main id="main-content" class="main-content">
+    <section id="start" class="hero-section content-section">
+      <figure class="hero-media">
+        <img src="../../p5-phone.png" alt="p5-phone library illustration" class="hero-image">
+        <figcaption class="image-credit">Illustration by <a href="https://angelatorchio.com/" target="_blank" rel="noreferrer">Angela Torchio</a></figcaption>
+      </figure>
+      <div class="signal-grid" aria-label="Docs priorities">
+        <div>
+          <strong>Static</strong>
+          <span>No framework, no build step, GitHub Pages friendly.</span>
+        </div>
+        <div>
+          <strong>Phone-first</strong>
+          <span>Every runnable example keeps a QR code.</span>
+        </div>
+        <div>
+          <strong>Current API</strong>
+          <span>Reference data is checked against <code>src/p5-phone.js</code>.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="quick-start" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Start</span>
+        <h2>Quick Start</h2>
+        <p>Use p5.js, load p5-phone, lock gestures, then enable the capability your sketch needs from a user tap.</p>
+      </div>
+      <div class="split-layout">
+        <div>
+            <h3>p5.js 2.2 default</h3>
+            <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"&gt;&lt;/script&gt;
+        &lt;script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
+        </div>
+        <div>
+            <h3>Asset loading support</h3>
+            <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"&gt;&lt;/script&gt;
+        &lt;script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
+        </div>
+      </div>
+      <pre><code>function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableGyroTap('Tap to enable motion sensors');
+}
+
+function draw() {
+  background(245);
+  textAlign(CENTER, CENTER);
+
+  if (window.sensorsEnabled) {
+    circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
+  } else {
+    text('Tap to enable motion sensors', width / 2, height / 2);
+  }
+}</code></pre>
+
+      <div class="note-band">
+        <strong>Permission pattern:</strong> put code that uses phone hardware inside a positive enabled check. Write sketches as <code>if (window.sensorsEnabled) { ... }</code>, <code>if (window.micEnabled) { ... }</code>, or the matching status flag for the capability you enabled.
+      </div>
+
+      <div class="starter-grid" aria-label="Positive permission examples">
+        <article class="starter-card">
+          <h3>Motion Sensors</h3>
+          <pre><code>if (window.sensorsEnabled) {
+  circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
+}</code></pre>
+        </article>
+
+        <article class="starter-card">
+          <h3>Microphone</h3>
+          <pre><code>if (window.micEnabled) {
+  let level = mic.getLevel();
+  circle(width / 2, height / 2, level * 500);
+}</code></pre>
+        </article>
+
+        <article class="starter-card">
+          <h3>Sound Output</h3>
+          <pre><code>function mousePressed() {
+  if (window.soundEnabled) {
+    mySound.play();
+  }
+  return false;
+}</code></pre>
+        </article>
+
+        <article class="starter-card">
+          <h3>NFC</h3>
+          <pre><code>if (window.nfcEnabled) {
+  if (isNfcTag('shirt')) {
+    drawShirtEffect();
+  }
+}</code></pre>
+        </article>
+
+        <article class="starter-card">
+          <h3>Vibration</h3>
+          <pre><code>function mousePressed() {
+  if (window.vibrationEnabled) {
+    vibrate(50);
+  }
+  return false;
+}</code></pre>
+        </article>
+
+        <article class="starter-card">
+          <h3>Camera</h3>
+          <pre><code>if (cam.ready) {
+  cam.draw();
+}</code></pre>
+        </article>
+      </div>
+
+      <div class="note-band">
+        <strong>p5.js 2.0 note:</strong> use <code>mousePressed()</code>, <code>mouseDragged()</code>, and <code>mouseReleased()</code> for touch or pointer input. The older <code>touchStarted()</code>, <code>touchMoved()</code>, and <code>touchEnded()</code> callbacks are p5.js 1.x only.
+      </div>
+    </section>
+
+    <section id="api" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Reference</span>
+        <h2>API</h2>
+        <p>Grouped by the job you are trying to do. The permission table keeps the five UI styles visible without repeating them throughout the page.</p>
+      </div>
+      <div id="permission-matrix" class="matrix-wrap" aria-live="polite"></div>
+      <div id="api-sections" class="api-sections" aria-live="polite"></div>
+    </section>
+
+    <section id="examples" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Examples</span>
+        <h2>Example Catalog</h2>
+        <p>Reordered around starter sketches, input, output, ML5, and lower-priority comparison material. Each card has room for a full example, minimal version, Web Editor link, source link, and QR code.</p>
+      </div>
+      <div class="filter-panel" aria-label="Example filters">
+        <label>Search <input id="example-search" type="search" placeholder="motion, NFC, face, sound"></label>
+        <label>Type <select id="category-filter"></select></label>
+        <label>Level <select id="level-filter"></select></label>
+        <label>p5 version <select id="version-filter"></select></label>
+      </div>
+      <div class="catalog-status" id="catalog-status"></div>
+      <div id="example-results" class="example-results" aria-live="polite"></div>
+    </section>
+
+    <section id="compatibility" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Support</span>
+        <h2>Compatibility</h2>
+        <p>Plan mobile sketches by platform first. Browser permissions and hardware support matter more than the p5.js version for most phone behavior.</p>
+      </div>
+
+      <div class="compat-grid">
+        <article class="compat-panel">
+          <h3>iOS Safari</h3>
+          <ul>
+            <li>Motion sensors, microphone, sound, speech, and camera must start from a user tap or button.</li>
+            <li>Motion permission uses Apple-specific sensor prompts, so the enable helpers are important.</li>
+            <li>Web NFC and vibration are not available in Safari on iPhone.</li>
+            <li>Use <code>mousePressed()</code>, <code>mouseDragged()</code>, and <code>mouseReleased()</code> for touch-compatible sketches.</li>
+          </ul>
+        </article>
+
+        <article class="compat-panel">
+          <h3>Android Chrome</h3>
+          <ul>
+            <li>Motion sensors usually work without the iOS-style sensor permission prompt.</li>
+            <li>Microphone, sound, speech, and camera still need a user gesture and browser permission.</li>
+            <li>Web NFC is Android Chrome only and requires HTTPS with NDEF-formatted tags.</li>
+            <li>Vibration is available on many Android devices through <code>vibrate()</code>.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Capability</th><th>iOS Safari</th><th>Android Chrome</th><th>Desktop browsers</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Motion sensors</td><td>Supported after a tap permission flow.</td><td>Supported; permission request is usually a no-op.</td><td>Limited or unavailable on most laptops and desktops.</td></tr>
+            <tr><td>Touch input</td><td>Supported through touch and pointer events.</td><td>Supported through touch and pointer events.</td><td>Use mouse or pointer callbacks for testing.</td></tr>
+            <tr><td>Microphone and sound</td><td>Supported after user gesture and permission.</td><td>Supported after user gesture and permission.</td><td>Supported after browser permission.</td></tr>
+            <tr><td>Speech recognition</td><td>Browser support varies; test on the target device.</td><td>Supported in Chrome where Web Speech is available.</td><td>Browser support varies.</td></tr>
+            <tr><td>NFC</td><td>Not supported.</td><td>Supported in Chrome on HTTPS.</td><td>Not supported.</td></tr>
+            <tr><td>Camera and ML5</td><td>Supported after camera permission.</td><td>Supported after camera permission.</td><td>Supported after camera permission.</td></tr>
+            <tr><td>Vibration</td><td>Not supported.</td><td>Supported on many phones.</td><td>Limited or unavailable.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

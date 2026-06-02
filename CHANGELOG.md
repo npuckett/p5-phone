@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+- Updated examples and teaching snippets to use p5.js `2.2.3`, `p5.js-compatibility@0.2.0` preload support, and `p5.sound@0.3.0` where sound is required.
+- Converted image and sound asset-loading examples from `preload()` to `async setup()` with awaited `loadImage()` and `loadSound()` calls.
+
+## [1.9.1] - 2026-06-02
+
+### Added
+- NFC tag alias helpers: `setNfcTagAlias()`, `getNfcTagAlias()`, and `isNfcTag()` for naming physical tags and using aliases in conditionals.
+- NFC read messages now include `message.alias`, with `window.lastNfcAlias` and `window.nfcTagAliases` available for sketches.
+- NFC two-tag effects example showing `shirt` and `table` aliases used in simple `if (isNfcTag(...))` branches.
+- Basic movement examples for `deviceShaken()`, `deviceMoved()`, and `deviceOrientation`, including threshold controls for `setShakeThreshold()` and `setMoveThreshold()`.
+- Motion Synth sound example showing generated p5.sound oscillator audio controlled by phone motion sensors.
+- `PhoneCamera.mapBox()` and `PhoneCamera.mapBoxes()` for mapping ML5 object-detection bounding boxes through p5-phone camera scaling and mirroring.
+- ML5 phone object detection example using `ml5.objectDetection('cocossd')` and mapped bounding boxes.
+
+### Changed
+- NFC example is now a tag identifier workflow with larger centered tag IDs, alias entry, and a downloadable tag-name list.
+- ML5 FaceMesh and HandPose examples now use the current `flipped: false` option name.
+
+### Fixed
+- PHONE BodyPose example now tracks the right shoulder at index `12` instead of the nose for the shoulder-distance pair.
+
 ## [1.9.0] - 2026-04-08
 
 ### Added
@@ -105,7 +129,7 @@ All notable changes to this project will be documented in this file.
 - API reference for all PhoneCamera methods and properties
 - Display modes documentation
 - Coordinate mapping explanation
-- Important notes about flipHorizontal and iOS compatibility
+- Important notes about ML5 flipping options and iOS compatibility
 
 ## [1.5.0] - Previous Release
 

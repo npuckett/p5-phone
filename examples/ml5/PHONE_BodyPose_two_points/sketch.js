@@ -68,7 +68,7 @@ let showData = true;    // Toggle measurement visualization (lines, arcs, text)
 let bodyPointIndex1 = 11;   // Left shoulder
 let bodyPointData1 = null;  // Stores mapped left shoulder data
 
-let bodyPointIndex2 = 0;   // Right shoulder
+let bodyPointIndex2 = 12;  // Right shoulder
 let bodyPointData2 = null;  // Stores mapped right shoulder data
 
 let bodyPointIndex3 = 15;   // Left wrist

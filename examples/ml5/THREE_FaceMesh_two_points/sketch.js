@@ -134,7 +134,7 @@ async function loadFaceMeshModel() {
     maxFaces: 1,              // Only detect 1 face
     refineLandmarks: false,   // Skip detailed landmarks (faster)
     runtime: 'mediapipe',     // Use MediaPipe runtime
-    flipHorizontal: false     // Don't flip - we handle mirroring in mapping
+    flipped: false            // Don't flip - we handle mirroring in mapping
   };
   
   // Create FaceMesh model

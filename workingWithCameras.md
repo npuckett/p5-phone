@@ -9,7 +9,7 @@ This guide covers how to use the PhoneCamera class from p5-phone for computer vi
 Include p5-phone in your HTML:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"></script>
 ```
 
 Or install via npm:
@@ -131,13 +131,14 @@ function setup() {
   <title>Phone Camera + ML5</title>
   
   <!-- p5.js library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
   
   <!-- ML5.js library (v1.x) -->
   <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
   
   <!-- p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"></script>
   
   <style>
     body {
@@ -208,7 +209,7 @@ function setup() {
   cam.onReady(() => {
     let options = {
       runtime: 'mediapipe',  // IMPORTANT: Required for iOS
-      flipHorizontal: false  // PhoneCamera handles mirroring
+      flipped: false         // PhoneCamera handles mirroring
     };
     
     model = ml5.modelName(options, modelLoaded);
@@ -245,7 +246,7 @@ cam.onReady(() => {
     maxFaces: 1,
     refineLandmarks: false,
     runtime: 'mediapipe',
-    flipHorizontal: false
+    flipped: false
   };
   
   facemesh = ml5.faceMesh(options, modelLoaded);
@@ -290,7 +291,7 @@ cam.onReady(() => {
   let options = {
     maxHands: 2,
     runtime: 'mediapipe',
-    flipHorizontal: false
+    flipped: false
   };
   
   handpose = ml5.handPose(options, modelLoaded);
@@ -399,7 +400,7 @@ All examples use this pattern:
 
 ```javascript
 let cam;           // PhoneCamera instance
-let model;         // ML5 model (facemesh, handpose, or bodypose)
+let model;         // ML5 model (facemesh, handpose, bodypose, objectDetection)
 let results = [];  // Detection results (updated automatically)
 ```
 
@@ -413,9 +414,12 @@ let mappedPoint = cam.mapKeypoint(keypoint);
 
 // Map array of keypoints
 let mappedPoints = cam.mapKeypoints(keypoints);
+
+// Map object detection bounding box
+let mappedBox = cam.mapBox(detection);
 ```
 
-**Why?** ML5 returns coordinates in video space (e.g., 640x480), but your canvas might be different (e.g., 1920x1080). `cam.mapKeypoint()` handles:
+**Why?** ML5 returns coordinates in video space (e.g., 640x480), but your canvas might be different (e.g., 1920x1080). `cam.mapKeypoint()` and `cam.mapBox()` handle:
 - Scaling to canvas size
 - Mirroring (for front camera)
 - Offset positioning (for different display modes)

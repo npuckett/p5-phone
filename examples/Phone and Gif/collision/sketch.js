@@ -23,13 +23,13 @@ class SpacePerson
         this.celebrationTimer = 0;
         this.touchCount = 0;
     }
-    
+
     update()
     {
         // Move the space person
         this.x = this.x + this.speedX;
         this.y = this.y + this.speedY;
-        
+
         // Bounce off edges
         if (this.x - this.width/2 < 0 || this.x + this.width/2 > width)
         {
@@ -39,14 +39,14 @@ class SpacePerson
         {
             this.speedY = this.speedY * -1;
         }
-        
+
         // Update celebration timer
         if (this.celebrationTimer > 0)
         {
             this.celebrationTimer = this.celebrationTimer - 1;
         }
     }
-    
+
     display()
     {
         // Draw border (green if touched, white otherwise)
@@ -60,11 +60,11 @@ class SpacePerson
             stroke(255);
             strokeWeight(2);
         }
-        
+
         fill(255, 255, 255, 0);
         rectMode(CORNER);
         rect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
-        
+
         // Display the space suit image (or placeholder if not loaded)
         noStroke();
         imageMode(CENTER);
@@ -85,7 +85,7 @@ class SpacePerson
             fill(100, 150, 255);
             circle(this.x, this.y - 15, 25); // visor
         }
-        
+
         // Show touch count for this space person
         fill(255);
         stroke(0);
@@ -93,17 +93,17 @@ class SpacePerson
         textSize(20);
         textAlign(CENTER, CENTER);
         text(this.touchCount, this.x, this.y - this.height/2 - 20);
-        
+
         // Reset touched state
         this.isTouched = false;
     }
-    
+
     checkTouch(touchX, touchY)
     {
         // Calculate the top-left corner for collidePointRect
         let rectX = this.x - this.width/2;
         let rectY = this.y - this.height/2;
-        
+
         // Use collidePointRect to check if touch is inside bounds
         if (collidePointRect(touchX, touchY, rectX, rectY, this.width, this.height))
         {
@@ -116,20 +116,17 @@ class SpacePerson
     }
 }
 
-function preload() 
+async function setup()
 {
     // Load the space suit image
-    spaceSuitImg = loadImage('gifs/spaceSuit2.png');
-}
+    spaceSuitImg = await loadImage('gifs/spaceSuit2.png');
 
-function setup() 
-{
     createCanvas(windowWidth, windowHeight);
     backgroundColor = color(20, 20, 40);
-    
+
     // Lock mobile gestures to prevent browser interference
     lockGestures();
-    
+
     // Create 5 space people at random positions
     for (let i = 0; i < 5; i = i + 1)
     {
@@ -139,17 +136,17 @@ function setup()
     }
 }
 
-function draw() 
+function draw()
 {
     background(backgroundColor);
-    
+
     // Update and display all space people
     for (let i = 0; i < spacePeople.length; i = i + 1)
     {
         spacePeople[i].update();
         spacePeople[i].display();
     }
-    
+
     // Display total touch counter
     fill(255);
     stroke(0);
@@ -157,25 +154,25 @@ function draw()
     textSize(32);
     textAlign(CENTER, CENTER);
     text("Total Touches: " + totalTouches, width/2, 40);
-    
+
     // Instructions
     textSize(20);
     text("Touch the space people!", width/2, height - 50);
-    
+
     // Show collision detection info
     textSize(16);
     fill(200);
     text("Using collidePointRect() - each object detects touches independently", width/2, height - 20);
 }
 
-function mousePressed() 
+function mousePressed()
 {
     // Check all touch points
     for (let i = 0; i < touches.length; i = i + 1)
     {
         let touchX = touches[i].x;
         let touchY = touches[i].y;
-        
+
         // Check each space person for collision with this touch
         for (let j = 0; j < spacePeople.length; j = j + 1)
         {
@@ -187,40 +184,40 @@ function mousePressed()
             }
         }
     }
-    
+
     // Prevent default touch behavior and unwanted gestures
     return false;
 }
 
-function mouseDragged() 
+function mouseDragged()
 {
     // Check touches during movement too
     for (let i = 0; i < touches.length; i = i + 1)
     {
         let touchX = touches[i].x;
         let touchY = touches[i].y;
-        
+
         // Check each space person
         for (let j = 0; j < spacePeople.length; j = j + 1)
         {
             spacePeople[j].checkTouch(touchX, touchY);
         }
     }
-    
+
     // Prevent default touch behavior and unwanted gestures
     return false;
 }
 
-function mouseReleased() 
+function mouseReleased()
 {
     // Reset background color when touch ends
     backgroundColor = color(20, 20, 40);
-    
+
     // Prevent default touch behavior and unwanted gestures
     return false;
 }
 
-function windowResized() 
+function windowResized()
 {
     resizeCanvas(windowWidth, windowHeight);
 }

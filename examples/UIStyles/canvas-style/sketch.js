@@ -7,20 +7,20 @@ function setup() {
 }
 
 function draw() {
-  if (!window.sensorsEnabled) return;
+  if (window.sensorsEnabled) {
+    background(220);
 
-  background(220);
+    // Map device rotation to a ball position
+    let x = width / 2 + rotationY * 3;
+    let y = height / 2 + rotationX * 3;
 
-  // Map device rotation to a ball position
-  let x = width / 2 + rotationY * 3;
-  let y = height / 2 + rotationX * 3;
+    fill(50, 150, 255);
+    noStroke();
+    circle(x, y, 60);
 
-  fill(50, 150, 255);
-  noStroke();
-  circle(x, y, 60);
-
-  fill(0);
-  textAlign(CENTER, TOP);
-  textSize(16);
-  text('Tilt your phone to move the ball', width / 2, 30);
+    fill(0);
+    textAlign(CENTER, TOP);
+    textSize(16);
+    text('Tilt your phone to move the ball', width / 2, 30);
+  }
 }

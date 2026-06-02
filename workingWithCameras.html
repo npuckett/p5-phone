@@ -250,7 +250,7 @@
       
       <h3>Installation</h3>
       <p>Include p5-phone in your HTML:</p>
-      <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
+      <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
       
       <p>Or install via npm:</p>
       <pre><code>npm install p5-phone</code></pre>
@@ -364,13 +364,14 @@ function switchCamera() {
   &lt;title&gt;Phone Camera + ML5&lt;/title&gt;
   
   &lt;!-- p5.js library --&gt;
-  &lt;script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"&gt;&lt;/script&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"&gt;&lt;/script&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"&gt;&lt;/script&gt;
   
   &lt;!-- ML5.js library (v1.x) --&gt;
   &lt;script src="https://unpkg.com/ml5@1/dist/ml5.min.js"&gt;&lt;/script&gt;
   
   &lt;!-- p5-phone library --&gt;
-  &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"&gt;&lt;/script&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;
   
   &lt;style&gt;
     body {
@@ -429,7 +430,7 @@ function setup() {
   cam.onReady(() => {
     let options = {
       runtime: 'mediapipe',  // IMPORTANT: Required for iOS
-      flipHorizontal: false  // PhoneCamera handles mirroring
+      flipped: false         // PhoneCamera handles mirroring
     };
     
     model = ml5.modelName(options, modelLoaded);
@@ -462,7 +463,7 @@ cam.onReady(() => {
     maxFaces: 1,
     refineLandmarks: false,
     runtime: 'mediapipe',
-    flipHorizontal: false
+    flipped: false
   };
   
   facemesh = ml5.faceMesh(options, modelLoaded);
@@ -505,7 +506,7 @@ cam.onReady(() => {
   let options = {
     maxHands: 2,
     runtime: 'mediapipe',
-    flipHorizontal: false
+    flipped: false
   };
   
   handpose = ml5.handPose(options, modelLoaded);
@@ -610,7 +611,7 @@ function draw() {
       <h3>Key Variables</h3>
       <p>All examples use this pattern:</p>
       <pre><code>let cam;           // PhoneCamera instance
-let model;         // ML5 model (facemesh, handpose, or bodypose)
+let model;         // ML5 model (facemesh, handpose, bodypose, objectDetection)
 let results = [];  // Detection results (updated automatically)</code></pre>
       
       <h3>Coordinate Mapping</h3>
@@ -622,9 +623,12 @@ let results = [];  // Detection results (updated automatically)</code></pre>
 let mappedPoint = cam.mapKeypoint(keypoint);
 
 // Map array of keypoints
-let mappedPoints = cam.mapKeypoints(keypoints);</code></pre>
+let mappedPoints = cam.mapKeypoints(keypoints);
+
+// Map object detection bounding box
+let mappedBox = cam.mapBox(detection);</code></pre>
       
-      <p><strong>Why?</strong> ML5 returns coordinates in video space (e.g., 640x480), but your canvas might be different (e.g., 1920x1080). <code>cam.mapKeypoint()</code> handles:</p>
+  <p><strong>Why?</strong> ML5 returns coordinates in video space (e.g., 640x480), but your canvas might be different (e.g., 1920x1080). <code>cam.mapKeypoint()</code> and <code>cam.mapBox()</code> handle:</p>
       <ul>
         <li>Scaling to canvas size</li>
         <li>Mirroring (for front camera)</li>

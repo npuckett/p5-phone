@@ -14,22 +14,19 @@ let corgiScale = 1.2; // Size multiplier for corgi
 let touchCounter = 0;
 let backgroundColor;
 
-function preload() 
+async function setup()
 {
     // Load the corgi swimming GIF
-    corgiGif = loadImage('gifs/corgiswimflip.gif');
-}
+    corgiGif = await loadImage('gifs/corgiswimflip.gif');
 
-function setup() 
-{
     createCanvas(windowWidth, windowHeight);
     backgroundColor = color(200, 255, 200);
-    
+
     // Lock mobile gestures to prevent browser interference
     lockGestures();
-    
+
     textAlign(CENTER, CENTER);
-    
+
     // Start corgi at center
     corgiX = width / 2;
     corgiY = height / 2;
@@ -37,20 +34,20 @@ function setup()
     targetY = corgiY;
 }
 
-function draw() 
+function draw()
 {
     background(backgroundColor);
-    
+
     // Calculate angle to target
     let angleToTarget = atan2(targetY - corgiY, targetX - corgiX);
-    
+
     // Smoothly move corgi toward target position
     corgiX = lerp(corgiX, targetX, moveSpeed);
     corgiY = lerp(corgiY, targetY, moveSpeed);
-    
+
     // Smoothly rotate toward movement direction
     corgiRotation = angleToTarget;
-    
+
     // Display GIF with rotation and scale
     push();
     translate(corgiX, corgiY);
@@ -58,20 +55,20 @@ function draw()
     imageMode(CENTER);
     image(corgiGif, 0, 0, 200 * corgiScale, 200 * corgiScale);
     pop();
-    
+
     // Draw ball (target point) when different from current position
     let distance = dist(corgiX, corgiY, targetX, targetY);
-    if (distance > 5) 
+    if (distance > 5)
     {
         // Corgi is moving - play the GIF
         corgiGif.play();
-        
+
         // Draw ball
         fill(255, 200, 50);
         stroke(200, 150, 0);
         strokeWeight(3);
         circle(targetX, targetY, 30);
-        
+
         // Add shine to ball
         fill(255, 255, 200, 150);
         noStroke();
@@ -81,59 +78,59 @@ function draw()
     {
         // Ball caught! Pause the GIF and show celebration
         corgiGif.pause();
-        
+
         fill(100, 255, 100);
         noStroke();
         textSize(32);
         text("BALL CAUGHT!", width/2, 100);
     }
-    
+
     // Display information
     fill(50);
     textSize(24);
     text("Fetches: " + touchCounter, width/2, 40);
-    
+
     // Instructions
     textSize(20);
     fill(100);
     text("Touch to throw the ball!", width/2, height - 30);
 }
 
-function mousePressed() 
+function mousePressed()
 {
     touchCounter = touchCounter + 1;
-    
+
     // Set new target position
-    if (touches.length > 0) 
+    if (touches.length > 0)
     {
         targetX = touches[0].x;
         targetY = touches[0].y;
     }
-    
+
     // Start playing the GIF when new target is set
     corgiGif.play();
-    
+
     return false;
 }
 
-function mouseDragged() 
+function mouseDragged()
 {
     // Update target as touch moves
-    if (touches.length > 0) 
+    if (touches.length > 0)
     {
         targetX = touches[0].x;
         targetY = touches[0].y;
     }
-    
+
     return false;
 }
 
-function mouseReleased() 
+function mouseReleased()
 {
     return false;
 }
 
-function windowResized() 
+function windowResized()
 {
     resizeCanvas(windowWidth, windowHeight);
 }

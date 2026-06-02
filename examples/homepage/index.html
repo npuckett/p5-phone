@@ -539,14 +539,14 @@
                 
                 <div class="code-box">
                     <h4>Minified version (recommended)</h4>
-                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
-                    <button class="copy-button" onclick="copyCode(this, '&lt;script src=&quot;https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js&quot;&gt;&lt;/script&gt;')">Copy</button>
+                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
+                    <button class="copy-button" onclick="copyCode(this, '&lt;script src=&quot;https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js&quot;&gt;&lt;/script&gt;')">Copy</button>
                 </div>
 
                 <div class="code-box">
                     <h4>Development version (larger, with comments)</h4>
-                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.js"&gt;&lt;/script&gt;</code></pre>
-                    <button class="copy-button" onclick="copyCode(this, '&lt;script src=&quot;https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.js&quot;&gt;&lt;/script&gt;')">Copy</button>
+                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.js"&gt;&lt;/script&gt;</code></pre>
+                    <button class="copy-button" onclick="copyCode(this, '&lt;script src=&quot;https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.js&quot;&gt;&lt;/script&gt;')">Copy</button>
                 </div>
             </div>
 
@@ -611,9 +611,9 @@
     }
   &lt;/style&gt;
   
-  &lt;script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"&gt;&lt;/script&gt;
-  <!-- For p5.js 2.0: <script src="https://cdn.jsdelivr.net/npm/p5@2/lib/p5.min.js"></script> -->
-  &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"&gt;&lt;/script&gt;
+    &lt;script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"&gt;&lt;/script&gt;
+    &lt;script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"&gt;&lt;/script&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"&gt;&lt;/script&gt;
 &lt;/head&gt;
 &lt;body&gt;
   &lt;script src="sketch.js"&gt;&lt;/script&gt;
@@ -800,7 +800,7 @@ function mousePressed() {
                     <tbody>
                         <tr>
                             <td><code>createPhoneCamera(mode, mirror, displayMode)</code></td>
-                            <td>Create a camera optimized for phone use. Returns a PhoneCamera instance with automatic coordinate mapping for ML5 models (BodyPose, FaceMesh, HandPose). Parameters: <code>mode</code> ('user' for front camera, 'environment' for back camera), <code>mirror</code> (boolean, flip horizontally), <code>displayMode</code> ('fitHeight', 'fitWidth', 'cover', 'contain', or 'fixed'). Use with ML5 models for automatic coordinate mapping between video and canvas space.</td>
+                            <td>Create a camera optimized for phone use. Returns a PhoneCamera instance with automatic coordinate mapping for ML5 models (BodyPose, FaceMesh, HandPose, ObjectDetection). Parameters: <code>mode</code> ('user' for front camera, 'environment' for back camera), <code>mirror</code> (boolean, flip horizontally), <code>displayMode</code> ('fitHeight', 'fitWidth', 'cover', 'contain', or 'fixed'). Use with ML5 models for automatic coordinate mapping between video and canvas space.</td>
                         </tr>
                         <tr>
                             <td><code>enableCameraTap(message)</code></td>
@@ -833,6 +833,14 @@ function mousePressed() {
                         <tr>
                             <td><code>cam.mapKeypoints(keypoints)</code></td>
                             <td>Map an array of ML5 keypoints to display coordinates. Handles scaling and mirroring automatically. Returns array of mapped keypoints. Use when processing multiple keypoints at once.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.mapBox(box)</code></td>
+                            <td>Map an ML5 bounding box or object detection result to display coordinates. Handles scaling and mirroring automatically. Preserves label, confidence, and other detection properties.</td>
+                        </tr>
+                        <tr>
+                            <td><code>cam.mapBoxes(boxes)</code></td>
+                            <td>Map an array of ML5 bounding boxes or object detection results to display coordinates. Use with ObjectDetection results before drawing rectangles.</td>
                         </tr>
                         <tr>
                             <td><code>cam.onReady(callback)</code></td>
@@ -1079,6 +1087,42 @@ function mousePressed() {
                     </div>
                     <div class="qr-code" id="qr-movement-03"></div>
                 </div>
+
+                <div class="example-card">
+                    <div class="example-title">04. Device Shaken</div>
+                    <p class="example-description">Count shakes with deviceShaken() and setShakeThreshold()</p>
+                    <a href="../Phone Sensor Examples/movement/04_device_shaken/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <div class="links-group">
+                        <div class="link-label">View on GitHub:</div>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/movement/04_device_shaken" target="_blank" class="github-link">Full Version</a>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/movement/04_device_shaken" target="_blank" class="github-link">Minimal</a>
+                    </div>
+                    <div class="qr-code" id="qr-movement-04"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">05. Device Moved</div>
+                    <p class="example-description">Respond to movement with deviceMoved() and setMoveThreshold()</p>
+                    <a href="../Phone Sensor Examples/movement/05_device_moved/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <div class="links-group">
+                        <div class="link-label">View on GitHub:</div>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/movement/05_device_moved" target="_blank" class="github-link">Full Version</a>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/movement/05_device_moved" target="_blank" class="github-link">Minimal</a>
+                    </div>
+                    <div class="qr-code" id="qr-movement-05"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">06. Device Orientation</div>
+                    <p class="example-description">Detect portrait and landscape with deviceOrientation</p>
+                    <a href="../Phone Sensor Examples/movement/06_device_orientation/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <div class="links-group">
+                        <div class="link-label">View on GitHub:</div>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/movement/06_device_orientation" target="_blank" class="github-link">Full Version</a>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/movement/06_device_orientation" target="_blank" class="github-link">Minimal</a>
+                    </div>
+                    <div class="qr-code" id="qr-movement-06"></div>
+                </div>
             </div>
         </div>
 
@@ -1138,6 +1182,18 @@ function mousePressed() {
                     </div>
                     <div class="qr-code" id="qr-sound-02"></div>
                 </div>
+
+                <div class="example-card">
+                    <div class="example-title">03. Motion Synth</div>
+                    <p class="example-description">Generate sound from phone tilt and movement</p>
+                    <a href="../Phone Sensor Examples/sound/03_motion_synth/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <div class="links-group">
+                        <div class="link-label">View on GitHub:</div>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/sound/03_motion_synth" target="_blank" class="github-link">Full Version</a>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/sound/03_motion_synth" target="_blank" class="github-link">Minimal</a>
+                    </div>
+                    <div class="qr-code" id="qr-sound-03"></div>
+                </div>
             </div>
         </div>
 
@@ -1155,6 +1211,34 @@ function mousePressed() {
                         <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples%20-%20Minimal/vibration/01_haptic_feedback" target="_blank" class="github-link">Minimal</a>
                     </div>
                     <div class="qr-code" id="qr-vibration-01"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NFC Examples -->
+        <div class="section">
+            <h2 class="section-title">NFC Tags (Android Only)</h2>
+            <div class="examples-grid">
+                <div class="example-card">
+                    <div class="example-title">01. Tag Identifier</div>
+                    <p class="example-description">Scan NFC tags, name them, and copy their IDs into sketches</p>
+                    <a href="../Phone Sensor Examples/nfc/01_nfc_read/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <div class="links-group">
+                        <div class="link-label">View on GitHub:</div>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/nfc/01_nfc_read" target="_blank" class="github-link">Full Version</a>
+                    </div>
+                    <div class="qr-code" id="qr-nfc-01"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">02. Two Tag Effects</div>
+                    <p class="example-description">Use shirt and table tag aliases in simple if statements</p>
+                    <a href="../Phone Sensor Examples/nfc/02_two_tag_effects/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <div class="links-group">
+                        <div class="link-label">View on GitHub:</div>
+                        <a href="https://github.com/npuckett/p5-phone/tree/main/examples/Phone%20Sensor%20Examples/nfc/02_two_tag_effects" target="_blank" class="github-link">Full Version</a>
+                    </div>
+                    <div class="qr-code" id="qr-nfc-02"></div>
                 </div>
             </div>
         </div>
@@ -1193,6 +1277,14 @@ function mousePressed() {
                     <a href="../ml5/PHONE_HandPose_two_points/index.html" class="example-link" target="_blank">Launch Example →</a>
                     <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/PHONE_HandPose_two_points" target="_blank" class="github-link">View Code</a>
                     <div class="qr-code" id="qr-ml5-phone-handpose"></div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-title">PHONE Object Detection</div>
+                    <p class="example-description">COCO-SSD object detection with mapped phone-camera bounding boxes</p>
+                    <a href="../ml5/PHONE_ObjectDetection/index.html" class="example-link" target="_blank">Launch Example →</a>
+                    <a href="https://github.com/npuckett/p5-phone/tree/main/examples/ml5/PHONE_ObjectDetection" target="_blank" class="github-link">View Code</a>
+                    <div class="qr-code" id="qr-ml5-phone-object-detection"></div>
                 </div>
 
                 <div class="example-card">
@@ -1392,15 +1484,22 @@ function mousePressed() {
                 { id: 'qr-movement-01', url: 'Phone%20Sensor%20Examples/movement/01_orientation_basic/' },
                 { id: 'qr-movement-02', url: 'Phone%20Sensor%20Examples/movement/02_rotational_velocity/' },
                 { id: 'qr-movement-03', url: 'Phone%20Sensor%20Examples/movement/03_acceleration/' },
+                { id: 'qr-movement-04', url: 'Phone%20Sensor%20Examples/movement/04_device_shaken/' },
+                { id: 'qr-movement-05', url: 'Phone%20Sensor%20Examples/movement/05_device_moved/' },
+                { id: 'qr-movement-06', url: 'Phone%20Sensor%20Examples/movement/06_device_orientation/' },
                 { id: 'qr-mic-01', url: 'Phone%20Sensor%20Examples/microphone/01_mic_level/' },
                 { id: 'qr-mic-02', url: 'Phone%20Sensor%20Examples/microphone/02_speech_recognition/' },
                 { id: 'qr-sound-01', url: 'Phone%20Sensor%20Examples/sound/01_dual_audio/' },
                 { id: 'qr-sound-02', url: 'Phone%20Sensor%20Examples/sound/02_volume_touches/' },
+                { id: 'qr-sound-03', url: 'Phone%20Sensor%20Examples/sound/03_motion_synth/' },
                 { id: 'qr-vibration-01', url: 'Phone%20Sensor%20Examples/vibration/01_haptic_feedback/' },
+                { id: 'qr-nfc-01', url: 'Phone%20Sensor%20Examples/nfc/01_nfc_read/' },
+                { id: 'qr-nfc-02', url: 'Phone%20Sensor%20Examples/nfc/02_two_tag_effects/' },
                 { id: 'qr-ml5-gaze', url: 'ml5/Gaze_detector_class/' },
                 { id: 'qr-ml5-phone-bodypose', url: 'ml5/PHONE_BodyPose_two_points/' },
                 { id: 'qr-ml5-phone-facemesh', url: 'ml5/PHONE_FaceMesh_two_points/' },
                 { id: 'qr-ml5-phone-handpose', url: 'ml5/PHONE_HandPose_two_points/' },
+                { id: 'qr-ml5-phone-object-detection', url: 'ml5/PHONE_ObjectDetection/' },
                 { id: 'qr-ml5-three-bodypose', url: 'ml5/THREE_BodyPose_two_points/' },
                 { id: 'qr-ml5-three-facemesh', url: 'ml5/THREE_FaceMesh_two_points/' },
                 { id: 'qr-ml5-three-handpose', url: 'ml5/THREE_HandPose_two_points/' },

@@ -102,10 +102,10 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
 
 ```html
 <!-- Minified version (recommended) -->
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"></script>
 
 <!-- Development version (larger, with comments) -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.js"></script> -->
 ```
 
 ### Basic Setup
@@ -130,11 +130,11 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   </style>
   
   <!-- Load p5.js library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
-  <!-- For p5.js 2.0: <script src="https://cdn.jsdelivr.net/npm/p5@2/lib/p5.min.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
   
   <!-- Load p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.1/dist/p5-phone.min.js"></script>
   
 </head>
 <body>
@@ -305,6 +305,8 @@ this.enableGyroTap('Tap to start');
 - `window.speechEnabled` - Boolean indicating if speech recognition is active
 - `window.vibrationEnabled` - Boolean indicating if vibration is available (Android only)
 - `window.nfcEnabled` - Boolean indicating if NFC scanning is active (Android only)
+- `window.lastNfcSerialNumber` - Serial number string for the most recently read NFC tag
+- `window.lastNfcAlias` - Alias string for the most recently read NFC tag, if one has been set
 
 **Usage:**
 ```javascript
@@ -337,11 +339,10 @@ function draw() {
 }
 
 // You can also use them for conditional UI
-function setup() {
-  enableGyroTap('Tap to enable motion');
-  
-  // Show different instructions based on status
-  if (!window.sensorsEnabled) {
+function draw() {
+  if (window.sensorsEnabled) {
+    debug("Motion sensors enabled");
+  } else {
     debug("Motion sensors not yet enabled");
   }
 }
@@ -432,7 +433,7 @@ function draw() {
 
 **Important:** Microphone examples require the p5.sound library. Add this script tag to your HTML:
 ```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.0/addons/p5.sound.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js"></script>
 ```
 
 **Commands:**
@@ -488,7 +489,7 @@ function draw() {
 
 **Important:** Sound examples require the p5.sound library. Add this script tag to your HTML:
 ```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.0/addons/p5.sound.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js"></script>
 ```
 
 **Commands:**
@@ -661,11 +662,23 @@ function gameOver() {
 - `enableNfcTap(message)` - Tap anywhere on screen to enable NFC scanning
 - `enableNfcButton(text)` - Creates a button with custom text to enable NFC
 - `stopNfc()` - Stop NFC scanning
+- `setNfcTagAlias(serialNumber, alias)` - Give a tag ID a human-friendly name
+- `getNfcTagAlias(serialNumber)` - Get a saved alias for a tag ID
+- `isNfcTag(aliasOrSerialNumber)` - Check whether the most recently read tag matches an alias or ID
 
 **Status Variables:**
 - `window.nfcEnabled` - Boolean indicating if NFC scanning is active
+- `window.nfcStatus` - String describing NFC startup/read status
+- `window.nfcError` - String containing the latest NFC startup/read error
+- `window.nfcTagAliases` - Object mapping tag IDs to aliases
 - `window.lastNfcMessage` - Object containing the most recently read tag's data
 - `window.lastNfcSerialNumber` - Serial number string of the most recently read tag
+- `window.lastNfcAlias` - Alias string for the most recently read tag, if one has been set
+
+**Two-step workflow:**
+
+1. Open the NFC identifier example, scan each physical tag, type an alias, then download the tag list.
+2. Paste the generated `setNfcTagAlias()` lines into your sketch and use `isNfcTag()` in conditionals.
 
 **User Callback:**
 
@@ -674,6 +687,7 @@ Define an `nfcRead()` function in your sketch to receive tag data when a tag is 
 ```javascript
 function nfcRead(message, serialNumber) {
   // message.serialNumber — tag serial number
+  // message.alias — saved alias, or '' if unnamed
   // message.records — array of NDEF records, each with:
   //   .recordType — 'text', 'url', 'mime', etc.
   //   .data — decoded content (string for text/url, object for JSON, raw for others)
@@ -690,6 +704,11 @@ let tagText = 'No tag scanned yet';
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
+
+  // Paste IDs from the NFC identifier example.
+  setNfcTagAlias('04:85:2a:1b:9f:61:80', 'paintbrush');
+  setNfcTagAlias('04:42:18:3c:9f:61:80', 'desk');
+
   enableNfcTap('Tap to enable NFC');
 }
 
@@ -698,16 +717,29 @@ function draw() {
   textAlign(CENTER, CENTER);
   textSize(20);
 
-  if (!window.nfcEnabled) {
-    text('NFC not active', width / 2, height / 2);
+  if (window.nfcEnabled) {
+    if (isNfcTag('paintbrush')) {
+      background(120, 220, 160);
+      text('Paintbrush tag read', width / 2, height / 2);
+    } else if (isNfcTag('desk')) {
+      background(140, 180, 240);
+      text('Desk tag read', width / 2, height / 2);
+    } else {
+      text(tagText, width / 2, height / 2);
+      text('Hold an NFC tag near your phone', width / 2, height / 2 + 40);
+    }
   } else {
-    text(tagText, width / 2, height / 2);
-    text('Hold an NFC tag near your phone', width / 2, height / 2 + 40);
+    text('NFC not active', width / 2, height / 2);
   }
 }
 
 function nfcRead(message, serialNumber) {
-  tagText = 'Tag: ' + serialNumber;
+  tagText = 'Tag: ' + (message.alias || serialNumber);
+
+  if (isNfcTag('paintbrush', serialNumber)) {
+    // This runs once when the paintbrush tag is scanned.
+  }
+
   for (let record of message.records) {
     if (record.recordType === 'text' || record.recordType === 'url') {
       tagText += '\n' + record.data;
@@ -730,6 +762,7 @@ NFC tags contain NDEF records. The most common types are:
 **Best Practices:**
 - Always check `window.nfcEnabled` before relying on NFC features
 - Use the `nfcRead()` callback for real-time tag processing
+- Use `setNfcTagAlias()` and `isNfcTag()` when a sketch should respond to named physical objects
 - Use `window.lastNfcMessage` in `draw()` for displaying the most recent tag
 - Test on Android devices with Chrome — NFC is not available on iOS or desktop browsers
 - Tags must be NDEF-formatted to be read by the Web NFC API
@@ -810,10 +843,10 @@ function draw() {
 
 ### PhoneCamera (ML5 Integration)
 
-**Purpose:** Simplified camera access optimized for ML5.js machine learning models (FaceMesh, HandPose, BodyPose, etc.). Handles camera initialization, coordinate mapping, mirroring, and display modes automatically.
+**Purpose:** Simplified camera access optimized for ML5.js machine learning models (FaceMesh, HandPose, BodyPose, ObjectDetection, etc.). Handles camera initialization, coordinate mapping, mirroring, and display modes automatically.
 
 **Key Features:**
-- **Automatic Coordinate Mapping** - ML5 keypoints automatically mapped to canvas coordinates
+- **Automatic Coordinate Mapping** - ML5 keypoints and bounding boxes automatically mapped to canvas coordinates
 - **Mirror Support** - Handles front camera mirroring for natural interaction
 - **Display Modes** - Multiple video sizing options (fitHeight, cover, contain, fixed)
 - **ML5 Optimized** - Direct integration with ML5 v1.x models
@@ -828,6 +861,8 @@ function draw() {
 | `cam.onReady(callback)` | Execute code when camera ready | Callback function |
 | `cam.mapKeypoint(keypoint)` | Map single ML5 keypoint to screen | ML5 keypoint object |
 | `cam.mapKeypoints(keypoints)` | Map array of ML5 keypoints | Array of ML5 keypoints |
+| `cam.mapBox(box)` | Map single ML5 bounding box to screen | ML5 detection object with x, y, width, height |
+| `cam.mapBoxes(boxes)` | Map array of ML5 bounding boxes | Array of ML5 detection objects |
 
 **Properties:**
 
@@ -861,7 +896,7 @@ function setup() {
     let options = {
       maxFaces: 1,
       refineLandmarks: false,
-      flipHorizontal: false  // cam.mapKeypoint() handles mirroring
+      flipped: false  // cam.mapKeypoint() handles mirroring
     };
     
     facemesh = ml5.faceMesh(options, modelLoaded);
@@ -914,7 +949,7 @@ function draw() {
 
 **Coordinate Mapping:**
 
-The `mapKeypoint()` and `mapKeypoints()` functions automatically handle:
+The `mapKeypoint()`, `mapKeypoints()`, `mapBox()`, and `mapBoxes()` functions automatically handle:
 - Video-to-canvas scaling
 - Mirror transformation (for front camera)
 - Offset positioning (for different display modes)
@@ -930,26 +965,34 @@ let hands = cam.mapKeypoints(hand.keypoints);
 hands.forEach(point => {
   circle(point.x, point.y, 5);
 });
+
+// Object detection bounding box
+let mappedObject = cam.mapBox(detection);
+rect(mappedObject.x, mappedObject.y, mappedObject.width, mappedObject.height);
 ```
 
 **ML5 Model Examples:**
 
 ```javascript
 // FaceMesh (468 keypoints)
-let options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: false };
+let options = { maxFaces: 1, refineLandmarks: false, flipped: false };
 facemesh = ml5.faceMesh(options, modelLoaded);
 
 // HandPose (21 keypoints per hand)
-let options = { maxHands: 2, runtime: 'mediapipe', flipHorizontal: false };
+let options = { maxHands: 2, runtime: 'mediapipe', flipped: false };
 handpose = ml5.handPose(options, modelLoaded);
 
 // BodyPose (33 keypoints with 3D)
 let options = { modelType: 'MULTIPOSE_LIGHTNING', flipped: false };
 bodypose = ml5.bodyPose('BlazePose', options, modelLoaded);
+
+// ObjectDetection (bounding boxes)
+objectDetector = await ml5.objectDetection('cocossd');
+objectDetector.detectStart(cam.videoElement, gotDetections);
 ```
 
 **Important Notes:**
-- Always set `flipHorizontal: false` in ML5 options (PhoneCamera handles mirroring)
+- Always set `flipped: false` in ML5 options when available (PhoneCamera handles mirroring)
 - Use `cam.videoElement` (native HTML video element) when passing to ML5's `detectStart()`
 - Check `cam.ready` before using video or drawing keypoints
 - Call `enableCameraTap()` to handle camera permissions automatically
@@ -1033,9 +1076,11 @@ function setup() {
 }
 
 function draw() {
-  if (!window.sensorsEnabled) return;
   background(220);
-  circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
+
+  if (window.sensorsEnabled) {
+    circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
+  }
 }
 ```
 
@@ -1095,9 +1140,11 @@ function setup() {
 }
 
 function draw() {
-  if (!window.sensorsEnabled) return;
   background(220);
-  circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
+
+  if (window.sensorsEnabled) {
+    circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
+  }
 }
 ```
 

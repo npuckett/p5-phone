@@ -124,7 +124,7 @@ class GazeDetector {
     let options = {
       maxFaces: 1,            // Only detect 1 face
       refineLandmarks: false, // Faster without refinement
-      flipHorizontal: false   // Camera handles mirroring
+      flipped: false          // Camera handles mirroring
     };
     
     // Create FaceMesh model

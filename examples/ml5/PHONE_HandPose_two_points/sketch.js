@@ -99,7 +99,7 @@ function setup() {
     let options = {
       maxHands: 1,           // Only detect 1 hand
       runtime: 'mediapipe',  // Use MediaPipe runtime
-      flipHorizontal: false  // Don't flip in ML5 - cam.mapKeypoint() handles mirroring
+      flipped: false         // Don't flip in ML5 - cam.mapKeypoint() handles mirroring
     };
     
     // Create HandPose model and start detection when ready
