@@ -99,6 +99,7 @@
       example.description,
       example.category,
       example.subcategory,
+      example.family,
       example.level,
       example.p5,
       (example.capabilities || []).join(' ')
@@ -165,6 +166,41 @@
     return subcategory ? base + '-' + slug(subcategory) : base;
   }
 
+  function exampleFamilyId(category, subcategory, family) {
+    return exampleGroupId(category, subcategory) + '-' + slug(family);
+  }
+
+  function renderExampleFamily(category, subcategory, family, examples) {
+    return `
+      <section class="example-family" id="${escapeHtml(exampleFamilyId(category, subcategory, family))}">
+        <h5>${escapeHtml(family)}</h5>
+        <div class="example-grid">${examples.map(renderExampleCard).join('')}</div>
+      </section>
+    `;
+  }
+
+  function renderSubgroupExamples(category, subcategory, examples) {
+    if (!examples.some(example => example.family)) {
+      return '<div class="example-grid">' + examples.map(renderExampleCard).join('') + '</div>';
+    }
+
+    const preferredFamilies = ['PhoneCamera + ML5 Examples', 'Three.js + ML5 Examples'];
+    const groupedFamilies = examples.reduce((groups, example) => {
+      const family = example.family || 'Other Examples';
+      if (!groups[family]) groups[family] = [];
+      groups[family].push(example);
+      return groups;
+    }, {});
+    const availableFamilies = Object.keys(groupedFamilies);
+    const orderedFamilies = preferredFamilies
+      .filter(family => availableFamilies.includes(family))
+      .concat(availableFamilies.filter(family => !preferredFamilies.includes(family)).sort());
+
+    return orderedFamilies
+      .map(family => renderExampleFamily(category, subcategory, family, groupedFamilies[family]))
+      .join('');
+  }
+
   function orderedSubcategories(category, groupedCategory) {
     const preferredOrder = {
       Start: ['Starter'],
@@ -201,7 +237,7 @@
         const subgroups = orderedSubcategories(category, grouped[category]).map(subcategory => `
           <section class="example-subgroup" id="${escapeHtml(exampleGroupId(category, subcategory))}">
             <h4>${escapeHtml(category === 'Start' && subcategory === 'Starter' ? 'Start' : subcategory)}</h4>
-            <div class="example-grid">${grouped[category][subcategory].map(renderExampleCard).join('')}</div>
+            ${renderSubgroupExamples(category, subcategory, grouped[category][subcategory])}
           </section>
         `).join('');
 

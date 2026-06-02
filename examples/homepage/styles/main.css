@@ -104,6 +104,8 @@ h3 { font-size: 1.2rem; margin-bottom: 12px; }
 .example-group h3 { margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
 .example-subgroup { scroll-margin-top: 24px; margin: 0 0 28px; }
 .example-subgroup h4 { margin: 0 0 12px; font-size: 1rem; color: var(--ink); }
+.example-family { scroll-margin-top: 24px; margin: 0 0 22px; }
+.example-family h5 { margin: 0 0 10px; padding: 8px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--accent-blue); font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.06em; }
 .card-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
 .qr-row { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 16px; padding: 0 0 16px; border-bottom: 1px solid var(--line); }
 .qr-row .example-meta { margin-bottom: 0; }
