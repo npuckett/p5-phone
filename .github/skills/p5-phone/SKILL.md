@@ -30,7 +30,7 @@ Use this HTML baseline for p5.js 2-compatible sketches:
   </style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.2/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.3/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>
@@ -92,7 +92,7 @@ Permission functions come in five activation styles: tap overlay, generated butt
 | Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllOn(selector)` |
 | Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraOn(selector)` |
 
-`enableGyro*` names are legacy aliases for motion sensor functions. When targeting the already-published `p5-phone@1.9.2` CDN, prefer `enableGyroCanvas`, `enableGyroBanner`, and `enableGyroOn` if a generated example must work before the next package release. In source after the Sensor alias update, `enableSensor*` names are also available.
+`enableGyro*` names are legacy aliases for motion sensor functions. Prefer the current `enableSensor*` names for new examples, and use `enableGyro*` only when matching older published sketches that depend on those aliases.
 
 Use exactly one activation style per permission need unless the user explicitly asks to compare styles.
 

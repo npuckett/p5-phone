@@ -19,7 +19,7 @@ Use the quick reference below when a chat or CLI interface cannot follow that fi
 ## Core Rules
 
 - Generate complete `index.html` and `sketch.js` examples unless the user asks for a snippet.
-- Include `p5@2.2.3`, `p5.js-compatibility@0.2.0`, and `p5-phone@1.9.2` in generated HTML.
+- Include `p5@2.2.3`, `p5.js-compatibility@0.2.0`, and `p5-phone@1.9.3` in generated HTML.
 - Include `p5.sound@0.3.0` only for microphone, audio input, oscillators, or sound output.
 - Call `lockGestures()` in every mobile sketch `setup()`.
 - Request permissions from a user action using `enableSensorTap`, `enableMicTap`, `enableSoundTap`, `enableSpeechTap`, `enableCameraTap`, `enableNfcTap`, `enableVibrationTap`, or style variants.

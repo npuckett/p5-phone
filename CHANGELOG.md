@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [1.9.3] - 2026-06-02
+
+### Fixed
+- Fixed `PhoneCamera` drawing in p5.js 2.x by rendering the native video element directly instead of passing p5 media wrappers back through `image()`.
+- Improved `PhoneCamera` display sizing by using the native video element dimensions when available.
+- Updated ML5 PhoneCamera examples to wait for model-loaded callbacks before starting detection.
+
 ## [1.9.2] - 2026-06-02
 
 ### Fixed
