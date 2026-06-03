@@ -36,8 +36,7 @@ function setup()
     lockGestures();
 
     createStartButton();
-    enableSoundOn('#motion-sound-start');
-    enableGyroOn('#motion-sound-start');
+    enablePermissionsOn('#motion-sound-start', ['sensors', 'sound']);
 
     textAlign(CENTER, CENTER);
 }
@@ -112,6 +111,10 @@ function updateSynthFromMotion()
     motionDelta.y = abs(accelerationY - previousAccelerationY);
     motionDelta.z = abs(accelerationZ - previousAccelerationZ);
     movementEnergy = constrain(motionDelta.x + motionDelta.y + motionDelta.z, 0, 8);
+
+    previousAccelerationX = accelerationX;
+    previousAccelerationY = accelerationY;
+    previousAccelerationZ = accelerationZ;
 
     oscillator.freq(currentFrequency, 0.04);
     oscillator.amp(currentVolume, 0.04);
@@ -189,10 +192,6 @@ function drawTiltMap()
 
 function drawMeter(label, value, low, high, y, unit)
 {
-    let pitchTilt = 0;
-    let volumeTilt = 0;
-    let motionDelta = { x: 0, y: 0, z: 0 };
-    let tiltMapPosition = { x: 0, y: 0 };
     let meterWidth = min(width - 70, 420);
     let x = width/2 - meterWidth/2;
     let amount = map(value, low, high, 0, 1);
@@ -201,8 +200,8 @@ function drawMeter(label, value, low, high, y, unit)
     noStroke();
     fill(255, 255, 255, 45);
     rect(x, y, meterWidth, 18, 8);
-        tiltMapPosition.x = map(volumeTilt, -synthTiltRange, synthTiltRange, x + 24, x + mapWidth - 24);
-        tiltMapPosition.y = map(pitchTilt, -synthTiltRange, synthTiltRange, y + mapHeight - 24, y + 24);
+
+    fill(255, 204, 102, 235);
     rect(x, y, meterWidth * amount, 18, 8);
 
     fill(255);
@@ -221,5 +220,3 @@ function windowResized()
     resizeCanvas(windowWidth, windowHeight);
     positionStartButton();
 }
-        fill(255, 204, 102);
-        circle(tiltMapPosition.x, tiltMapPosition.y, 28);
