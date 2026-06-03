@@ -16,6 +16,7 @@
   function renderCard(example) {
     return `
       <article class="example-card workshop-card">
+        <button class="qr-expand-button" type="button" aria-label="Expand QR code for ${escapeHtml(example.title)}" aria-expanded="false">+</button>
         <div class="qr-row">
           <div class="qr-code" id="qr-${escapeHtml(example.id)}"></div>
           <span class="example-meta">Scan to open on phone</span>
@@ -34,6 +35,7 @@
   function makeQr(id, text, size) {
     const element = document.getElementById(id);
     if (!element || typeof QRCode === 'undefined') return;
+    element.dataset.qrText = text;
     element.innerHTML = '';
     new QRCode(element, {
       text: text,

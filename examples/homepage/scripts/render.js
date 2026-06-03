@@ -128,6 +128,7 @@
 
     return `
       <article class="example-card">
+        <button class="qr-expand-button" type="button" aria-label="Expand QR code for ${escapeHtml(example.title)}" aria-expanded="false">+</button>
         <div class="qr-row">
           <div class="qr-code" id="${escapeHtml(qrId)}"></div>
           <span class="example-meta">Scan to open on phone</span>
@@ -262,9 +263,11 @@
     examples.forEach(example => {
       const element = document.getElementById('qr-' + example.id);
       if (!element) return;
+      const qrText = baseUrl + example.path;
+      element.dataset.qrText = qrText;
       element.innerHTML = '';
       new QRCode(element, {
-        text: baseUrl + example.path,
+        text: qrText,
         width: qrSize,
         height: qrSize,
         colorDark: '#171717',
