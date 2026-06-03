@@ -15,11 +15,11 @@ However - several of the links are outdated, using the wrong version of the libr
 
 | Catalog id | Title | Web Editor | Full preview | Notes |
 | --- | --- | --- | --- | --- |
-| haptic-feedback | Haptic Feedback | https://editor.p5js.org/npuckett/sketches/jolA5eA_M | https://editor.p5js.org/npuckett/full/jolA5eA_M | Updated from local files with p5 2.2.3 and p5-phone 1.9.2; user confirmed phone test works. |
+| haptic-feedback | Haptic Feedback | https://editor.p5js.org/npuckett/sketches/jolA5eA_M | https://editor.p5js.org/npuckett/full/jolA5eA_M | Updated from local files with p5 2.2.3 and p5-phone 1.10.0; user confirmed phone test works. |
 
 ## Created and browser verified
 
-These sketches were created under `npuckett`, loaded in public full-preview pages, and verified for canvas creation, `p5@2.2.3`, `p5-phone@1.9.2`, and no runtime/page errors in browser smoke testing.
+These sketches were created under `npuckett`, loaded in public full-preview pages, and verified for canvas creation, `p5@2.2.3`, `p5-phone@1.10.0`, and no runtime/page errors in browser smoke testing. Existing hosted HTML files were updated to `p5-phone@1.10.0` on 2026-06-02.
 
 | Catalog id | Title | Web Editor | Full preview | Replaces |
 | --- | --- | --- | --- | --- |
@@ -35,6 +35,7 @@ These sketches were created under `npuckett`, loaded in public full-preview page
 | device-shaken | Device Shaken | https://editor.p5js.org/npuckett/sketches/FgraGpDkn | https://editor.p5js.org/npuckett/full/FgraGpDkn | New link |
 | device-moved | Device Moved | https://editor.p5js.org/npuckett/sketches/0UdVXvdcN | https://editor.p5js.org/npuckett/full/0UdVXvdcN | New link |
 | device-orientation | Device Orientation | https://editor.p5js.org/npuckett/sketches/ayDVWysQ2 | https://editor.p5js.org/npuckett/full/ayDVWysQ2 | New link |
+| combined-permissions | Combined Permissions | https://editor.p5js.org/npuckett/sketches/GgquhEnKv | https://editor.p5js.org/npuckett/full/GgquhEnKv | New link for `enablePermissionsTap(['sensors', 'mic'])`; created with `p5-phone@1.10.0`. |
 | mic-level | Microphone Level | https://editor.p5js.org/npuckett/sketches/fuWalYu-L | https://editor.p5js.org/npuckett/full/fuWalYu-L | https://editor.p5js.org/creationcomputation/sketches/ySuEk7s6- |
 | speech-recognition | Speech Recognition | https://editor.p5js.org/npuckett/sketches/kMjBzPtoYL | https://editor.p5js.org/npuckett/full/kMjBzPtoYL | New link |
 | sound-basic | Sound Basic | https://editor.p5js.org/npuckett/sketches/x8Mix5h19D | https://editor.p5js.org/npuckett/full/x8Mix5h19D | New generated-sound link; no tracks/loadSound asset dependency. |
@@ -43,10 +44,10 @@ These sketches were created under `npuckett`, loaded in public full-preview page
 | ui-banner | Banner Permission Style | https://editor.p5js.org/npuckett/sketches/cE3a0kZPa | https://editor.p5js.org/npuckett/full/cE3a0kZPa | New link. |
 | ui-canvas | Canvas Permission Style | https://editor.p5js.org/npuckett/sketches/5IwCEIxI- | https://editor.p5js.org/npuckett/full/5IwCEIxI- | New link; sketch updated to use published `enableGyroCanvas()` API. |
 | ui-custom-element | Custom Element Permission Style | https://editor.p5js.org/npuckett/sketches/dzTJBBH_94 | https://editor.p5js.org/npuckett/full/dzTJBBH_94 | New link; sketch updated to use published `enableGyroOn()` API. |
-| ml5-bodypose-phone | PHONE BodyPose Two Points | https://editor.p5js.org/npuckett/sketches/hXHfWAYSN | https://editor.p5js.org/npuckett/full/hXHfWAYSN | Updated 2026-06-02 with `p5-phone@1.9.3`, ml5 loaded-callback startup, and direct video drawing fix. |
-| ml5-facemesh-phone | PHONE FaceMesh Two Points | https://editor.p5js.org/npuckett/sketches/DLnD9LIMG | https://editor.p5js.org/npuckett/full/DLnD9LIMG | Updated 2026-06-02 with `p5-phone@1.9.3`, ml5 loaded-callback startup, and direct video drawing fix. |
-| ml5-handpose-phone | PHONE HandPose Two Points | https://editor.p5js.org/npuckett/sketches/aBF5_M0jN3 | https://editor.p5js.org/npuckett/full/aBF5_M0jN3 | Updated 2026-06-02 with `p5-phone@1.9.3`, ml5 loaded-callback startup, direct video drawing fix, and camera toggle. |
-| gaze-detector | Gaze Detector Class | https://editor.p5js.org/npuckett/sketches/y3aGKwPIx_ | https://editor.p5js.org/npuckett/full/y3aGKwPIx_ | Updated 2026-06-02 with `p5-phone@1.9.3`, `GazeDetector.js` ml5 loaded-callback startup, and direct video drawing fix. |
+| ml5-bodypose-phone | PHONE BodyPose Two Points | https://editor.p5js.org/npuckett/sketches/hXHfWAYSN | https://editor.p5js.org/npuckett/full/hXHfWAYSN | Updated 2026-06-02 with `p5-phone@1.10.0`, ml5 loaded-callback startup, and direct video drawing fix. |
+| ml5-facemesh-phone | PHONE FaceMesh Two Points | https://editor.p5js.org/npuckett/sketches/DLnD9LIMG | https://editor.p5js.org/npuckett/full/DLnD9LIMG | Updated 2026-06-02 with `p5-phone@1.10.0`, ml5 loaded-callback startup, and direct video drawing fix. |
+| ml5-handpose-phone | PHONE HandPose Two Points | https://editor.p5js.org/npuckett/sketches/aBF5_M0jN3 | https://editor.p5js.org/npuckett/full/aBF5_M0jN3 | Updated 2026-06-02 with `p5-phone@1.10.0`, ml5 loaded-callback startup, direct video drawing fix, and camera toggle. |
+| gaze-detector | Gaze Detector Class | https://editor.p5js.org/npuckett/sketches/y3aGKwPIx_ | https://editor.p5js.org/npuckett/full/y3aGKwPIx_ | Updated 2026-06-02 with `p5-phone@1.10.0`, `GazeDetector.js` ml5 loaded-callback startup, and direct video drawing fix. |
 | three-bodypose | THREE BodyPose Two Points | https://editor.p5js.org/npuckett/sketches/L-ch91hH8 | https://editor.p5js.org/npuckett/full/L-ch91hH8 | New link; includes `functions.js`, Three.js, p5 2 compatibility shim, and ml5 preload-counter polyfill. Camera permission denial ignored in browser smoke test. |
 | three-facemesh | THREE FaceMesh Two Points | https://editor.p5js.org/npuckett/sketches/Olii4GsA6 | https://editor.p5js.org/npuckett/full/Olii4GsA6 | New link; includes `functions.js`, Three.js, p5 2 compatibility shim, and ml5 preload-counter polyfill. Camera permission denial ignored in browser smoke test. |
 | three-handpose | THREE HandPose Two Points | https://editor.p5js.org/npuckett/sketches/El8kyGBLL | https://editor.p5js.org/npuckett/full/El8kyGBLL | New link; includes `functions.js`, Three.js, p5 2 compatibility shim, and ml5 preload-counter polyfill. Camera permission denial ignored in browser smoke test. |

@@ -1,6 +1,6 @@
 ---
 name: p5-phone
-description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, NFC, lockGestures, mobile browser permissions, p5.js 2 compatibility."
+description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, NFC, lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
 argument-hint: "Describe the p5-phone example or API question"
 ---
 
@@ -10,7 +10,7 @@ Use this skill when the user asks for a p5-phone sketch, p5-phone example, mobil
 
 This is the canonical full skill. Portable entrypoints for other CLI/chat agents live at `.agents/skills/p5-phone/SKILL.md` and `.claude/skills/p5-phone/SKILL.md`; keep those short files aligned with this one when the API guidance changes.
 
-p5-phone is a p5.js helper library for mobile hardware access. It provides permission activation UI, gesture locking, microphone and sound activation, speech activation, NFC helpers, vibration helpers, an on-device debug console, and `PhoneCamera` for camera/ML5 coordinate mapping.
+p5-phone is a p5.js helper library for mobile hardware access. It provides permission activation UI, arbitrary hardware-combination permission helpers, gesture locking, microphone and sound activation, speech activation, NFC helpers, vibration helpers, an on-device debug console, and `PhoneCamera` for camera/ML5 coordinate mapping.
 
 ## Start Here
 
@@ -30,7 +30,7 @@ Use this HTML baseline for p5.js 2-compatible sketches:
   </style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.3/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>
@@ -91,6 +91,24 @@ Permission functions come in five activation styles: tap overlay, generated butt
 | NFC | `enableNfcTap(msg)` | `enableNfcButton(text)` | `enableNfcCanvas(msg)` | `enableNfcBanner(msg)` | `enableNfcOn(selector)` |
 | Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllOn(selector)` |
 | Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraOn(selector)` |
+| Any combination | `enablePermissionsTap(list, msg)` | `enablePermissionsButton(list, text)` | `enablePermissionsCanvas(list, msg)` | `enablePermissionsBanner(list, msg)` | `enablePermissionsOn(selector, list)` |
+
+Use `enablePermissions*` when a sketch needs a custom combination such as `['sensors', 'mic', 'camera']`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `nfc`, and `camera`; aliases like `gyro`, `microphone`, `video`, and `haptics` also work. `enableHardware*` aliases are available for the same functions.
+
+For sketches that need multiple hardware features, prefer one combined permission call over binding several single-permission helpers to the same gesture. This keeps iOS transient user activation intact and calls `userSetupComplete()` once.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enablePermissionsTap(['sensors', 'mic'], 'Tap to enable motion + microphone');
+}
+
+function draw() {
+  if (!window.sensorsEnabled || !window.micEnabled) return;
+  // Use motion values and microphone input here.
+}
+```
 
 `enableGyro*` names are legacy aliases for motion sensor functions. Prefer the current `enableSensor*` names for new examples, and use `enableGyro*` only when matching older published sketches that depend on those aliases.
 
@@ -105,6 +123,7 @@ Check status before using hardware-dependent data:
 - `window.speechEnabled`
 - `window.vibrationEnabled`
 - `window.nfcEnabled`
+- `window.cameraEnabled`
 - `window.lastNfcSerialNumber`
 - `window.lastNfcAlias`
 - `window.lastNfcMessage`
@@ -132,25 +151,22 @@ For iOS, sensor permission must be requested from a tap/click. Never auto-reques
 
 ## Microphone and Sound
 
-For microphone level sketches, include p5.sound and create `p5.AudioIn()` before enabling mic.
+For microphone level sketches, include p5.sound and create `p5.AudioIn()` before enabling mic. For simple examples, read levels with `mic.getLevel()` after `window.micEnabled` is true; avoid wiring `p5.Amplitude.setInput(mic)` before permission because p5.sound 0.3.0 can throw in p5.js 2 previews.
 
 ```javascript
 let mic;
-let amplitude;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
   mic = new p5.AudioIn();
-  amplitude = new p5.Amplitude();
-  amplitude.setInput(mic);
   enableMicTap('Tap to enable microphone');
 }
 
 function draw() {
   background(0);
   if (!window.micEnabled) return;
-  const level = amplitude.getLevel();
+  const level = mic.getLevel();
   circle(width / 2, height / 2, 40 + level * 600);
 }
 ```

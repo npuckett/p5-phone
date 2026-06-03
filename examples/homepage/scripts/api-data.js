@@ -5,8 +5,9 @@ window.P5PHONE_PERMISSION_MATRIX = [
   { capability: 'Speech recognition', status: 'window.speechEnabled', tap: 'enableSpeechTap(message)', button: 'enableSpeechButton(text)', canvas: 'enableSpeechCanvas(message)', banner: 'enableSpeechBanner(message, position)', custom: 'enableSpeechOn(selector)', notes: 'Activates audio context. Create your own p5.SpeechRec after permission.' },
   { capability: 'Vibration', status: 'window.vibrationEnabled', tap: 'enableVibrationTap(message)', button: 'enableVibrationButton(text)', canvas: 'enableVibrationCanvas(message)', banner: 'enableVibrationBanner(message, position)', custom: 'enableVibrationOn(selector)', notes: 'Android-oriented. Use vibrate(pattern) for haptics.' },
   { capability: 'NFC', status: 'window.nfcEnabled', tap: 'enableNfcTap(message)', button: 'enableNfcButton(text)', canvas: 'enableNfcCanvas(message)', banner: 'enableNfcBanner(message, position)', custom: 'enableNfcOn(selector)', notes: 'Android Chrome with HTTPS only. Use nfcRead(message, serialNumber).' },
-  { capability: 'Camera', status: 'cam.ready', tap: 'enableCameraTap(message)', button: 'enableCameraButton(text)', canvas: 'enableCameraCanvas(message)', banner: 'enableCameraBanner(message, position)', custom: 'enableCameraOn(selector)', notes: 'Pair with createPhoneCamera() for ML5-friendly mapping.' },
-  { capability: 'Motion + microphone', status: 'window.sensorsEnabled && window.micEnabled', tap: 'enableAllTap(message)', button: 'enableAllButton(text)', canvas: 'enableAllCanvas(message)', banner: 'enableAllBanner(message, position)', custom: 'enableAllOn(selector)', notes: 'Convenience flow for sketches that need both sensors and mic.' }
+  { capability: 'Camera', status: 'window.cameraEnabled || cam.ready', tap: 'enableCameraTap(message)', button: 'enableCameraButton(text)', canvas: 'enableCameraCanvas(message)', banner: 'enableCameraBanner(message, position)', custom: 'enableCameraOn(selector)', notes: 'Pair with createPhoneCamera() for ML5-friendly mapping.' },
+  { capability: 'Motion + microphone', status: 'window.sensorsEnabled && window.micEnabled', tap: 'enableAllTap(message)', button: 'enableAllButton(text)', canvas: 'enableAllCanvas(message)', banner: 'enableAllBanner(message, position)', custom: 'enableAllOn(selector)', notes: 'Convenience flow for sketches that need both sensors and mic.' },
+  { capability: 'Any combination', status: 'depends on selected permissions', tap: "enablePermissionsTap(['sensors', 'mic'])", button: "enablePermissionsButton(['camera', 'mic'], text)", canvas: "enablePermissionsCanvas(['camera', 'mic'])", banner: "enablePermissionsBanner(['sensors', 'nfc'], msg)", custom: "enablePermissionsOn(selector, ['camera', 'mic'])", notes: 'Use sensors, mic, sound, speech, vibration, nfc, and camera in any combination. enableHardware* aliases are also available.' }
 ];
 
 window.P5PHONE_API_SECTIONS = [
@@ -66,7 +67,8 @@ window.P5PHONE_API_SECTIONS = [
       { name: 'enableMicTap', signature: 'enableMicTap(message)', summary: 'Requests microphone access from a tap. Use with p5.sound and p5.AudioIn.', tags: ['microphone', 'tap'] },
       { name: 'enableSoundTap', signature: 'enableSoundTap(message)', summary: 'Unlocks browser audio output so sound files or oscillators can play.', tags: ['sound', 'tap'] },
       { name: 'enableSpeechTap', signature: 'enableSpeechTap(message)', summary: 'Activates the audio context for Web Speech API use without creating a p5.AudioIn instance.', tags: ['speech', 'tap'] },
-      { name: 'enableAllTap', signature: 'enableAllTap(message)', summary: 'Combines motion sensor and microphone activation in one user-gesture flow.', tags: ['combined'] }
+      { name: 'enableAllTap', signature: 'enableAllTap(message)', summary: 'Combines motion sensor and microphone activation in one user-gesture flow.', tags: ['combined'] },
+      { name: 'enablePermissionsTap', signature: "enablePermissionsTap(['sensors', 'mic', 'camera'], message)", summary: 'Requests any selected combination of hardware permissions from one user gesture. Also available as enableHardwareTap.', tags: ['combined'] }
     ]
   },
   {

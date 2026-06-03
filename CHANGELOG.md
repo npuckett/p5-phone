@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [1.10.0] - 2026-06-02
+
+### Added
+- Added `enablePermissionsTap()`, `enablePermissionsButton()`, `enablePermissionsCanvas()`, `enablePermissionsBanner()`, and `enablePermissionsOn()` for requesting any selected combination of hardware permissions from one user gesture.
+- Added `enableHardware*` aliases for the new arbitrary-combination permission helpers.
+- Added `window.cameraEnabled` and included camera status in the `permissionsReady` event detail.
+
 ## [1.9.3] - 2026-06-02
 
 ### Fixed

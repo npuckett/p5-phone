@@ -102,10 +102,10 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
 
 ```html
 <!-- Minified version (recommended) -->
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.3/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"></script>
 
 <!-- Development version (larger, with comments) -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.3/dist/p5-phone.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.js"></script> -->
 ```
 
 ### Basic Setup
@@ -134,7 +134,7 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
   
   <!-- Load p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.3/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"></script>
   
 </head>
 <body>
@@ -237,6 +237,14 @@ enableSpeechButton(text)    // Button-based speech activation
 enableAllTap(message)     // Tap anywhere to enable both
 enableAllButton(text)     // Button-based combined activation
 
+// Any combination of hardware permissions
+enablePermissionsTap(['sensors', 'mic', 'camera'], message)
+enablePermissionsButton(['sensors', 'mic'], text, statusText)
+enablePermissionsCanvas(['camera', 'mic'], message)
+enablePermissionsBanner(['sensors', 'nfc'], message, position)
+enablePermissionsOn('#start-button', ['camera', 'mic'])
+// Also available as enableHardwareTap/Button/Canvas/Banner/On
+
 // Vibration motor (Android only)
 enableVibrationTap(message)   // Tap anywhere to enable vibration
 enableVibrationButton(text)   // Button-based vibration activation
@@ -272,6 +280,8 @@ window.micEnabled         // Boolean: true when microphone is active
 window.soundEnabled       // Boolean: true when sound output is active
 window.speechEnabled      // Boolean: true when speech recognition is active
 window.vibrationEnabled   // Boolean: true when vibration is available (Android only)
+window.nfcEnabled         // Boolean: true when NFC scanning is active (Android only)
+window.cameraEnabled      // Boolean: true after camera startup succeeds
 
 // Debug system
 showDebug()       // Show on-screen debug panel with automatic error catching
@@ -305,6 +315,7 @@ this.enableGyroTap('Tap to start');
 - `window.speechEnabled` - Boolean indicating if speech recognition is active
 - `window.vibrationEnabled` - Boolean indicating if vibration is available (Android only)
 - `window.nfcEnabled` - Boolean indicating if NFC scanning is active (Android only)
+- `window.cameraEnabled` - Boolean indicating if camera startup has succeeded
 - `window.lastNfcSerialNumber` - Serial number string for the most recently read NFC tag
 - `window.lastNfcAlias` - Alias string for the most recently read NFC tag, if one has been set
 

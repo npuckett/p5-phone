@@ -69,7 +69,7 @@ https://editor.p5js.org/npuckett/full/{projectId}
 3. Build a project payload with `visibility: 'Public'`.
 4. `POST /editor/projects` for new sketches, or `PUT /editor/projects/{projectId}` when updating an existing sketch.
 5. Record the returned project ID, sketch URL, and full-preview URL.
-6. Confirm saved file contents contain the expected dependency strings, such as `p5@2.2.3`, `p5-phone@1.9.3`, `p5.js-compatibility@0.2.0`, `p5.sound@0.3.0`, `ml5@1`, or `three@0.160.0`.
+6. Confirm saved file contents contain the expected dependency strings, such as `p5@2.2.3`, `p5-phone@1.10.0`, `p5.js-compatibility@0.2.0`, `p5.sound@0.3.0`, `ml5@1`, or `three@0.160.0`.
 
 Do not patch the homepage catalog until the public full preview has been smoke-tested.
 

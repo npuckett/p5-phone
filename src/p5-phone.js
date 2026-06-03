@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.9.2
+ * p5-phone v1.10.0
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -88,6 +88,7 @@ window.gesturesLocked = false;
 window.vibrationEnabled = false;
 window.speechEnabled = false;
 window.nfcEnabled = false;
+window.cameraEnabled = false;
 window.nfcError = '';
 window.nfcStatus = 'idle';
 window.nfcTagAliases = {};
@@ -294,6 +295,33 @@ function enableAllTap(message = 'Tap screen to enable motion sensors & microphon
   });
 }
 
+/**
+ * Enable any combination of hardware permissions with tap-to-start.
+ * @param {string|string[]} permissions - e.g. ['sensors', 'mic', 'camera']
+ * @param {string} message - Tap overlay message
+ */
+function enablePermissionsTap(permissions, message = 'Tap screen to enable hardware') {
+  _createTapToEnable(message, async () => {
+    const enabledPermissions = await _requestPermissionsCore(permissions);
+    _notifySketchReady();
+    console.log('Hardware permissions enabled via tap:', enabledPermissions);
+  });
+}
+
+/**
+ * Enable any combination of hardware permissions with a button interface.
+ * @param {string|string[]} permissions - e.g. ['sensors', 'mic', 'camera']
+ * @param {string} buttonText - Button label
+ * @param {string} statusText - Status text shown while enabling
+ */
+function enablePermissionsButton(permissions, buttonText = 'ENABLE HARDWARE', statusText = 'Requesting permissions...') {
+  _createPermissionButton(buttonText, statusText, async () => {
+    const enabledPermissions = await _requestPermissionsCore(permissions);
+    _notifySketchReady();
+    console.log('Hardware permissions enabled via button:', enabledPermissions);
+  });
+}
+
 // =========================================
 // CANVAS-FIRST-TOUCH — enableXxxCanvas()
 // Permissions fire on the user's first touch/click on the p5 canvas.
@@ -383,6 +411,17 @@ function enableCameraCanvas(message = 'Touch to start') {
   });
 }
 
+/**
+ * Enable any combination of hardware permissions on first canvas touch.
+ */
+function enablePermissionsCanvas(permissions, message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    const enabledPermissions = await _requestPermissionsCore(permissions);
+    _notifySketchReady();
+    console.log('Hardware permissions enabled via canvas touch:', enabledPermissions);
+  });
+}
+
 // =========================================
 // BANNER UI — enableXxxBanner()
 // A slim notification bar at the top or bottom of the screen.
@@ -451,6 +490,14 @@ function enableCameraBanner(message = 'Tap to enable camera', position = 'top') 
   });
 }
 
+function enablePermissionsBanner(permissions, message = 'Tap to enable hardware', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    const enabledPermissions = await _requestPermissionsCore(permissions);
+    _notifySketchReady();
+    console.log('Hardware permissions enabled via banner:', enabledPermissions);
+  });
+}
+
 // =========================================
 // CUSTOM ELEMENT BINDING — enableXxxOn()
 // Attach permission trigger to any existing DOM element.
@@ -515,6 +562,14 @@ function enableCameraOn(selector) {
   _bindPermissionTo(selector, async () => {
     await _requestCameraPermission();
     console.log('✅ Camera enabled via custom element');
+  });
+}
+
+function enablePermissionsOn(selector, permissions) {
+  _bindPermissionTo(selector, async () => {
+    const enabledPermissions = await _requestPermissionsCore(permissions);
+    _notifySketchReady();
+    console.log('Hardware permissions enabled via custom element:', enabledPermissions);
   });
 }
 
@@ -891,6 +946,97 @@ async function _requestNfcPermissionCore() {
   }
 }
 
+function _normalizePermissionList(permissions) {
+  const aliasMap = {
+    sensor: 'sensors',
+    sensors: 'sensors',
+    motion: 'sensors',
+    orientation: 'sensors',
+    gyro: 'sensors',
+    gyroscope: 'sensors',
+    accelerometer: 'sensors',
+    mic: 'mic',
+    microphone: 'mic',
+    audioin: 'mic',
+    sound: 'sound',
+    audio: 'sound',
+    audiooutput: 'sound',
+    output: 'sound',
+    speech: 'speech',
+    voice: 'speech',
+    recognition: 'speech',
+    vibration: 'vibration',
+    vibrate: 'vibration',
+    haptic: 'vibration',
+    haptics: 'vibration',
+    nfc: 'nfc',
+    tag: 'nfc',
+    tags: 'nfc',
+    camera: 'camera',
+    video: 'camera',
+    webcam: 'camera'
+  };
+
+  const source = Array.isArray(permissions)
+    ? permissions
+    : (typeof permissions === 'string' ? permissions.split(/[\s,]+/) : []);
+  const normalized = [];
+
+  for (const permission of source) {
+    const key = String(permission).trim().toLowerCase().replace(/[-_]/g, '');
+    if (!key) continue;
+
+    if (key === 'all') {
+      for (const defaultPermission of ['sensors', 'mic']) {
+        if (!normalized.includes(defaultPermission)) {
+          normalized.push(defaultPermission);
+        }
+      }
+      continue;
+    }
+
+    const normalizedPermission = aliasMap[key];
+    if (!normalizedPermission) {
+      console.warn('p5-phone: Unknown permission type:', permission);
+      continue;
+    }
+
+    if (!normalized.includes(normalizedPermission)) {
+      normalized.push(normalizedPermission);
+    }
+  }
+
+  if (normalized.length === 0) {
+    console.warn('p5-phone: No valid permission types provided. Use sensors, mic, sound, speech, vibration, nfc, or camera.');
+  }
+
+  return normalized;
+}
+
+async function _requestPermissionsCore(permissions) {
+  const normalized = _normalizePermissionList(permissions);
+
+  for (const permission of normalized) {
+    if (permission === 'sensors') {
+      await _requestMotionPermissionsCore();
+    } else if (permission === 'mic') {
+      await _requestMicrophonePermissionsCore();
+    } else if (permission === 'sound') {
+      await _requestSoundOutputCore();
+    } else if (permission === 'speech') {
+      await _requestSpeechPermissionCore();
+    } else if (permission === 'vibration') {
+      await _requestVibrationPermissionCore();
+    } else if (permission === 'nfc') {
+      await _requestNfcPermissionCore();
+    } else if (permission === 'camera') {
+      await _requestCameraPermissionCore();
+    }
+  }
+
+  return normalized;
+}
+
 // Wrapped versions that notify the sketch (used by single-permission functions)
 async function _requestMotionPermissions() {
   await _requestMotionPermissionsCore();
@@ -938,6 +1084,7 @@ function _notifySketchReady() {
       speech: window.speechEnabled,
       vibration: window.vibrationEnabled,
       nfc: window.nfcEnabled,
+      camera: window.cameraEnabled,
       gestures: window.gesturesLocked
     }
   }));
@@ -1698,6 +1845,10 @@ window.getNfcTagAlias = getNfcTagAlias;
 window.isNfcTag = isNfcTag;
 window.enableAllTap = enableAllTap;
 window.enableAllButton = enableAllButton;
+window.enablePermissionsTap = enablePermissionsTap;
+window.enablePermissionsButton = enablePermissionsButton;
+window.enableHardwareTap = enablePermissionsTap;
+window.enableHardwareButton = enablePermissionsButton;
 
 // Canvas-first-touch style
 window.enableGyroCanvas = enableGyroCanvas;
@@ -1709,6 +1860,8 @@ window.enableVibrationCanvas = enableVibrationCanvas;
 window.enableNfcCanvas = enableNfcCanvas;
 window.enableAllCanvas = enableAllCanvas;
 window.enableCameraCanvas = enableCameraCanvas;
+window.enablePermissionsCanvas = enablePermissionsCanvas;
+window.enableHardwareCanvas = enablePermissionsCanvas;
 
 // Banner style
 window.enableGyroBanner = enableGyroBanner;
@@ -1720,6 +1873,8 @@ window.enableVibrationBanner = enableVibrationBanner;
 window.enableNfcBanner = enableNfcBanner;
 window.enableAllBanner = enableAllBanner;
 window.enableCameraBanner = enableCameraBanner;
+window.enablePermissionsBanner = enablePermissionsBanner;
+window.enableHardwareBanner = enablePermissionsBanner;
 
 // Custom element binding
 window.enableGyroOn = enableGyroOn;
@@ -1731,6 +1886,8 @@ window.enableVibrationOn = enableVibrationOn;
 window.enableNfcOn = enableNfcOn;
 window.enableAllOn = enableAllOn;
 window.enableCameraOn = enableCameraOn;
+window.enablePermissionsOn = enablePermissionsOn;
+window.enableHardwareOn = enablePermissionsOn;
 
 /**
  * Set up console overrides to capture console.error and console.warn
@@ -2495,32 +2652,53 @@ function enableCameraTap(message = 'Tap screen to enable camera') {
   }
 }
 
-async function _requestCameraPermission() {
+async function _requestCameraPermissionCore() {
   try {
     // Initialize any PhoneCamera instances that haven't been initialized yet
     // This happens after user interaction grants camera permission
+    let cameraStarted = false;
+
     if (typeof window._phoneCameras !== 'undefined' && Array.isArray(window._phoneCameras)) {
       for (let cam of window._phoneCameras) {
-        if (cam && !cam._ready && !cam._video) {
+        if (!cam) continue;
+
+        if (!cam._ready && !cam._video) {
           cam._initializeCamera();
         }
+
+        if (cam._ready || cam._video) {
+          cameraStarted = true;
+        }
       }
+    }
+
+    window.cameraEnabled = cameraStarted;
+
+    if (!cameraStarted) {
+      console.warn('p5-phone: No PhoneCamera found. Create one with createPhoneCamera() before enabling camera permissions.');
+      return false;
     }
     
     // Call userCameraReady callback if it exists (user-defined function)
     if (typeof userCameraReady === 'function') {
       userCameraReady();
     }
-    
-    _notifySketchReady();
+    return true;
     
   } catch (error) {
     console.error('Camera permission error:', error);
     if (_debugVisible) {
       debugError('Camera permission error:', error);
     }
-    _notifySketchReady();
+    window.cameraEnabled = false;
+    return false;
   }
+}
+
+async function _requestCameraPermission() {
+  const enabled = await _requestCameraPermissionCore();
+  _notifySketchReady();
+  return enabled;
 }
 
 // Make camera functions globally accessible
@@ -2581,6 +2759,10 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.isNfcTag = isNfcTag;
   p5.prototype.enableAllTap = enableAllTap;
   p5.prototype.enableAllButton = enableAllButton;
+  p5.prototype.enablePermissionsTap = enablePermissionsTap;
+  p5.prototype.enablePermissionsButton = enablePermissionsButton;
+  p5.prototype.enableHardwareTap = enablePermissionsTap;
+  p5.prototype.enableHardwareButton = enablePermissionsButton;
   
   // Canvas-first-touch style
   p5.prototype.enableGyroCanvas = enableGyroCanvas;
@@ -2592,6 +2774,8 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableNfcCanvas = enableNfcCanvas;
   p5.prototype.enableAllCanvas = enableAllCanvas;
   p5.prototype.enableCameraCanvas = enableCameraCanvas;
+  p5.prototype.enablePermissionsCanvas = enablePermissionsCanvas;
+  p5.prototype.enableHardwareCanvas = enablePermissionsCanvas;
   
   // Banner style
   p5.prototype.enableGyroBanner = enableGyroBanner;
@@ -2603,6 +2787,8 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableNfcBanner = enableNfcBanner;
   p5.prototype.enableAllBanner = enableAllBanner;
   p5.prototype.enableCameraBanner = enableCameraBanner;
+  p5.prototype.enablePermissionsBanner = enablePermissionsBanner;
+  p5.prototype.enableHardwareBanner = enablePermissionsBanner;
   
   // Custom element binding
   p5.prototype.enableGyroOn = enableGyroOn;
@@ -2614,6 +2800,8 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableNfcOn = enableNfcOn;
   p5.prototype.enableAllOn = enableAllOn;
   p5.prototype.enableCameraOn = enableCameraOn;
+  p5.prototype.enablePermissionsOn = enablePermissionsOn;
+  p5.prototype.enableHardwareOn = enablePermissionsOn;
   
   // Camera functions
   p5.prototype.createPhoneCamera = createPhoneCamera;
@@ -2672,6 +2860,10 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.isNfcTag = isNfcTag;
       this.enableAllTap = enableAllTap;
       this.enableAllButton = enableAllButton;
+      this.enablePermissionsTap = enablePermissionsTap;
+      this.enablePermissionsButton = enablePermissionsButton;
+      this.enableHardwareTap = enablePermissionsTap;
+      this.enableHardwareButton = enablePermissionsButton;
 
       // Canvas-first-touch style
       this.enableGyroCanvas = enableGyroCanvas;
@@ -2683,6 +2875,8 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableNfcCanvas = enableNfcCanvas;
       this.enableAllCanvas = enableAllCanvas;
       this.enableCameraCanvas = enableCameraCanvas;
+      this.enablePermissionsCanvas = enablePermissionsCanvas;
+      this.enableHardwareCanvas = enablePermissionsCanvas;
 
       // Banner style
       this.enableGyroBanner = enableGyroBanner;
@@ -2694,6 +2888,8 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableNfcBanner = enableNfcBanner;
       this.enableAllBanner = enableAllBanner;
       this.enableCameraBanner = enableCameraBanner;
+      this.enablePermissionsBanner = enablePermissionsBanner;
+      this.enableHardwareBanner = enablePermissionsBanner;
 
       // Custom element binding
       this.enableGyroOn = enableGyroOn;
@@ -2705,6 +2901,8 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableNfcOn = enableNfcOn;
       this.enableAllOn = enableAllOn;
       this.enableCameraOn = enableCameraOn;
+      this.enablePermissionsOn = enablePermissionsOn;
+      this.enableHardwareOn = enablePermissionsOn;
 
       // Camera functions
       this.createPhoneCamera = createPhoneCamera;

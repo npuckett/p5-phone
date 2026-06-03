@@ -1,5 +1,5 @@
 ---
-description: "Use when writing p5.js sketches that use mobile phone sensors, microphone, camera, speech recognition, vibration, NFC, or the p5-phone library. Use when: enableSensorTap, enableMicTap, enableAllTap, enableNfcTap, lockGestures, PhoneCamera, mobile permissions, device orientation, accelerometer, gyroscope, NFC tag reading."
+description: "Use when writing p5.js sketches that use mobile phone sensors, microphone, camera, speech recognition, vibration, NFC, or the p5-phone library. Use when: enableSensorTap, enableMicTap, enableAllTap, enablePermissionsTap, enableNfcTap, lockGestures, PhoneCamera, mobile permissions, device orientation, accelerometer, gyroscope, NFC tag reading."
 applyTo: "**/sketch.js"
 ---
 
@@ -8,7 +8,7 @@ applyTo: "**/sketch.js"
 p5-phone provides mobile hardware access for p5.js sketches. Include it via CDN:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.3/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"></script>
 ```
 
 ## Essential Pattern
@@ -47,6 +47,8 @@ Each permission type has 5 UI styles — pick the one that fits your design:
 | **Banner** | `enableSensorBanner(msg)` | `enableMicBanner(msg)` | `enableSpeechBanner(msg)` | `enableAllBanner(msg)` | `enableCameraBanner(msg)` | `enableNfcBanner(msg)` |
 | **Custom** | `enableSensorOn(sel)` | `enableMicOn(sel)` | `enableSpeechOn(sel)` | `enableAllOn(sel)` | `enableCameraOn(sel)` | `enableNfcOn(sel)` |
 
+For arbitrary combinations, use `enablePermissionsTap(['sensors', 'mic', 'camera'])`, `enablePermissionsButton([...])`, `enablePermissionsCanvas([...])`, `enablePermissionsBanner([...])`, or `enablePermissionsOn(selector, [...])`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `nfc`, and `camera`. `enableHardware*` aliases also work.
+
 Legacy aliases: `enableGyroTap`, `enableGyroButton` also work (same as `enableSensor*`).
 
 ## Status Variables
@@ -55,6 +57,7 @@ Check these to know if permissions have been granted:
 - `window.sensorsEnabled` — motion sensors active
 - `window.micEnabled` — microphone active
 - `window.speechEnabled` — speech recognition active
+- `window.cameraEnabled` — camera startup succeeded
 - `window.nfcEnabled` — NFC scanning active (Android only)
 - `window.lastNfcSerialNumber` — most recently read NFC tag ID
 - `window.lastNfcAlias` — alias for the most recently read NFC tag, if set
@@ -110,7 +113,7 @@ debugError('error');   // Red error
 - **NFC** is Android-only (Chrome 89+). Define `nfcRead(message, serialNumber)` in your sketch to receive tag data. Use `setNfcTagAlias(id, alias)` and `isNfcTag(aliasOrId)` for named tag workflows. Use `stopNfc()` to stop scanning.
 - **PhoneCamera + ML5**: Use `cam.mapKeypoint()` / `cam.mapKeypoints()` for landmark models and `cam.mapBox()` / `cam.mapBoxes()` for object-detection boxes. Set ML5 `flipped: false` when available because PhoneCamera handles mirroring.
 - `enableSpeech*` only activates the audio context — create your own `p5.SpeechRec` object after.
-- `enableAll*` combines sensors + microphone (not speech or camera).
+- `enableAll*` combines sensors + microphone (not speech or camera). Use `enablePermissions*` for custom hardware combinations.
 
 ## p5.js 2.0 Compatibility
 
@@ -139,7 +142,7 @@ function mousePressed() {
   <style>body { margin: 0; padding: 0; overflow: hidden; }</style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.9.3/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>

@@ -170,6 +170,19 @@ window.P5PHONE_EXAMPLES = [
     capabilities: ['motion', 'deviceOrientation']
   },
   {
+    id: 'combined-permissions',
+    title: 'Combined Permissions',
+    category: 'Input',
+    subcategory: 'Combined',
+    level: 'Starter',
+    p5: '1.x and 2.0',
+    description: 'Use enablePermissionsTap() to request motion sensors and microphone from one gesture.',
+    path: 'Phone%20Sensor%20Examples/combined/01_permissions_combo/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/combined/01_permissions_combo',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/GgquhEnKv',
+    capabilities: ['motion', 'microphone', 'combined permissions']
+  },
+  {
     id: 'mic-level',
     title: 'Microphone Level',
     category: 'Input',
