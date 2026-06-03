@@ -5,12 +5,15 @@
 .workshop-qr-panel span { color: var(--muted); font-size: 0.9rem; }
 .qr-code.large, .qr-code.large img, .qr-code.large canvas { width: 184px; height: 184px; }
 .timeline-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
-.timeline-grid article, .prompt-panels article, .hardware-lists article, .intro-grid article, .browser-grid article, .reference-grid article, .workshop-block { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
+.timeline-grid article, .prompt-panels article, .hardware-lists article, .intro-grid article, .browser-grid article, .reference-grid article, .platform-permissions article, .workshop-block { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
 .timeline-grid strong { display: inline-flex; min-width: 58px; justify-content: center; margin-bottom: 14px; border-radius: 999px; border: 1px solid var(--line); background: #f1f2ee; padding: 4px 10px; }
-.timeline-grid p, .prompt-panels li, .hardware-lists li, .workflow-list li, .build-checklist p, .intro-grid p, .browser-grid p, .reference-grid p, .workshop-block li, .workshop-block p { color: var(--muted); }
+.timeline-grid p, .prompt-panels li, .hardware-lists li, .workflow-list li, .build-checklist p, .intro-grid p, .browser-grid p, .reference-grid p, .platform-permissions p, .workshop-block li, .workshop-block p { color: var(--muted); }
+.section-note { max-width: 820px; margin: -8px 0 26px; color: var(--muted); font-size: 1.08rem; }
 .prompt-panels ul, .hardware-lists ul { margin: 0; padding-left: 20px; }
-.prompt-panels li + li, .hardware-lists li + li, .workflow-list li + li { margin-top: 8px; }
+.prompt-panels li + li, .hardware-lists li + li, .workflow-list li + li, .permissions-steps li + li { margin-top: 8px; }
 .workflow-list { max-width: 820px; margin: 0 0 24px; padding-left: 24px; }
+.workflow-list ol, .workflow-list ul { margin-top: 8px; padding-left: 24px; }
+.workflow-note { max-width: 820px; margin: -6px 0 0; color: var(--muted); font-weight: 700; }
 .workshop-card .qr-row { min-height: 154px; }
 .workshop-card .example-meta strong { color: var(--ink); }
 .workshop-card .card-actions { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }

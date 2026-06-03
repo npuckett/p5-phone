@@ -95,7 +95,7 @@ h3 { font-size: 1.2rem; margin-bottom: 12px; }
 .qr-expand-button { position: absolute; top: 10px; right: 10px; z-index: 2; display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: 1.35rem; line-height: 1; font-weight: 750; cursor: pointer; }
 .qr-expand-button:hover { background: var(--highlight); }
 body.qr-card-open { overflow: hidden; }
-.example-card.qr-expanded { position: fixed; inset: clamp(12px, 3vw, 38px); z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px, 3vw, 28px); padding: clamp(18px, 4vw, 52px); overflow: auto; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32); }
+.example-card.qr-expanded { position: fixed; inset: clamp(12px, 3vw, 38px); z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(10px, 2vmin, 22px); padding: clamp(18px, 4vw, 52px); overflow: auto; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32); }
 .example-card.qr-expanded .qr-expand-button { top: clamp(12px, 2vw, 22px); right: clamp(12px, 2vw, 22px); width: 48px; height: 48px; font-size: 2rem; }
 .example-card.qr-expanded .qr-row { margin: 0; padding: 0; border-bottom: 0; }
 .example-card.qr-expanded .qr-row .example-meta,
@@ -103,10 +103,10 @@ body.qr-card-open { overflow: hidden; }
 .example-card.qr-expanded > p,
 .example-card.qr-expanded > .tag-list,
 .example-card.qr-expanded > .card-actions { display: none; }
-.example-card.qr-expanded h4 { max-width: min(92vw, 1000px); margin: 0; text-align: center; font-size: clamp(2rem, 7vw, 6rem); overflow-wrap: anywhere; }
+.example-card.qr-expanded h4 { flex: 0 0 auto; max-width: min(84vw, 840px); margin: 0; text-align: center; font-size: clamp(1.35rem, 4vw, 3.4rem); line-height: 1.05; overflow-wrap: anywhere; }
 .example-card.qr-expanded .qr-code,
 .example-card.qr-expanded .qr-code img,
-.example-card.qr-expanded .qr-code canvas { width: min(72vmin, 680px); height: min(72vmin, 680px); }
+.example-card.qr-expanded .qr-code canvas { width: min(62vmin, 560px); height: min(62vmin, 560px); }
 .api-card h4, .example-card h4 { margin: 0 0 8px; font-size: 1.05rem; }
 .api-signature { color: var(--accent-blue); font-weight: 750; overflow-wrap: anywhere; }
 .example-meta, .api-card p, .example-card p { color: var(--muted); }

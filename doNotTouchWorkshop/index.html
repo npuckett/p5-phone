@@ -36,7 +36,8 @@
         <a href="#reuse-phone">Old Phone</a>
         <a href="#hardware">Phone Hardware</a>
         <a href="#patterns">Interaction Patterns</a>
-        <a href="#open-first">Open These First</a>
+        <a href="#permissions">Permissions</a>
+        <a href="#open-first">Pt 1: Reading the Data</a>
         <a href="#workflow">Web Editor Workflow</a>
         <a href="#workshop-examples">Workshop Examples</a>
         <a href="#build">Build Something</a>
@@ -121,7 +122,7 @@
           <p>p5-phone focuses on the permission and mobile browser setup layer, so experiments can get to the interaction faster.</p>
         </article>
       </div>
-      <div class="workshop-block"><strong>Why the browser:</strong> app stores are not designed for experimentation, but the browser is.</div>
+      <div class="workshop-block"><h3>Sharing</h3><p><strong>Why the browser:</strong> app stores are not designed for experimentation, but the browser is. Also, once you have created the URL for your interaction you can share it with anyone.</p></div>
     </section>
 
     <section id="reuse-phone" class="content-section">
@@ -138,6 +139,7 @@
 
     <section id="hardware" class="content-section">
       <div class="section-heading"><span class="eyebrow">Phone Hardware</span><h2>Inputs And Outputs</h2><p>p5-phone does not replace p5.js. It smooths out the mobile browser access step so sketches can get to the playful part faster.</p></div>
+      <p class="section-note">Though your phone tries to <em>assign</em> use cases for its hardware components, you can actually treat them as generic components to <em>do what you want</em>.</p>
       <div class="split-layout hardware-lists">
         <article><h3>Inputs</h3><ul><li>Gyroscope and orientation</li><li>Accelerometer and movement</li><li>Microphone and speech</li><li>Front and back cameras</li><li>NFC reader on supported Android phones</li></ul></article>
         <article><h3>Outputs</h3><ul><li>Screen graphics</li><li>Speaker sound</li><li>Vibration motors on supported Android phones</li><li>Camera-framed body, face, and hand tracking feedback</li></ul></article>
@@ -153,15 +155,30 @@
       </div>
     </section>
 
+    <section id="permissions" class="content-section">
+      <div class="section-heading"><span class="eyebrow">Phone Approval</span><h2>Permissions</h2><p>One of the primary functions of the library is to trigger your phone's hardware approval process. For security reasons, this requires a physical interaction, at least the first time.</p></div>
+      <div class="workshop-block permissions-steps">
+        <ul>
+          <li>These examples all use <strong>Tap</strong>, meaning touching the screen anywhere. Sorry, it is impossible to remove all touch input.</li>
+          <li>This will trigger an OS-level approval asking you to approve the use of the hardware. Hit Approve.</li>
+          <li>Then the sketch should open and you should see data. The ML5 examples may take a bit longer to load since they are downloading the model.</li>
+        </ul>
+      </div>
+      <div class="split-layout platform-permissions">
+        <article><h3>iOS</h3><p>Required on each opening.</p></article>
+        <article><h3>Android</h3><p>Can be set to remember your approval for the URL, so it only asks once.</p></article>
+      </div>
+    </section>
+
     <section id="open-first" class="content-section">
-      <div class="section-heading"><span class="eyebrow">Data Examples</span><h2>Open These First</h2><p>Start with existing examples that show where values are stored in code, then remix one into a physical interaction.</p></div>
+      <div class="section-heading"><span class="eyebrow">Data Examples</span><h2>Pt 1 : Reading the Data</h2><p>Start with existing examples that show where values are stored in code, then remix one into a physical interaction.</p></div>
       <div id="existing-example-grid" class="example-grid" aria-live="polite"></div>
     </section>
 
     <section id="workflow" class="content-section">
       <div class="section-heading"><span class="eyebrow">Phone Testing</span><h2>Web Editor Workflow</h2><p>Code on your computer, interact on your phone. Your phone needs a public HTTPS page, and the p5 Web Editor is the quickest path.</p></div>
-      <ol class="workflow-list"><li>Use Chrome or Edge.</li><li>Make sure you are logged in, or create a free account if you need one.</li><li>Start with an existing Web Editor file such as <a href="https://editor.p5js.org/npuckett/sketches/-_pUgcYmW" target="_blank" rel="noreferrer">the Orientation starter</a>.</li><li>Save the file so it is associated with your account.</li><li>Get the fullscreen link: choose File, then Share, then click the arrow icon under Share Sketch As View-Only to open it in a new tab.</li><li>Generate a QR code so you can open the link on your phone. Google Chrome has a built-in QR code generator.</li><li>Click the 3 dots on the top right corner of the Google Chrome browser.</li><li>Scroll down and click Cast, Save, and Share.</li><li>Click Create QR Code.</li><li>Use your phone to scan the QR code and open the page.</li><li>Change the code in the Web Editor.</li><li>Press Save in the editor.</li><li>Refresh your phone to see the update.</li></ol>
-      <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
+      <ol class="workflow-list"><li>Use Chrome or Edge.</li><li>Go to the <a href="https://editor.p5js.org/" target="_blank" rel="noreferrer">p5 Web Editor</a> and log in or create an account.<ul><li>If you are not logged in, you cannot save your code or generate your URL.</li></ul></li><li>Start with an existing Web Editor file such as <a href="https://editor.p5js.org/npuckett/sketches/-_pUgcYmW" target="_blank" rel="noreferrer">the Orientation starter</a>.</li><li>Choose File, then Duplicate to copy the sketch into your own account.</li><li>Save the duplicated file so it is associated with your account.</li><li>Get the fullscreen link for your duplicated sketch: choose File, then Share, then click the arrow icon under Share Sketch As View-Only to open it in a new tab.</li><li>Generate a QR code so you can open the link on your phone. Google Chrome has a built-in QR code generator.<ol><li>Click the 3 dots on the top right corner of the Google Chrome browser.</li><li>Scroll down and click Cast, Save, and Share.</li><li>Click Create QR Code.</li></ol></li><li>Use your phone to scan the QR code and open the page.</li><li>Change the code in the Web Editor.</li><li>Press Save in the editor.</li><li>Refresh your phone to see the update.</li></ol>
+      <p class="workflow-note">Once you establish the URL of your sketch, it won't change.</p>
     </section>
 
     <section id="workshop-examples" class="content-section">

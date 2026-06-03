@@ -2,7 +2,7 @@
   const collapsedQrSize = 132;
 
   function expandedQrSize() {
-    return Math.max(260, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.72));
+    return Math.max(220, Math.min(560, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.62)));
   }
 
   function renderQr(element, size) {
