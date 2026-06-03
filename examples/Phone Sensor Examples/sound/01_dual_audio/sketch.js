@@ -12,6 +12,8 @@ let tone1Active = false;
 let tone2Active = false;
 let tone1Level = 0;
 let tone2Level = 0;
+let primaryTouchY = 0;
+let activeTouchZone = '';
 
 function setup()
 {
@@ -101,9 +103,9 @@ function mousePressed(event)
     {
         ensureTonesStarted();
 
-        let touchY = getPrimaryY(event);
+        updateTouchAudioValues(event);
 
-        if (touchY < height / 2)
+        if (activeTouchZone === 'top')
         {
             tone1Active = true;
             tone2Active = false;
@@ -120,6 +122,12 @@ function mousePressed(event)
     }
 
     return false;
+}
+
+function updateTouchAudioValues(event)
+{
+    primaryTouchY = getPrimaryY(event);
+    activeTouchZone = primaryTouchY < height / 2 ? 'top' : 'bottom';
 }
 
 function mouseReleased()

@@ -117,15 +117,15 @@ function mapKeypointToCanvas(keypoint, index) {
   const cropOffset = (scaledVideoWidth - canvasWidth) / 2;
   const centeredX = scaledX - cropOffset;
   
-  // Step 4: Mirror X coordinate (front camera effect)
-  const mirroredX = canvasWidth - centeredX;
+  // Step 4: Mirror X coordinate for front camera only
+  const displayX = mirrorVideo ? canvasWidth - centeredX : centeredX;
   
   // Step 5: Invert Y coordinate for Three.js coordinate system
   // Three.js uses bottom-left origin, we want top-left
   const invertedY = canvasHeight - scaledY;
   
   return {
-    x: mirroredX,
+    x: displayX,
     y: invertedY,
     z: keypoint.z,
     index: index
@@ -419,7 +419,9 @@ function updateTextOverlay() {
   
   // Draw status at top
   let statusText = '';
-  if (initErrorMessage) {
+  if (cameraSwitching) {
+    statusText = 'Switching camera...';
+  } else if (initErrorMessage) {
     statusText = initErrorMessage;
   } else if (!videoElement || !videoElement.srcObject) {
     statusText = 'Starting camera...';

@@ -6,6 +6,8 @@
 let prevRotationX = 0;
 let prevRotationY = 0;
 let prevRotationZ = 0;
+let rotationValues = { x: 0, y: 0, z: 0 };
+let rotationVelocity = { x: 0, y: 0, z: 0, total: 0 };
 
 function setup() 
 {
@@ -35,36 +37,40 @@ function draw()
     // Check if motion sensors are enabled
     if (window.sensorsEnabled) 
     {
-        // Get current rotation values
-        let currentX = rotationX;
-        let currentY = rotationY;
-        let currentZ = rotationZ;
-        
-        // Calculate velocity (change since last frame)
-        let velocityX = currentX - prevRotationX;
-        let velocityY = currentY - prevRotationY;
-        let velocityZ = currentZ - prevRotationZ;
-        
-        // Calculate total velocity magnitude
-        let totalVelocity = sqrt(velocityX * velocityX + velocityY * velocityY + velocityZ * velocityZ);
+        updateRotationValues();
         
         // Output to debug panel
         debug("--- Rotational Velocity ---");
-        debug("Velocity X: " + nf(velocityX, 1, 2) + "°/frame");
-        debug("Velocity Y: " + nf(velocityY, 1, 2) + "°/frame");
-        debug("Velocity Z: " + nf(velocityZ, 1, 2) + "°/frame");
-        debug("Total Velocity: " + nf(totalVelocity, 1, 2) + "°/frame");
+        debug("Velocity X: " + nf(rotationVelocity.x, 1, 2) + "°/frame");
+        debug("Velocity Y: " + nf(rotationVelocity.y, 1, 2) + "°/frame");
+        debug("Velocity Z: " + nf(rotationVelocity.z, 1, 2) + "°/frame");
+        debug("Total Velocity: " + nf(rotationVelocity.total, 1, 2) + "°/frame");
         
 
         
         // Store current rotation for next frame
-        prevRotationX = currentX;
-        prevRotationY = currentY;
-        prevRotationZ = currentZ;
+        prevRotationX = rotationValues.x;
+        prevRotationY = rotationValues.y;
+        prevRotationZ = rotationValues.z;
     }
     else 
     {
         debug("Waiting for sensor permissions...");
         debug("Tap the screen to enable sensors");
     }
+}
+
+function updateRotationValues()
+{
+    rotationValues.x = rotationX;
+    rotationValues.y = rotationY;
+    rotationValues.z = rotationZ;
+    rotationVelocity.x = rotationValues.x - prevRotationX;
+    rotationVelocity.y = rotationValues.y - prevRotationY;
+    rotationVelocity.z = rotationValues.z - prevRotationZ;
+    rotationVelocity.total = sqrt(
+        rotationVelocity.x * rotationVelocity.x +
+        rotationVelocity.y * rotationVelocity.y +
+        rotationVelocity.z * rotationVelocity.z
+    );
 }

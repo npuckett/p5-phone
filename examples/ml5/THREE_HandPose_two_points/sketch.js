@@ -49,6 +49,11 @@ let videoElement;      // HTML video element
 let handPose;          // ML5 HandPose model
 let hands = [];        // Detected hands
 let showData = true;   // Toggle measurement visualization (lines, arcs, text)
+let videoVisible = false;
+let cameraMode = 'user';
+let mirrorVideo = true;
+let cameraSwitching = false;
+let cameraButton;
 
 // Canvas dimensions (portrait orientation: 9:16 ratio)
 const canvasWidth = 405;
@@ -93,6 +98,7 @@ let velocity5 = { x: 0, y: 0, speed: 0 }; // Wrist velocity
 async function init() {
   // Set up Three.js scene (without video background yet)
   setupThreeJS();
+  createCameraButton();
   
   // Initialize camera using native WebRTC
   try {
@@ -136,15 +142,17 @@ async function loadHandPoseModel() {
 
 async function setupCamera() {
   // Create video element
-  videoElement = document.createElement('video');
-  videoElement.setAttribute('playsinline', '');
-  videoElement.autoplay = true;
-  videoElement.muted = true;
+  if (!videoElement) {
+    videoElement = document.createElement('video');
+    videoElement.setAttribute('playsinline', '');
+    videoElement.autoplay = true;
+    videoElement.muted = true;
+  }
   
   // Request camera access
   const constraints = {
     video: {
-      facingMode: 'user',  // Front camera
+      facingMode: cameraMode,
       width: { ideal: 640 },
       height: { ideal: 480 }
     },
@@ -228,6 +236,18 @@ function createTextSprite() {
 }
 
 function createVideoBackground() {
+  if (videoPlane) {
+    scene.remove(videoPlane);
+    if (videoPlane.geometry) videoPlane.geometry.dispose();
+    if (videoPlane.material) videoPlane.material.dispose();
+    videoPlane = null;
+  }
+
+  if (videoTexture) {
+    videoTexture.dispose();
+    videoTexture = null;
+  }
+
   // Calculate how to fit video to canvas (matching p5-phone 'fitHeight' mode)
   // Video is 640x480 (4:3), canvas is 405x720 (9:16)
   const videoAspect = videoWidth / videoHeight;
@@ -267,8 +287,7 @@ function createVideoBackground() {
   // Position the plane at the back (z = 0)
   videoPlane.position.set(canvasWidth / 2, canvasHeight / 2, 0);
   
-  // Mirror the video horizontally (flip X scale for front camera)
-  videoPlane.scale.x = -1;
+  videoPlane.scale.x = mirrorVideo ? -1 : 1;
   
   // Store the video plane dimensions for coordinate mapping
   videoPlane.userData.displayWidth = planeWidth;
@@ -276,6 +295,65 @@ function createVideoBackground() {
   
   // Add to scene
   scene.add(videoPlane);
+}
+
+function createCameraButton() {
+  cameraButton = document.createElement('button');
+  cameraButton.textContent = 'Back camera';
+  cameraButton.style.position = 'fixed';
+  cameraButton.style.right = '14px';
+  cameraButton.style.top = '14px';
+  cameraButton.style.zIndex = '20';
+  cameraButton.style.padding = '12px 14px';
+  cameraButton.style.fontSize = '15px';
+  cameraButton.style.fontWeight = '700';
+  cameraButton.style.border = '0';
+  cameraButton.style.borderRadius = '8px';
+  cameraButton.style.background = '#ffffff';
+  cameraButton.style.color = '#111111';
+  cameraButton.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.25)';
+  cameraButton.addEventListener('click', switchCameraView);
+  document.body.appendChild(cameraButton);
+}
+
+async function switchCameraView(event) {
+  if (event) event.stopPropagation();
+
+  if (cameraSwitching) {
+    return;
+  }
+
+  cameraSwitching = true;
+  hands = [];
+  updateStatus('Switching camera...', 'status');
+
+  if (handPose && handPose.detectStop) {
+    handPose.detectStop();
+  }
+
+  if (videoElement && videoElement.srcObject) {
+    videoElement.srcObject.getTracks().forEach(track => track.stop());
+    videoElement.srcObject = null;
+  }
+
+  cameraMode = cameraMode === 'environment' ? 'user' : 'environment';
+  mirrorVideo = cameraMode === 'user';
+  cameraButton.textContent = cameraMode === 'environment' ? 'Front camera' : 'Back camera';
+
+  try {
+    await setupCamera();
+    createVideoBackground();
+
+    if (handPose && videoElement) {
+      handPose.detectStart(videoElement, gotHands);
+    }
+
+    updateStatus('Detection started!', 'status');
+  } catch (error) {
+    updateStatus(`Camera error: ${error.message}`, 'error');
+  }
+
+  cameraSwitching = false;
 }
 
 // ==============================================

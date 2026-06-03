@@ -11,6 +11,8 @@ let targetY;
 let moveSpeed = 0.05; // Speed multiplier for movement (0.0 - 1.0)
 let corgiRotation = 0;
 let corgiScale = 1.2; // Size multiplier for corgi
+let angleToTarget = 0;
+let targetDistance = 0;
 let touchCounter = 0;
 let backgroundColor;
 
@@ -38,15 +40,7 @@ function draw()
 {
     background(backgroundColor);
 
-    // Calculate angle to target
-    let angleToTarget = atan2(targetY - corgiY, targetX - corgiX);
-
-    // Smoothly move corgi toward target position
-    corgiX = lerp(corgiX, targetX, moveSpeed);
-    corgiY = lerp(corgiY, targetY, moveSpeed);
-
-    // Smoothly rotate toward movement direction
-    corgiRotation = angleToTarget;
+    updateCorgiValues();
 
     // Display GIF with rotation and scale
     push();
@@ -57,8 +51,7 @@ function draw()
     pop();
 
     // Draw ball (target point) when different from current position
-    let distance = dist(corgiX, corgiY, targetX, targetY);
-    if (distance > 5)
+    if (targetDistance > 5)
     {
         // Corgi is moving - play the GIF
         corgiGif.play();
@@ -94,6 +87,18 @@ function draw()
     textSize(20);
     fill(100);
     text("Touch to throw the ball!", width/2, height - 30);
+}
+
+function updateCorgiValues()
+{
+    angleToTarget = atan2(targetY - corgiY, targetX - corgiX);
+    // Smoothly move corgi toward target position
+    corgiX = lerp(corgiX, targetX, moveSpeed);
+    corgiY = lerp(corgiY, targetY, moveSpeed);
+    targetDistance = dist(corgiX, corgiY, targetX, targetY);
+
+    // Smoothly rotate toward movement direction
+    corgiRotation = angleToTarget;
 }
 
 function mousePressed()

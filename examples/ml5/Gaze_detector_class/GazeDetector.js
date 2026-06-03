@@ -61,6 +61,7 @@ class GazeDetector {
     this.faceMesh = null;
     this.faces = [];
     this.ready = false;
+    this.cameraSwitching = false;
     
     // Camera settings
     this.cameraMode = options.cameraMode || 'user';
@@ -133,6 +134,60 @@ class GazeDetector {
       this.faces = results;
     });
     this.ready = true;
+  }
+
+  async switchCamera() {
+    if (!this.cam || this.cameraSwitching) {
+      return false;
+    }
+
+    this.cameraSwitching = true;
+    this.ready = false;
+    this.faces = [];
+    this.leftEarData = null;
+    this.rightEarData = null;
+    this.noseData = null;
+
+    if (this.faceMesh && this.faceMesh.detectStop) {
+      this.faceMesh.detectStop();
+    }
+
+    let useBackCamera = this.cameraMode !== 'environment';
+    this.cameraMode = useBackCamera ? 'environment' : 'user';
+    this.mirror = !useBackCamera;
+    this.cam.mirror = this.mirror;
+    this.cam.active = this.cameraMode;
+
+    await this._waitForCameraReady();
+
+    if (this.faceMesh && this.cam.videoElement) {
+      this.faceMesh.detectStart(this.cam.videoElement, (results) => {
+        this.faces = results;
+      });
+    }
+
+    this.ready = true;
+    this.cameraSwitching = false;
+    return true;
+  }
+
+  _waitForCameraReady() {
+    return new Promise((resolve) => {
+      let attempts = 0;
+      let checkReady = () => {
+        if (this.cam && this.cam.ready && this.cam.videoElement && this.cam.videoElement.readyState >= 2) {
+          resolve();
+        }
+        else if (attempts > 100) {
+          resolve();
+        }
+        else {
+          attempts = attempts + 1;
+          setTimeout(checkReady, 100);
+        }
+      };
+      checkReady();
+    });
   }
 
   _loadMl5Model(createModel) {
@@ -283,6 +338,14 @@ class GazeDetector {
    */
   isReady() {
     return this.ready && this.cam && this.cam.ready;
+  }
+
+  isSwitchingCamera() {
+    return this.cameraSwitching;
+  }
+
+  getCameraMode() {
+    return this.cameraMode;
   }
   
   /**

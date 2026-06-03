@@ -1,5 +1,11 @@
 // Global variable for microphone
 let mic;
+let orientationX = 0;
+let orientationY = 0;
+let motionCircleX = 0;
+let motionCircleY = 0;
+let micLevel = 0;
+let micCircleSize = 10;
 
 function setup() 
 {
@@ -27,20 +33,34 @@ function draw()
   
   if (window.sensorsEnabled) 
   {
+    updateMotionValues();
+
     // Use device rotation and acceleration
     fill(255, 0, 0);
-    circle(width/2 + rotationY * 5, height/2 + rotationX * 5, 50);
+    circle(motionCircleX, motionCircleY, 50);
   }
   
   if (window.micEnabled) 
   {
-    // Use microphone input
-    let micLevel = mic.getLevel();
-    let size = map(micLevel, 0, 1, 10, 200);
+    updateMicValues();
     
     fill(0, 255, 0);
-    circle(width/2, height/2, size);
+    circle(width/2, height/2, micCircleSize);
   }
+}
+
+function updateMotionValues()
+{
+  orientationX = rotationX;
+  orientationY = rotationY;
+  motionCircleX = width/2 + orientationY * 5;
+  motionCircleY = height/2 + orientationX * 5;
+}
+
+function updateMicValues()
+{
+  micLevel = mic.getLevel();
+  micCircleSize = map(micLevel, 0, 1, 10, 200);
 }
 
 // Prevent default touch behavior (optional but recommended)

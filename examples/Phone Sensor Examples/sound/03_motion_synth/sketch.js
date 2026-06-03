@@ -17,6 +17,10 @@ let startButton;
 let currentFrequency = 220;
 let currentVolume = 0;
 let movementEnergy = 0;
+let pitchTilt = 0;
+let volumeTilt = 0;
+let motionDelta = { x: 0, y: 0, z: 0 };
+let tiltMapPosition = { x: 0, y: 0 };
 let previousAccelerationX = 0;
 let previousAccelerationY = 0;
 let previousAccelerationZ = 0;
@@ -99,19 +103,15 @@ function positionStartButton()
 
 function updateSynthFromMotion()
 {
-    let pitchTilt = constrain(rotationX, -synthTiltRange, synthTiltRange);
-    let volumeTilt = constrain(rotationY, -synthTiltRange, synthTiltRange);
+    pitchTilt = constrain(rotationX, -synthTiltRange, synthTiltRange);
+    volumeTilt = constrain(rotationY, -synthTiltRange, synthTiltRange);
     currentFrequency = map(pitchTilt, -synthTiltRange, synthTiltRange, minFrequency, maxFrequency);
     currentVolume = map(volumeTilt, -synthTiltRange, synthTiltRange, minVolume, maxVolume);
 
-    let deltaX = abs(accelerationX - previousAccelerationX);
-    let deltaY = abs(accelerationY - previousAccelerationY);
-    let deltaZ = abs(accelerationZ - previousAccelerationZ);
-    movementEnergy = constrain(deltaX + deltaY + deltaZ, 0, 8);
-
-    previousAccelerationX = accelerationX;
-    previousAccelerationY = accelerationY;
-    previousAccelerationZ = accelerationZ;
+    motionDelta.x = abs(accelerationX - previousAccelerationX);
+    motionDelta.y = abs(accelerationY - previousAccelerationY);
+    motionDelta.z = abs(accelerationZ - previousAccelerationZ);
+    movementEnergy = constrain(motionDelta.x + motionDelta.y + motionDelta.z, 0, 8);
 
     oscillator.freq(currentFrequency, 0.04);
     oscillator.amp(currentVolume, 0.04);
@@ -189,6 +189,10 @@ function drawTiltMap()
 
 function drawMeter(label, value, low, high, y, unit)
 {
+    let pitchTilt = 0;
+    let volumeTilt = 0;
+    let motionDelta = { x: 0, y: 0, z: 0 };
+    let tiltMapPosition = { x: 0, y: 0 };
     let meterWidth = min(width - 70, 420);
     let x = width/2 - meterWidth/2;
     let amount = map(value, low, high, 0, 1);
@@ -197,8 +201,8 @@ function drawMeter(label, value, low, high, y, unit)
     noStroke();
     fill(255, 255, 255, 45);
     rect(x, y, meterWidth, 18, 8);
-
-    fill(120, 220, 170);
+        tiltMapPosition.x = map(volumeTilt, -synthTiltRange, synthTiltRange, x + 24, x + mapWidth - 24);
+        tiltMapPosition.y = map(pitchTilt, -synthTiltRange, synthTiltRange, y + mapHeight - 24, y + 24);
     rect(x, y, meterWidth * amount, 18, 8);
 
     fill(255);
@@ -217,3 +221,5 @@ function windowResized()
     resizeCanvas(windowWidth, windowHeight);
     positionStartButton();
 }
+        fill(255, 204, 102);
+        circle(tiltMapPosition.x, tiltMapPosition.y, 28);

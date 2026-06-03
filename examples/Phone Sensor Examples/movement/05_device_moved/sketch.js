@@ -11,6 +11,11 @@ let trail = [];
 let lastAcceptedAccelerationX = 0;
 let lastAcceptedAccelerationY = 0;
 let lastAcceptedAccelerationZ = 0;
+let accelerationValues = { x: 0, y: 0, z: 0 };
+let movementStrength = 0;
+let movementPoint = { x: 0, y: 0 };
+let movementDotSize = 16;
+let accelerationDelta = 0;
 
 const moveDebounceMs = 450;
 
@@ -80,13 +85,12 @@ function updateTrail()
         return;
     }
 
-    let movementStrength = sqrt(accelerationX * accelerationX + accelerationY * accelerationY + accelerationZ * accelerationZ);
-    let dotSize = map(constrain(movementStrength, 0, 30), 0, 30, 16, 90);
+    updateAccelerationValues();
 
     trail.push({
-        x: width / 2 + accelerationX * 10,
-        y: height / 2 + accelerationY * 10,
-        size: dotSize,
+        x: movementPoint.x,
+        y: movementPoint.y,
+        size: movementDotSize,
         age: 255
     });
 
@@ -94,6 +98,21 @@ function updateTrail()
     {
         trail.shift();
     }
+}
+
+function updateAccelerationValues()
+{
+    accelerationValues.x = accelerationX;
+    accelerationValues.y = accelerationY;
+    accelerationValues.z = accelerationZ;
+    movementStrength = sqrt(
+        accelerationValues.x * accelerationValues.x +
+        accelerationValues.y * accelerationValues.y +
+        accelerationValues.z * accelerationValues.z
+    );
+    movementPoint.x = width / 2 + accelerationValues.x * 10;
+    movementPoint.y = height / 2 + accelerationValues.y * 10;
+    movementDotSize = map(constrain(movementStrength, 0, 30), 0, 30, 16, 90);
 }
 
 function drawTrail()
@@ -139,7 +158,8 @@ function applyMoveThreshold()
 function deviceMoved()
 {
     let now = millis();
-    let accelerationDelta = dist(
+    updateAccelerationValues();
+    accelerationDelta = dist(
         accelerationX, accelerationY, accelerationZ,
         lastAcceptedAccelerationX, lastAcceptedAccelerationY, lastAcceptedAccelerationZ
     );

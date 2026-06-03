@@ -2,68 +2,81 @@
 // No visual feedback - data displayed in debug panel only
 // Demonstrates: Measuring distance between two simultaneous touches
 
-function setup() 
+let touchPoints = [];
+let touchDistance = 0;
+
+function setup()
 {
     createCanvas(windowWidth, windowHeight);
-    
+
     // Show debug panel FIRST
     showDebug();
-    
+
     // Lock mobile gestures
     lockGestures();
-    
+
     debug("Touch Distance - Minimal Version");
     debug("Use two fingers to touch the screen");
     debug("Waiting for two touches...");
 }
 
-function draw() 
+function draw()
 {
     // No visual feedback in minimal version
-    
+
+    updateTouchValues();
+
     // Only measure when there are exactly 2 touches
-    if (touches.length === 2) 
+    if (touchPoints.length === 2)
     {
-        // Get positions of both touches
-        let x1 = touches[0].x;
-        let y1 = touches[0].y;
-        let x2 = touches[1].x;
-        let y2 = touches[1].y;
-        
-        // Calculate distance using Pythagorean theorem
-        let distance = dist(x1, y1, x2, y2);
-        
         // Output to debug panel
         debug("--- Distance Measurement ---");
-        debug("Touch 1: (" + int(x1) + ", " + int(y1) + ")");
-        debug("Touch 2: (" + int(x2) + ", " + int(y2) + ")");
-        debug("Distance: " + int(distance) + " pixels");
+        debug("Touch 1: (" + int(touchPoints[0].x) + ", " + int(touchPoints[0].y) + ")");
+        debug("Touch 2: (" + int(touchPoints[1].x) + ", " + int(touchPoints[1].y) + ")");
+        debug("Distance: " + int(touchDistance) + " pixels");
     }
-    else if (touches.length === 0) 
+    else if (touchPoints.length === 0)
     {
         // No touches
         debug("Waiting for two touches...");
     }
-    else if (touches.length === 1) 
+    else if (touchPoints.length === 1)
     {
         // Only one touch
         debug("Need one more finger (1/2 touches)");
     }
-    else if (touches.length > 2) 
+    else if (touchPoints.length > 2)
     {
         // Too many touches
         debug("Too many touches! Use only 2 fingers");
     }
 }
 
+function updateTouchValues()
+{
+    touchPoints = touches.map((touchPoint) => ({
+        x: touchPoint.x,
+        y: touchPoint.y
+    }));
+
+    if (touchPoints.length === 2)
+    {
+        touchDistance = dist(touchPoints[0].x, touchPoints[0].y, touchPoints[1].x, touchPoints[1].y);
+    }
+    else
+    {
+        touchDistance = 0;
+    }
+}
+
 // Prevent default touch behavior and unwanted gestures
-function mousePressed() 
+function mousePressed()
 {
     return false;  // Prevents default behavior
 }
 
 // Prevent default touch behavior and unwanted gestures
-function mouseReleased() 
+function mouseReleased()
 {
     return false;  // Prevents default behavior
 }

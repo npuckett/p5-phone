@@ -6,6 +6,8 @@
 let spaceSuitImg;
 let spacePeople = []; // Array to hold multiple space person objects
 let totalTouches = 0;
+let touchPoints = [];
+let activeTouchPoint = { x: 0, y: 0 };
 let backgroundColor;
 
 // Simple SpacePerson class
@@ -167,16 +169,18 @@ function draw()
 
 function mousePressed()
 {
+    updateTouchValues();
+
     // Check all touch points
-    for (let i = 0; i < touches.length; i = i + 1)
+    for (let i = 0; i < touchPoints.length; i = i + 1)
     {
-        let touchX = touches[i].x;
-        let touchY = touches[i].y;
+        activeTouchPoint.x = touchPoints[i].x;
+        activeTouchPoint.y = touchPoints[i].y;
 
         // Check each space person for collision with this touch
         for (let j = 0; j < spacePeople.length; j = j + 1)
         {
-            if (spacePeople[j].checkTouch(touchX, touchY))
+            if (spacePeople[j].checkTouch(activeTouchPoint.x, activeTouchPoint.y))
             {
                 totalTouches = totalTouches + 1;
                 // Flash the background
@@ -191,21 +195,31 @@ function mousePressed()
 
 function mouseDragged()
 {
+    updateTouchValues();
+
     // Check touches during movement too
-    for (let i = 0; i < touches.length; i = i + 1)
+    for (let i = 0; i < touchPoints.length; i = i + 1)
     {
-        let touchX = touches[i].x;
-        let touchY = touches[i].y;
+        activeTouchPoint.x = touchPoints[i].x;
+        activeTouchPoint.y = touchPoints[i].y;
 
         // Check each space person
         for (let j = 0; j < spacePeople.length; j = j + 1)
         {
-            spacePeople[j].checkTouch(touchX, touchY);
+            spacePeople[j].checkTouch(activeTouchPoint.x, activeTouchPoint.y);
         }
     }
 
     // Prevent default touch behavior and unwanted gestures
     return false;
+}
+
+function updateTouchValues()
+{
+    touchPoints = touches.map((touchPoint) => ({
+        x: touchPoint.x,
+        y: touchPoint.y
+    }));
 }
 
 function mouseReleased()

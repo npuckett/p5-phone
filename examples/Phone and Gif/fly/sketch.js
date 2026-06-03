@@ -5,6 +5,7 @@
 // Global variables
 let airplaneGif;
 let playbackSpeed = 1.0; // Speed multiplier for GIF playback
+let accelerationAmount = 0; // Current absolute acceleration controlling playback
 let backgroundColor;
 
 // Mapping variables - easy to adjust
@@ -37,13 +38,10 @@ function draw()
     // Check if motion sensors are available
     if (window.sensorsEnabled)
     {
-        // Map absolute value of accelerationY to playback speed
-        // When still (accelerationY = 0), speed is low/paused
-        // As you move phone up/down, speed increases
-        let moveAmount = abs(accelerationY);
+        updatePlaybackValues();
 
         // Check if movement is below threshold
-        if (moveAmount < movementThreshold)
+        if (accelerationAmount < movementThreshold)
         {
             // Below threshold - pause the GIF
             airplaneGif.pause();
@@ -52,7 +50,7 @@ function draw()
         else
         {
             // Above threshold - calculate and set playback speed
-            playbackSpeed = moveAmount * speedMultiplier;
+            playbackSpeed = accelerationAmount * speedMultiplier;
 
             // Constrain to max speed
             playbackSpeed = constrain(playbackSpeed, 0.0, maxSpeed);
@@ -92,6 +90,13 @@ function draw()
         text("On iOS: Tap to request motion permission", width/2, height/2 + 30);
         text("Check device compatibility", width/2, height/2 + 60);
     }
+}
+
+function updatePlaybackValues()
+{
+    // When still (accelerationY = 0), speed is low/paused.
+    // As you move phone up/down, speed increases.
+    accelerationAmount = abs(accelerationY);
 }
 
 function windowResized()

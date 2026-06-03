@@ -116,8 +116,10 @@ function mapKeypointToCanvas(keypoint) {
   x -= offsetX;
   y -= offsetY;
   
-  // Step 5: Mirror X (video plane has scale.x = -1 for front camera mirror effect)
-  x = canvasWidth - x;
+  // Step 5: Mirror X for front camera only
+  if (mirrorVideo) {
+    x = canvasWidth - x;
+  }
   
   // Step 6: Invert Y (Three.js camera has inverted Y: top=canvasHeight, bottom=0)
   y = canvasHeight - y;

@@ -1,3 +1,5 @@
+let heading = 0;
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
@@ -10,10 +12,12 @@ function draw() {
   background(30);
 
   if (window.sensorsEnabled) {
+    updateHeadingValue();
+
     // Draw a compass-like indicator using device orientation
     push();
     translate(width / 2, height / 2);
-    rotate(radians(rotationZ));
+    rotate(radians(heading));
     stroke(255);
     strokeWeight(3);
     line(0, -80, 0, 80);
@@ -25,11 +29,15 @@ function draw() {
     fill(255);
     textAlign(CENTER, TOP);
     textSize(16);
-    text('Heading: ' + nf(rotationZ, 0, 1) + '°', width / 2, 30);
+    text('Heading: ' + nf(heading, 0, 1) + '°', width / 2, 30);
   } else {
     fill(100);
     textAlign(CENTER, CENTER);
     textSize(18);
     text('Waiting for permissions...', width / 2, height / 2);
   }
+}
+
+function updateHeadingValue() {
+  heading = rotationZ;
 }

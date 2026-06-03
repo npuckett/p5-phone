@@ -7,6 +7,8 @@ let lastMoveTime = 0;
 let lastAcceptedAccelerationX = 0;
 let lastAcceptedAccelerationY = 0;
 let lastAcceptedAccelerationZ = 0;
+let accelerationValues = { x: 0, y: 0, z: 0 };
+let accelerationDelta = 0;
 
 const moveDebounceMs = 450;
 
@@ -40,7 +42,8 @@ function draw()
 function deviceMoved()
 {
     let now = millis();
-    let accelerationDelta = dist(
+    updateAccelerationValues();
+    accelerationDelta = dist(
         accelerationX, accelerationY, accelerationZ,
         lastAcceptedAccelerationX, lastAcceptedAccelerationY, lastAcceptedAccelerationZ
     );
@@ -54,6 +57,13 @@ function deviceMoved()
         lastAcceptedAccelerationZ = accelerationZ;
         debug('deviceMoved() fired: ' + moveCount);
     }
+}
+
+function updateAccelerationValues()
+{
+    accelerationValues.x = accelerationX;
+    accelerationValues.y = accelerationY;
+    accelerationValues.z = accelerationZ;
 }
 
 function mousePressed()

@@ -2,6 +2,8 @@
 // No visual feedback - data displayed in debug panel only
 // Demonstrates: Reading device orientation (rotationX, rotationY, rotationZ)
 
+let rotationValues = { x: 0, y: 0, z: 0 };
+
 function setup() 
 {
     createCanvas(windowWidth, windowHeight);
@@ -30,16 +32,13 @@ function draw()
     // Check if motion sensors are enabled
     if (window.sensorsEnabled) 
     {
-        // Get current orientation values
-        let rx = rotationX;
-        let ry = rotationY;
-        let rz = rotationZ;
+        updateRotationValues();
         
         // Output to debug panel
         debug("--- Device Orientation ---");
-        debug("Rotation X (Tilt Forward/Back): " + int(rx) + "°");
-        debug("Rotation Y (Tilt Left/Right): " + int(ry) + "°");
-        debug("Rotation Z (Turn/Compass): " + int(rz) + "°");
+        debug("Rotation X (Tilt Forward/Back): " + int(rotationValues.x) + "°");
+        debug("Rotation Y (Tilt Left/Right): " + int(rotationValues.y) + "°");
+        debug("Rotation Z (Turn/Compass): " + int(rotationValues.z) + "°");
         
 
     }
@@ -48,4 +47,11 @@ function draw()
         debug("Waiting for sensor permissions...");
         debug("Tap the screen to enable sensors");
     }
+}
+
+function updateRotationValues()
+{
+    rotationValues.x = rotationX;
+    rotationValues.y = rotationY;
+    rotationValues.z = rotationZ;
 }

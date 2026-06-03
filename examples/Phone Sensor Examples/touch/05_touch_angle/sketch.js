@@ -4,7 +4,7 @@
 // This example measures the angle between
 // the first 2 touches and displays the line
 // with coordinates and angle
-// 
+//
 // CONCEPTS COVERED:
 // - Multi-touch detection
 // - Angle calculation using atan2() function
@@ -20,18 +20,22 @@ let touch1Y = 0;      // Y position of first touch
 let touch2X = 0;      // X position of second touch
 let touch2Y = 0;      // Y position of second touch
 let touchAngle = 0;   // Angle between the two touches (in degrees)
+let touchAngleRadians = 0; // Angle between the two touches (in radians)
+let touchMidpointX = 0;    // Midpoint X between the two touches
+let touchMidpointY = 0;    // Midpoint Y between the two touches
+let hasTwoTouches = false;
 
 // ==============================================
 // SETUP FUNCTION - Runs once when page loads
 // ==============================================
-function setup() 
+function setup()
 {
     // Create a canvas that fills the entire screen
     createCanvas(windowWidth, windowHeight);
-    
+
     // Lock mobile gestures to prevent scrolling, zooming, etc.
     lockGestures();
-    
+
     // Set text properties
     textAlign(CENTER, CENTER);
     textSize(24);
@@ -40,53 +44,41 @@ function setup()
 // ==============================================
 // DRAW FUNCTION - Runs continuously
 // ==============================================
-function draw() 
+function draw()
 {
     // Clear the screen
     background(240, 240, 240);
-    
+
+    updateTouchValues();
+
     // Check if we have at least 2 touches
-    if (touches.length >= 2) 
+    if (hasTwoTouches)
     {
-        // Get the positions of the first 2 touches
-        touch1X = touches[0].x;
-        touch1Y = touches[0].y;
-        touch2X = touches[1].x;
-        touch2Y = touches[1].y;
-        
-        // Calculate angle between the two touches
-        // atan2 gives us the angle in radians, so we convert to degrees
-        let angleInRadians = atan2(touch2Y - touch1Y, touch2X - touch1X);
-        touchAngle = degrees(angleInRadians);  // Convert to degrees
-        
         // Draw a line between the two touches
         stroke(100, 100, 100);
         strokeWeight(3);
         line(touch1X, touch1Y, touch2X, touch2Y);
-        
+
         // Draw circles at each touch point
         fill(255, 0, 0);  // Red circles
         noStroke();
         circle(touch1X, touch1Y, 30);
         circle(touch2X, touch2Y, 30);
-        
+
         // Draw angle text in the middle of the line
-        let midX = (touch1X + touch2X) / 2;
-        let midY = (touch1Y + touch2Y) / 2;
-        
         fill(0, 0, 0);  // Black text
         textSize(20);
-        text(Math.round(touchAngle) + "°", midX, midY - 30);
-        
+        text(Math.round(touchAngle) + "°", touchMidpointX, touchMidpointY - 30);
+
         // Display coordinates and angle at the top of screen
         textAlign(LEFT, TOP);
         textSize(18);
         text("Touch 1: (" + Math.round(touch1X) + ", " + Math.round(touch1Y) + ")", 20, 20);
         text("Touch 2: (" + Math.round(touch2X) + ", " + Math.round(touch2Y) + ")", 20, 50);
         text("Angle: " + Math.round(touchAngle) + "° (degrees)", 20, 80);
-        
-    } 
-    else 
+
+    }
+    else
     {
         // Instructions when not enough touches
         textAlign(CENTER, CENTER);
@@ -96,19 +88,41 @@ function draw()
     }
 }
 
+function updateTouchValues()
+{
+    hasTwoTouches = touches.length >= 2;
+
+    if (hasTwoTouches)
+    {
+        touch1X = touches[0].x;
+        touch1Y = touches[0].y;
+        touch2X = touches[1].x;
+        touch2Y = touches[1].y;
+        touchAngleRadians = atan2(touch2Y - touch1Y, touch2X - touch1X);
+        touchAngle = degrees(touchAngleRadians);
+        touchMidpointX = (touch1X + touch2X) / 2;
+        touchMidpointY = (touch1Y + touch2Y) / 2;
+    }
+    else
+    {
+        touchAngleRadians = 0;
+        touchAngle = 0;
+    }
+}
+
 // ==============================================
 // INPUT EVENT FUNCTIONS
 // ==============================================
 
 // This function runs when a new touch begins
-function mousePressed() 
+function mousePressed()
 {
     // Touch positions will be updated in draw() function
     return false;
 }
 
 // This function runs when a touch ends
-function mouseReleased() 
+function mouseReleased()
 {
     // Touch positions will be updated in draw() function
     return false;

@@ -5,6 +5,8 @@ let oscillator;
 let startButton;
 let frequency = 220;
 let volume = 0;
+let pitchTilt = 0;
+let volumeTilt = 0;
 const synthTiltRange = 30;
 const minFrequency = 90;
 const maxFrequency = 1200;
@@ -38,11 +40,8 @@ function draw()
     {
         startButton.hide();
         ensureSynthStarted();
+        updateMotionSoundValues();
 
-        let pitchTilt = constrain(rotationX, -synthTiltRange, synthTiltRange);
-        let volumeTilt = constrain(rotationY, -synthTiltRange, synthTiltRange);
-        frequency = map(pitchTilt, -synthTiltRange, synthTiltRange, minFrequency, maxFrequency);
-        volume = map(volumeTilt, -synthTiltRange, synthTiltRange, minVolume, maxVolume);
 
         oscillator.freq(frequency, 0.04);
         oscillator.amp(volume, 0.04);
@@ -64,6 +63,14 @@ function draw()
 
         debug('Waiting for sound and motion sensors...');
     }
+}
+
+function updateMotionSoundValues()
+{
+    pitchTilt = constrain(rotationX, -synthTiltRange, synthTiltRange);
+    volumeTilt = constrain(rotationY, -synthTiltRange, synthTiltRange);
+    frequency = map(pitchTilt, -synthTiltRange, synthTiltRange, minFrequency, maxFrequency);
+    volume = map(volumeTilt, -synthTiltRange, synthTiltRange, minVolume, maxVolume);
 }
 
 function ensureSynthStarted()

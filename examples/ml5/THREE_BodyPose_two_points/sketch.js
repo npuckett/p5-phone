@@ -67,6 +67,10 @@ let poses = [];             // Detected bodies
 let scene, camera, renderer;
 let videoBackground;        // Video texture mesh
 let videoTexture;           // Three.js VideoTexture
+let cameraMode = 'user';
+let mirrorVideo = true;
+let cameraSwitching = false;
+let cameraButton;
 
 // Canvas dimensions (portrait orientation)
 const canvasWidth = 405;
@@ -124,6 +128,7 @@ async function init() {
   
   // Setup Three.js scene, camera, and renderer
   setupThreeJS();
+  createCameraButton();
 
   try {
     // Setup camera and load model
@@ -182,16 +187,17 @@ function setupCamera() {
   return new Promise((resolve, reject) => {
     console.log('Setting up camera...');
     
-    // Create video element
-    videoElement = document.createElement('video');
-    videoElement.setAttribute('playsinline', '');
-    videoElement.style.display = 'none';
-    document.body.appendChild(videoElement);
+    if (!videoElement) {
+      videoElement = document.createElement('video');
+      videoElement.setAttribute('playsinline', '');
+      videoElement.style.display = 'none';
+      document.body.appendChild(videoElement);
+    }
     
     // Request camera access (front camera)
     navigator.mediaDevices.getUserMedia({
       video: {
-        facingMode: 'user',
+        facingMode: cameraMode,
         width: { ideal: 640 },
         height: { ideal: 480 }
       },
@@ -279,6 +285,18 @@ function setupThreeJS() {
  */
 function createVideoBackground() {
   console.log('Creating video background...');
+
+  if (videoBackground) {
+    scene.remove(videoBackground);
+    if (videoBackground.geometry) videoBackground.geometry.dispose();
+    if (videoBackground.material) videoBackground.material.dispose();
+    videoBackground = null;
+  }
+
+  if (videoTexture) {
+    videoTexture.dispose();
+    videoTexture = null;
+  }
   
   // Create video texture
   videoTexture = new THREE.VideoTexture(videoElement);
@@ -306,12 +324,67 @@ function createVideoBackground() {
   // Position to fill canvas (centered horizontally)
   videoBackground.position.set(canvasWidth / 2, canvasHeight / 2, 0);
   
-  // Flip horizontally for mirror effect (front camera)
-  videoBackground.scale.x = -1;
+  videoBackground.scale.x = mirrorVideo ? -1 : 1;
   
   scene.add(videoBackground);
   
   console.log('Video background created');
+}
+
+function createCameraButton() {
+  cameraButton = document.createElement('button');
+  cameraButton.textContent = 'Back camera';
+  cameraButton.style.position = 'fixed';
+  cameraButton.style.left = '14px';
+  cameraButton.style.top = '14px';
+  cameraButton.style.zIndex = '20';
+  cameraButton.style.padding = '12px 14px';
+  cameraButton.style.fontSize = '15px';
+  cameraButton.style.fontWeight = '700';
+  cameraButton.style.border = '0';
+  cameraButton.style.borderRadius = '8px';
+  cameraButton.style.background = '#ffffff';
+  cameraButton.style.color = '#111111';
+  cameraButton.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.25)';
+  cameraButton.addEventListener('click', switchCameraView);
+  document.body.appendChild(cameraButton);
+}
+
+async function switchCameraView(event) {
+  if (event) event.stopPropagation();
+
+  if (cameraSwitching) {
+    return;
+  }
+
+  cameraSwitching = true;
+  initErrorMessage = '';
+  poses = [];
+
+  if (bodypose && bodypose.detectStop) {
+    bodypose.detectStop();
+  }
+
+  if (videoElement && videoElement.srcObject) {
+    videoElement.srcObject.getTracks().forEach(track => track.stop());
+    videoElement.srcObject = null;
+  }
+
+  cameraMode = cameraMode === 'environment' ? 'user' : 'environment';
+  mirrorVideo = cameraMode === 'user';
+  cameraButton.textContent = cameraMode === 'environment' ? 'Front camera' : 'Back camera';
+
+  try {
+    await setupCamera();
+    if (bodypose && videoElement) {
+      bodypose.detectStart(videoElement, gotPoses);
+    }
+  } catch (error) {
+    console.error('Camera switch error:', error);
+    initErrorMessage = 'Camera error: ' + error.message;
+  }
+
+  cameraSwitching = false;
 }
 
 /**

@@ -5,6 +5,7 @@
 // Global variables
 let pencilGif;
 let playbackSpeed = 1.0; // Speed multiplier for GIF playback
+let tiltAmount = 0; // Current absolute tilt controlling playback
 let backgroundColor;
 
 // Mapping variables - easy to adjust
@@ -36,9 +37,7 @@ function draw()
     // Check if motion sensors are available
     if (window.sensorsEnabled)
     {
-        // Map absolute value of rotationX to playback speed
-        // When flat (rotationX = 0), speed is 0 (paused)
-        let tiltAmount = abs(rotationX);
+        updatePlaybackValues();
         playbackSpeed = tiltAmount * speedMultiplier;
 
         // Constrain to max speed
@@ -97,6 +96,12 @@ function draw()
         text("On iOS: Tap to request motion permission", width/2, height/2 + 30);
         text("Check device compatibility", width/2, height/2 + 60);
     }
+}
+
+function updatePlaybackValues()
+{
+    // When flat (rotationX = 0), speed is 0 (paused).
+    tiltAmount = abs(rotationX);
 }
 
 // ==============================================

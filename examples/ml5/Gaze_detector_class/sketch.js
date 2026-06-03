@@ -20,6 +20,13 @@ BENEFITS:
 // GLOBAL VARIABLES
 // ==============================================
 let gazeDetector;  // GazeDetector instance
+let cameraButton;  // Button to toggle front/back camera
+let lastCameraButtonPress = 0;
+let gazeDirection = "CENTER";
+let gazePosition = { x: 0, y: 0 };
+let gazeAngle = 0;
+let verticalGazeAngle = 0;
+let gazeKeypoints = null;
 
 // ==============================================
 // SETUP - Runs once when page loads
@@ -31,6 +38,7 @@ function setup() {
   // Create gaze detector with default settings
   // That's it! Camera and FaceMesh are automatically initialized
   gazeDetector = new GazeDetector();
+  createCameraButton();
   
   // Optional: Customize settings
   // gazeDetector = new GazeDetector({
@@ -44,6 +52,36 @@ function setup() {
   // });
 }
 
+function createCameraButton() {
+  cameraButton = createButton('Back camera');
+  cameraButton.position(14, 14);
+  cameraButton.style('position', 'fixed');
+  cameraButton.style('z-index', '20');
+  cameraButton.style('padding', '12px 14px');
+  cameraButton.style('font-size', '15px');
+  cameraButton.style('font-weight', '700');
+  cameraButton.style('border', '0');
+  cameraButton.style('border-radius', '8px');
+  cameraButton.style('background', '#ffffff');
+  cameraButton.style('color', '#111111');
+  cameraButton.style('box-shadow', '0 4px 14px rgba(0, 0, 0, 0.25)');
+  cameraButton.mousePressed(switchCameraView);
+}
+
+async function switchCameraView() {
+  lastCameraButtonPress = Date.now();
+
+  if (!gazeDetector || gazeDetector.isSwitchingCamera()) {
+    return false;
+  }
+
+  let useBackCamera = gazeDetector.getCameraMode() !== 'environment';
+  cameraButton.html(useBackCamera ? 'Switching...' : 'Switching...');
+  await gazeDetector.switchCamera();
+  cameraButton.html(gazeDetector.getCameraMode() === 'environment' ? 'Front camera' : 'Back camera');
+  return false;
+}
+
 // ==============================================
 // DRAW - Runs continuously
 // ==============================================
@@ -55,29 +93,25 @@ function draw() {
   
   // Only process if face is detected
   if (gazeDetector.isFaceDetected()) {
+    updateGazeValues();
     
     // ==========================================
     // GET GAZE DATA - Multiple ways to access
     // ==========================================
     
-    // Method 1: Get gaze direction as string
-    let direction = gazeDetector.getDirection();
+    // Method 1: Use gazeDirection as a string
     // Returns: "LEFT", "CENTER", or "RIGHT"
     
-    // Method 2: Get gaze position on screen
-    let gazePos = gazeDetector.getGazePosition();
+    // Method 2: Use gazePosition on screen
     // Returns: {x: number, y: number}
     
-    // Method 3: Get raw gaze angle
-    let angle = gazeDetector.getGazeAngle();
+    // Method 3: Use raw gazeAngle
     // Returns: number (-1 to 1, negative = left, positive = right)
     
-    // Method 4: Get vertical angle
-    let verticalAngle = gazeDetector.getVerticalAngle();
+    // Method 4: Use verticalGazeAngle
     // Returns: number (-1 to 1, negative = up, positive = down)
     
-    // Method 5: Get individual keypoints
-    let keypoints = gazeDetector.getKeypoints();
+    // Method 5: Use gazeKeypoints
     // Returns: {leftEar, rightEar, nose}
     
     // ==========================================
@@ -98,12 +132,25 @@ function draw() {
   }
 }
 
+function updateGazeValues() {
+  gazeDirection = gazeDetector.getDirection();
+  gazePosition = gazeDetector.getGazePosition();
+  gazeAngle = gazeDetector.getGazeAngle();
+  verticalGazeAngle = gazeDetector.getVerticalAngle();
+  gazeKeypoints = gazeDetector.getKeypoints();
+}
+
 // ==============================================
 // INTERACTION - Toggle video with tap
 // ==============================================
 function mousePressed() {
+  if (Date.now() - lastCameraButtonPress < 400) {
+    return false;
+  }
+
   // Toggle video display when screen is tapped
   gazeDetector.toggleVideo();
+  return false;
 }
 
 // ==============================================
