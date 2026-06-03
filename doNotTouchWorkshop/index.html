@@ -30,7 +30,10 @@
       <p class="sidebar-summary">Phones for Creative Interaction with p5-phone.</p>
       <nav class="sidebar-nav" aria-label="Workshop sections">
         <a href="#start">Start</a>
+        <a href="#introduction">Introduction</a>
         <a href="#agenda">Agenda</a>
+        <a href="#browsers">Browsers</a>
+        <a href="#reuse-phone">Old Phone</a>
         <a href="#hardware">Phone Hardware</a>
         <a href="#patterns">Interaction Patterns</a>
         <a href="#open-first">Open These First</a>
@@ -42,7 +45,6 @@
       <div class="sidebar-actions">
         <a href="../examples/homepage/#start">p5-phone Docs</a>
         <a href="https://github.com/npuckett/p5-phone" target="_blank" rel="noreferrer">GitHub</a>
-        <a href="markdown-structure-suggestions.md">Markdown Notes</a>
       </div>
     </div>
   </aside>
@@ -74,15 +76,64 @@
       </div>
     </section>
 
+    <section id="introduction" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Introduction</span>
+        <h2>Me</h2>
+        <p>Hi, I'm Nick.</p>
+      </div>
+      <div class="split-layout intro-grid">
+        <article>
+          <h3>Nick Puckett</h3>
+          <p>Associate Professor, Digital Futures<br>Co-Director, <a href="https://socialbodylab.com/" target="_blank" rel="noreferrer">Social Body Lab</a><br><a href="https://www.ocadu.ca/" target="_blank" rel="noreferrer">OCADU</a>, Toronto</p>
+        </article>
+        <article>
+          <h3>Work</h3>
+          <p>See more about my work at <a href="https://puckettrand.com/" target="_blank" rel="noreferrer">puckettrand.com</a>.</p>
+        </article>
+      </div>
+    </section>
+
     <section id="agenda" class="content-section">
       <div class="section-heading"><span class="eyebrow">90 Minutes</span><h2>Workshop Flow</h2><p>A fast route from phone hardware to a small physical interaction sketch.</p></div>
       <div class="timeline-grid">
-        <article><strong>0-10</strong><h3>Meet p5-phone</h3><p>What your phone can sense and why browser permission setup matters.</p></article>
-        <article><strong>10-25</strong><h3>Data Tour</h3><p>Open sensor, microphone, vibration, NFC, and camera examples on phones.</p></article>
-        <article><strong>25-40</strong><h3>Web Editor Loop</h3><p>Save, share fullscreen, make a QR code, scan, edit, save, refresh.</p></article>
-        <article><strong>40-75</strong><h3>Build Time</h3><p>Pick one value or event and connect it to a visual, sound, or haptic output.</p></article>
-        <article><strong>75-90</strong><h3>Share</h3><p>Show the interaction, name the phone value, and describe the material choice.</p></article>
+        <article><strong>0-5</strong><h3>Meet p5-phone</h3><p>What your phone can sense and why browser permission setup matters.</p></article>
+        <article><strong>5-15</strong><h3>Data Tour</h3><p>Open sensor, microphone, vibration, NFC, and camera examples on phones.</p></article>
+        <article><strong>15-25</strong><h3>Web Editor Loop</h3><p>Save, share fullscreen, make a QR code, scan, edit, save, refresh.</p></article>
+        <article><strong>25-80</strong><h3>Build Time</h3><p>Pick one value or event and connect it to a visual, sound, or haptic output.</p></article>
+        <article><strong>80-90</strong><h3>Share</h3><p>Show the interaction, name the phone value, and describe the material choice.</p></article>
       </div>
+    </section>
+
+    <section id="browsers" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Browsers</span>
+        <h2>Browsers For Experimentation</h2>
+        <p>Browsers have gotten more powerful, but constantly change how to gain access to hardware in the browser.</p>
+      </div>
+      <div class="split-layout browser-grid">
+        <article>
+          <h3>p5.js Reads Data</h3>
+          <p>p5.js does a great job of simplifying how sketches read and use data once the browser has permission.</p>
+        </article>
+        <article>
+          <h3>p5-phone Handles Access</h3>
+          <p>p5-phone focuses on the permission and mobile browser setup layer, so experiments can get to the interaction faster.</p>
+        </article>
+      </div>
+      <div class="workshop-block"><strong>Why the browser:</strong> app stores are not designed for experimentation, but the browser is.</div>
+    </section>
+
+    <section id="reuse-phone" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Materials</span>
+        <h2>Reuse Your Old Phone</h2>
+        <p>Consider how you can use your old phone for new purposes.</p>
+      </div>
+      <figure class="workshop-image-block">
+        <img src="assets/oldPHone.jpg" alt="An older mobile phone shown as a reused experimental device.">
+        <figcaption>Image via Gizmodo, 2015: <a href="https://gizmodo.com/what-its-like-to-have-the-oldest-phone-in-san-francisco-1721395933" target="_blank" rel="noreferrer">What it's like to have the oldest phone in San Francisco</a></figcaption>
+      </figure>
     </section>
 
     <section id="hardware" class="content-section">
@@ -91,7 +142,7 @@
         <article><h3>Inputs</h3><ul><li>Gyroscope and orientation</li><li>Accelerometer and movement</li><li>Microphone and speech</li><li>Front and back cameras</li><li>NFC reader on supported Android phones</li></ul></article>
         <article><h3>Outputs</h3><ul><li>Screen graphics</li><li>Speaker sound</li><li>Vibration motors on supported Android phones</li><li>Camera-framed body, face, and hand tracking feedback</li></ul></article>
       </div>
-      <div class="note-band"><strong>Platform note:</strong> iOS supports motion, microphone, and camera permission flows, but Web NFC and browser vibration are primarily Android Chrome features.</div>
+      <div class="workshop-block"><strong>Platform note:</strong> iOS supports motion, microphone, and camera permission flows, but Web NFC and browser vibration are primarily Android Chrome features.</div>
     </section>
 
     <section id="patterns" class="content-section">
@@ -109,7 +160,7 @@
 
     <section id="workflow" class="content-section">
       <div class="section-heading"><span class="eyebrow">Phone Testing</span><h2>Web Editor Workflow</h2><p>Code on your computer, interact on your phone. Your phone needs a public HTTPS page, and the p5 Web Editor is the quickest path.</p></div>
-      <ol class="workflow-list"><li>Open a starter sketch in Chrome or Edge and make sure you are logged into the p5 Web Editor.</li><li>Save the sketch so it belongs to your account.</li><li>Choose File, Share, then open the fullscreen view-only link.</li><li>Use the browser QR generator from Cast, Save, and Share, then Create QR Code.</li><li>Scan the QR code on your phone and allow the requested hardware permissions.</li><li>Edit on your computer, press Save in the editor, and refresh your phone.</li></ol>
+      <ol class="workflow-list"><li>Use Chrome or Edge.</li><li>Make sure you are logged in, or create a free account if you need one.</li><li>Start with an existing Web Editor file such as <a href="https://editor.p5js.org/npuckett/sketches/-_pUgcYmW" target="_blank" rel="noreferrer">the Orientation starter</a>.</li><li>Save the file so it is associated with your account.</li><li>Get the fullscreen link: choose File, then Share, then click the arrow icon under Share Sketch As View-Only to open it in a new tab.</li><li>Generate a QR code so you can open the link on your phone. Google Chrome has a built-in QR code generator.</li><li>Click the 3 dots on the top right corner of the Google Chrome browser.</li><li>Scroll down and click Cast, Save, and Share.</li><li>Click Create QR Code.</li><li>Use your phone to scan the QR code and open the page.</li><li>Change the code in the Web Editor.</li><li>Press Save in the editor.</li><li>Refresh your phone to see the update.</li></ol>
       <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
     </section>
 
@@ -129,7 +180,54 @@
 
     <section id="help" class="content-section">
       <div class="section-heading"><span class="eyebrow">References</span><h2>Library Questions</h2><p>Use the full docs for API details and the portable skill file when asking an AI assistant for p5-phone-specific code help.</p></div>
-      <div class="card-actions reference-actions"><a href="../examples/homepage/#start">Full Documentation</a><a href="../.agents/skills/p5-phone/SKILL.md">p5-phone Skill File</a><a href="markdown-structure-suggestions.md">Markdown Structure Suggestions</a><a href="https://puckettrand.com/" target="_blank" rel="noreferrer">Nick Puckett</a></div>
+      <div class="split-layout reference-grid">
+        <article>
+          <span class="eyebrow">For you</span>
+          <h3>Full Documentation</h3>
+          <p>Use the complete p5-phone documentation when you want API details, examples, and current setup patterns.</p>
+          <div class="card-actions"><a href="../examples/homepage/#start">Open Documentation</a></div>
+        </article>
+        <article>
+          <span class="eyebrow">For you and the robots</span>
+          <h3>p5-phone Skill File</h3>
+          <p>The skill file is a small instruction document for AI chat tools and coding agents. It explains the p5-phone API, mobile permission constraints, p5.js 2 patterns, and example conventions so the assistant has library-specific context before it writes code or answers questions.</p>
+          <div class="card-actions"><a href="../.agents/skills/p5-phone/SKILL.md">Open Skill File</a><a href="../examples/SKILL.zip">Download Zip</a></div>
+        </article>
+      </div>
+      <div class="workshop-block skill-guide">
+        <div>
+          <span class="eyebrow">Method 1</span>
+          <h3>Use The Text File</h3>
+          <ol>
+            <li>Open the p5-phone skill file.</li>
+            <li>Copy the full contents.</li>
+            <li>Paste it into a new chat before your question.</li>
+            <li>Ask the chat to use that context when it explains or writes p5-phone code.</li>
+          </ol>
+        </div>
+        <div>
+          <span class="eyebrow">Method 2</span>
+          <h3>Use The Zip File</h3>
+          <ol>
+            <li>Download <a href="../examples/SKILL.zip">SKILL.zip</a>.</li>
+            <li>Unzip the file on your computer.</li>
+            <li>Upload or attach the unzipped skill file to your chat tool, if attachments are supported.</li>
+            <li>Tell the chat that the uploaded file describes the p5-phone library.</li>
+          </ol>
+        </div>
+        <div>
+          <span class="eyebrow">Good Questions</span>
+          <h3>Ask For Specific Hardware And Output</h3>
+          <ul class="question-list">
+            <li>Make a p5-phone sketch where rotation controls color.</li>
+            <li>How do I request motion and microphone permissions from one tap?</li>
+            <li>Create a no-touch sketch where mouth openness launches particles.</li>
+            <li>Change this sketch so microphone level controls particle size.</li>
+            <li>Help me adapt this sketch for p5.js 2 and mobile sensors.</li>
+            <li>Why is NFC Android-only in this browser sketch?</li>
+          </ul>
+        </div>
+      </div>
     </section>
   </main>
 </body>

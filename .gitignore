@@ -38,6 +38,9 @@ logs
 tmp/
 temp/
 
+# Site development notes and moved markdown sources
+siteDev/
+
 # Build outputs
 dist/
 build/
