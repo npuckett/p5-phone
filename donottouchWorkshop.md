@@ -141,5 +141,5 @@ Other fun NASA images https://archive.org/details/nasa?page=3&and%5B%5D=mediatyp
 - Full documentation : https://npuckett.github.io/p5-phone/examples/homepage/#start
 
 - If you are using Ai/Chat for code help
-- - Download the library Skill.md file
+- - Download the library Skill.md file (use githubio link examples/SKILL.zip)
 - - Add it to your chat of choice as context

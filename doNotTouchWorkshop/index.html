@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Do Not Touch: Phones for Creative Interaction</title>
+  <link rel="stylesheet" href="../examples/homepage/styles/main.css">
+  <link rel="stylesheet" href="styles/workshop.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="scripts/workshop-data.js" defer></script>
+  <script src="scripts/render.js" defer></script>
+  <script src="../examples/homepage/scripts/navigation.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="mobile-header">
+    <a class="brand compact" href="#start" aria-label="Do Not Touch workshop home">
+      <span class="brand-title"><span>Do Not</span><span>Touch</span></span>
+    </a>
+    <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-sidebar" data-menu-button>Menu</button>
+  </header>
+
+  <aside class="sidebar" id="site-sidebar" data-sidebar>
+    <div class="sidebar-inner">
+      <a class="brand" href="#start" aria-label="Do Not Touch workshop home">
+        <span class="brand-title"><span>Do Not</span><span>Touch</span></span>
+      </a>
+      <p class="sidebar-summary">Phones for Creative Interaction with p5-phone.</p>
+      <nav class="sidebar-nav" aria-label="Workshop sections">
+        <a href="#start">Start</a>
+        <a href="#agenda">Agenda</a>
+        <a href="#hardware">Phone Hardware</a>
+        <a href="#patterns">Interaction Patterns</a>
+        <a href="#open-first">Open These First</a>
+        <a href="#workflow">Web Editor Workflow</a>
+        <a href="#workshop-examples">Workshop Examples</a>
+        <a href="#build">Build Something</a>
+        <a href="#help">AI Help</a>
+      </nav>
+      <div class="sidebar-actions">
+        <a href="../examples/homepage/#start">p5-phone Docs</a>
+        <a href="https://github.com/npuckett/p5-phone" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="markdown-structure-suggestions.md">Markdown Notes</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="backdrop" data-backdrop></div>
+
+  <main id="main-content" class="main-content">
+    <section id="start" class="hero-section content-section workshop-hero">
+      <div class="hero-layout">
+        <div>
+          <span class="eyebrow">ITP Camp Workshop</span>
+          <h1>Do Not Touch</h1>
+          <p class="hero-copy">Phones for Creative Interaction is a 90-minute workshop about using the phone as a small creative computer: motion, sound, speech, camera, NFC, vibration, screen, and speakers.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="../examples/homepage/#start">Open p5-phone Docs</a>
+            <a class="secondary-link" href="#workshop-examples">Open Starter Examples</a>
+          </div>
+        </div>
+        <div class="workshop-qr-panel" aria-label="Workshop page QR code">
+          <div class="qr-code large" id="workshop-page-qr"></div>
+          <strong>Scan this page</strong>
+          <span>https://npuckett.github.io/p5-phone/doNotTouchWorkshop/</span>
+        </div>
+      </div>
+      <div class="signal-grid" aria-label="Workshop framing">
+        <div><strong>Bring Your Own Phone</strong><span>iPhone and Android both work. Some APIs are Android-only.</span></div>
+        <div><strong>No Touch Input</strong><span>Touch is only for browser permission prompts and utility buttons.</span></div>
+        <div><strong>Simple Materials</strong><span>Paper, string, tape, fabric, bodies, sound, movement, and cameras.</span></div>
+      </div>
+    </section>
+
+    <section id="agenda" class="content-section">
+      <div class="section-heading"><span class="eyebrow">90 Minutes</span><h2>Workshop Flow</h2><p>A fast route from phone hardware to a small physical interaction sketch.</p></div>
+      <div class="timeline-grid">
+        <article><strong>0-10</strong><h3>Meet p5-phone</h3><p>What your phone can sense and why browser permission setup matters.</p></article>
+        <article><strong>10-25</strong><h3>Data Tour</h3><p>Open sensor, microphone, vibration, NFC, and camera examples on phones.</p></article>
+        <article><strong>25-40</strong><h3>Web Editor Loop</h3><p>Save, share fullscreen, make a QR code, scan, edit, save, refresh.</p></article>
+        <article><strong>40-75</strong><h3>Build Time</h3><p>Pick one value or event and connect it to a visual, sound, or haptic output.</p></article>
+        <article><strong>75-90</strong><h3>Share</h3><p>Show the interaction, name the phone value, and describe the material choice.</p></article>
+      </div>
+    </section>
+
+    <section id="hardware" class="content-section">
+      <div class="section-heading"><span class="eyebrow">Phone Hardware</span><h2>Inputs And Outputs</h2><p>p5-phone does not replace p5.js. It smooths out the mobile browser access step so sketches can get to the playful part faster.</p></div>
+      <div class="split-layout hardware-lists">
+        <article><h3>Inputs</h3><ul><li>Gyroscope and orientation</li><li>Accelerometer and movement</li><li>Microphone and speech</li><li>Front and back cameras</li><li>NFC reader on supported Android phones</li></ul></article>
+        <article><h3>Outputs</h3><ul><li>Screen graphics</li><li>Speaker sound</li><li>Vibration motors on supported Android phones</li><li>Camera-framed body, face, and hand tracking feedback</li></ul></article>
+      </div>
+      <div class="note-band"><strong>Platform note:</strong> iOS supports motion, microphone, and camera permission flows, but Web NFC and browser vibration are primarily Android Chrome features.</div>
+    </section>
+
+    <section id="patterns" class="content-section">
+      <div class="section-heading"><span class="eyebrow">Interaction Patterns</span><h2>Events And Ranges</h2><p>Most workshop sketches can start as one of two shapes: an event that happens, or a changing value that behaves like a slider.</p></div>
+      <div class="split-layout prompt-panels">
+        <article><h3>Events</h3><ul><li>If the phone moves fast enough, play a sound.</li><li>If the phone reaches an angle range, switch the scene.</li><li>If the room gets quiet, draw a face.</li><li>If an NFC tag is read, trigger a material-specific response.</li><li>If a mouth opens, emit particles.</li></ul></article>
+        <article><h3>Ranges</h3><ul><li>Map rotation to color.</li><li>Map tilt to animation speed.</li><li>Map acceleration to volume.</li><li>Map thumb-index distance to image opacity.</li><li>Map microphone level to size, density, or brightness.</li></ul></article>
+      </div>
+    </section>
+
+    <section id="open-first" class="content-section">
+      <div class="section-heading"><span class="eyebrow">Data Examples</span><h2>Open These First</h2><p>Start with existing examples that show where values are stored in code, then remix one into a physical interaction.</p></div>
+      <div id="existing-example-grid" class="example-grid" aria-live="polite"></div>
+    </section>
+
+    <section id="workflow" class="content-section">
+      <div class="section-heading"><span class="eyebrow">Phone Testing</span><h2>Web Editor Workflow</h2><p>Code on your computer, interact on your phone. Your phone needs a public HTTPS page, and the p5 Web Editor is the quickest path.</p></div>
+      <ol class="workflow-list"><li>Open a starter sketch in Chrome or Edge and make sure you are logged into the p5 Web Editor.</li><li>Save the sketch so it belongs to your account.</li><li>Choose File, Share, then open the fullscreen view-only link.</li><li>Use the browser QR generator from Cast, Save, and Share, then Create QR Code.</li><li>Scan the QR code on your phone and allow the requested hardware permissions.</li><li>Edit on your computer, press Save in the editor, and refresh your phone.</li></ol>
+      <pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"&gt;&lt;/script&gt;</code></pre>
+    </section>
+
+    <section id="workshop-examples" class="content-section">
+      <div class="section-heading"><span class="eyebrow">Starter Sketches</span><h2>Workshop Examples</h2><p>These sketches are made for the no-touch rule. Each one exposes the main sensor or tracking values as global variables so it is easy to swap the output.</p></div>
+      <div id="new-example-grid" class="example-grid" aria-live="polite"></div>
+    </section>
+
+    <section id="build" class="content-section">
+      <div class="section-heading"><span class="eyebrow">Build Time</span><h2>Make A Physical Interaction</h2><p>Choose one input, one output, and one simple material constraint. The first version should be tiny enough to explain in one sentence.</p></div>
+      <div class="starter-grid build-checklist">
+        <article class="starter-card"><h3>1. Pick A Value</h3><p>Use a global such as <code>rotationZ</code>, <code>micLevel</code>, <code>mouthOpenAmount</code>, or <code>fingerDistance</code>.</p></article>
+        <article class="starter-card"><h3>2. Map It</h3><p>Turn the value into size, speed, opacity, pitch, color, particle count, or vibration timing.</p></article>
+        <article class="starter-card"><h3>3. Add Material</h3><p>Let paper, string, tape, fabric, clothing, posture, or distance change how the phone is held or sensed.</p></article>
+      </div>
+    </section>
+
+    <section id="help" class="content-section">
+      <div class="section-heading"><span class="eyebrow">References</span><h2>Library Questions</h2><p>Use the full docs for API details and the portable skill file when asking an AI assistant for p5-phone-specific code help.</p></div>
+      <div class="card-actions reference-actions"><a href="../examples/homepage/#start">Full Documentation</a><a href="../.agents/skills/p5-phone/SKILL.md">p5-phone Skill File</a><a href="markdown-structure-suggestions.md">Markdown Structure Suggestions</a><a href="https://puckettrand.com/" target="_blank" rel="noreferrer">Nick Puckett</a></div>
+    </section>
+  </main>
+</body>
+</html>
