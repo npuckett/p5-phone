@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Android Torch Prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101214;
+      --panel: #1b2026;
+      --panel-2: #232a31;
+      --text: #eef2f4;
+      --muted: #a8b2bc;
+      --accent-dark: #5d4613;
+      --line: #37414c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body {
+      touch-action: manipulation;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: 16px;
+      width: min(1180px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    #preview,
+    #panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    #preview {
+      display: grid;
+      align-content: stretch;
+      min-height: 420px;
+    }
+
+    #panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 2.2vw, 2rem);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      color: var(--text);
+      font: inherit;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    button.primary {
+      border-color: #d7aa35;
+      background: var(--accent-dark);
+      color: #fff5d1;
+    }
+
+    button:disabled {
+      color: #727d88;
+      background: #171b1f;
+      border-color: #28313a;
+    }
+
+    dl {
+      display: grid;
+      grid-template-columns: minmax(112px, 0.62fr) minmax(0, 1fr);
+      gap: 8px 10px;
+      margin: 0;
+      padding: 0;
+      font-size: 0.92rem;
+    }
+
+    dt {
+      color: var(--muted);
+    }
+
+    dd {
+      min-width: 0;
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #15191e;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .status.ok {
+      color: #d8ffe7;
+      background: #15311f;
+    }
+
+    .status.warn {
+      color: #ffe8a8;
+      background: #352812;
+    }
+
+    .status.error {
+      color: #ffe1e1;
+      background: #371a1e;
+    }
+
+    pre {
+      max-height: 260px;
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #0b0d10;
+      color: #d7dee5;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    @media (max-width: 820px) {
+      main {
+        grid-template-columns: 1fr;
+        padding: 10px;
+      }
+
+      #preview {
+        min-height: 48vh;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"></script>
+</head>
+<body>
+  <main>
+    <section id="preview" aria-label="Camera preview"></section>
+    <section id="panel" aria-label="Torch controls">
+      <h1>Android Torch Prototype</h1>
+      <div class="controls">
+        <button id="start-camera" class="primary" type="button">Start Back Camera</button>
+        <button id="toggle-torch" type="button" disabled>Toggle Torch</button>
+        <button id="torch-on" type="button" disabled>Torch On</button>
+        <button id="torch-off" type="button" disabled>Torch Off</button>
+        <button id="try-anyway" type="button" disabled>Try Anyway</button>
+        <button id="stop-camera" type="button" disabled>Stop Camera</button>
+      </div>
+      <dl>
+        <dt>Camera</dt><dd><span id="camera-status" class="status">idle</span></dd>
+        <dt>Torch</dt><dd><span id="torch-status" class="status">unknown</span></dd>
+        <dt>Supported</dt><dd id="supported-constraints">pending</dd>
+        <dt>Capabilities</dt><dd id="capability-summary">pending</dd>
+        <dt>Settings</dt><dd id="settings-summary">pending</dd>
+        <dt>Error</dt><dd id="error-summary">none</dd>
+      </dl>
+      <pre id="debug-output">Waiting for camera start.</pre>
+    </section>
+  </main>
+  <script src="sketch.js"></script>
+</body>
+</html>
