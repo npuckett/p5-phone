@@ -206,7 +206,7 @@
     const preferredOrder = {
       Start: ['Starter'],
       Input: ['Touch', 'Movement', 'Microphone', 'Speech', 'NFC', 'Camera'],
-      Output: ['Sound', 'Vibration'],
+      Output: ['Sound', 'Vibration', 'Torch'],
       Reference: ['UI Styles', 'Phone and GIF', 'UX Compare']
     };
     const available = Object.keys(groupedCategory || {});
