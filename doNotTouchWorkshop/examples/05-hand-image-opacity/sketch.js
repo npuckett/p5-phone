@@ -8,26 +8,22 @@ let fingerDistance = 0;
 let imageOpacity = 0;
 let thumbPoint = null;
 let indexPoint = null;
+let archiveImageLoading = true;
+let handTrackingLoading = false;
+let handTrackingReady = false;
+let loadingMessage = 'Loading image';
 
 const archiveImageUrl = 'https://dn710708.ca.archive.org/0/items/AILS_AC89-0437-6/AC89-0437-6.jpg';
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
-  loadImage(archiveImageUrl, (loadedImage) => {
-    archiveImage = loadedImage;
-  }, () => {
-    archiveImage = null;
-  });
+  loadArchiveImage();
   cam = createPhoneCamera('user', true, 'fitHeight');
   createCameraButton();
   enableCameraTap('Tap to enable camera');
 
-  cam.onReady(async () => {
-    let options = { maxHands: 1, runtime: 'mediapipe', flipped: false };
-    handpose = await loadMl5Model((modelLoaded) => ml5.handPose(options, modelLoaded));
-    handpose.detectStart(cam.videoElement, gotHands);
-  });
+  cam.onReady(prepareHandTracking);
 }
 
 function draw() {
@@ -36,7 +32,39 @@ function draw() {
   updateHandValues();
   drawArchiveImage();
   drawHandOverlay();
+  drawLoadingGraphic();
   drawReadout();
+}
+
+async function loadArchiveImage() {
+  archiveImageLoading = true;
+  loadingMessage = 'Loading image';
+  try {
+    archiveImage = await loadImageAsync(archiveImageUrl);
+  } catch (error) {
+    archiveImage = null;
+  }
+  archiveImageLoading = false;
+}
+
+async function prepareHandTracking() {
+  handTrackingLoading = true;
+  handTrackingReady = false;
+  loadingMessage = 'Loading hand tracking';
+  let options = { maxHands: 1, runtime: 'mediapipe', flipped: false };
+  handpose = await loadMl5Model((modelLoaded) => ml5.handPose(options, modelLoaded));
+  handpose.detectStart(cam.videoElement, gotHands);
+  handTrackingLoading = false;
+  handTrackingReady = true;
+}
+
+function loadImageAsync(url) {
+  return new Promise((resolve, reject) => {
+    let imageElement = new Image();
+    imageElement.onload = () => resolve(imageElement);
+    imageElement.onerror = reject;
+    imageElement.src = url;
+  });
 }
 
 function loadMl5Model(createModel) {
@@ -71,14 +99,13 @@ function getHandKeypoint(index) {
 }
 
 function drawArchiveImage() {
-  if (!archiveImage || !archiveImage.width || !archiveImage.height) return;
-  let scaleFactor = max(width / archiveImage.width, height / archiveImage.height);
-  let imageWidth = archiveImage.width * scaleFactor;
-  let imageHeight = archiveImage.height * scaleFactor;
+  if (!archiveImage || !archiveImage.naturalWidth || !archiveImage.naturalHeight) return;
+  let scaleFactor = max(width / archiveImage.naturalWidth, height / archiveImage.naturalHeight);
+  let imageWidth = archiveImage.naturalWidth * scaleFactor;
+  let imageHeight = archiveImage.naturalHeight * scaleFactor;
   push();
-  tint(255, imageOpacity);
-  imageMode(CENTER);
-  image(archiveImage, width / 2, height / 2, imageWidth, imageHeight);
+  drawingContext.globalAlpha = imageOpacity / 255;
+  drawingContext.drawImage(archiveImage, width / 2 - imageWidth / 2, height / 2 - imageHeight / 2, imageWidth, imageHeight);
   pop();
 }
 
@@ -128,6 +155,7 @@ async function switchCameraView() {
   hands = [];
 
   if (handpose && handpose.detectStop) handpose.detectStop();
+  loadingMessage = 'Switching camera';
   let useBackCamera = cam.active !== 'environment';
   cam.mirror = !useBackCamera;
   cam.active = useBackCamera ? 'environment' : 'user';
@@ -137,6 +165,33 @@ async function switchCameraView() {
 
   cameraSwitching = false;
   return false;
+}
+
+function drawLoadingGraphic() {
+  if (!window.cameraEnabled || (!archiveImageLoading && !handTrackingLoading && !cameraSwitching && handTrackingReady)) return;
+
+  let centerX = width / 2;
+  let centerY = height / 2;
+  let radius = 34;
+  let activeDot = frameCount % 12;
+
+  push();
+  noStroke();
+  fill(0, 180);
+  rect(0, 0, width, height);
+
+  for (let index = 0; index < 12; index += 1) {
+    let angle = TWO_PI * index / 12;
+    let alpha = map((index + 12 - activeDot) % 12, 0, 11, 255, 55);
+    fill(255, alpha);
+    circle(centerX + cos(angle) * radius, centerY + sin(angle) * radius, 9);
+  }
+
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(16);
+  text(loadingMessage, centerX, centerY + 70);
+  pop();
 }
 
 function waitForCameraReady() {
