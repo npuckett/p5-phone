@@ -1,13 +1,17 @@
 let mic;
+let micAmplitude;
 let micLevel = 0;
 let bloomSize = 0;
 let quietAmount = 1;
 let bloomParticles = [];
+const micMultiplier = 4;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
   mic = new p5.AudioIn();
+  micAmplitude = new p5.Amplitude();
+  routeMicToAnalyzer();
   enableMicTap('Tap to enable microphone');
 
   for (let index = 0; index < 90; index += 1) {
@@ -50,13 +54,21 @@ function draw() {
 
 function updateMicValues() {
   if (window.micEnabled) {
-    micLevel = lerp(micLevel, mic.getLevel(), 0.18);
+    routeMicToAnalyzer();
+    micLevel = lerp(micLevel, constrain(micAmplitude.getLevel() * micMultiplier, 0, 1), 0.18);
   } else {
     micLevel = lerp(micLevel, 0, 0.08);
   }
 
   bloomSize = map(constrain(micLevel, 0, 0.22), 0, 0.22, min(width, height) * 0.18, min(width, height) * 0.82);
   quietAmount = 1 - constrain(map(micLevel, 0, 0.08, 0, 1), 0, 1);
+}
+
+function routeMicToAnalyzer() {
+  if (mic && mic.disconnect && micAmplitude) {
+    mic.disconnect();
+    mic.connect(micAmplitude);
+  }
 }
 
 function windowResized() {
