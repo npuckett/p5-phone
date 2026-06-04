@@ -185,7 +185,7 @@
       return '<div class="example-grid">' + examples.map(renderExampleCard).join('') + '</div>';
     }
 
-    const preferredFamilies = ['PhoneCamera + ML5 Examples', 'Three.js + ML5 Examples'];
+    const preferredFamilies = ['Camera Basics', 'PhoneCamera + ML5 Examples', 'Three.js + ML5 Examples'];
     const groupedFamilies = examples.reduce((groups, example) => {
       const family = example.family || 'Other Examples';
       if (!groups[family]) groups[family] = [];

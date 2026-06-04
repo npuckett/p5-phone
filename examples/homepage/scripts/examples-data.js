@@ -329,6 +329,20 @@ window.P5PHONE_EXAMPLES = [
     capabilities: ['torch', 'flashlight', 'motion', 'deviceShaken']
   },
   {
+    id: 'camera-color-tracking',
+    title: 'Camera Color Tracking',
+    category: 'Input',
+    subcategory: 'Camera',
+    family: 'Camera Basics',
+    level: 'Intermediate',
+    p5: '1.x and 2.0',
+    description: 'Average the camera color inside a square and compare it to a target color with a tolerance slider.',
+    path: 'Phone%20Sensor%20Examples/camera/01_color_tracking/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/camera/01_color_tracking',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/n9kyBCsHl',
+    capabilities: ['camera', 'color', 'tracking']
+  },
+  {
     id: 'ml5-bodypose-phone',
     title: 'PHONE BodyPose Two Points',
     category: 'Input',
