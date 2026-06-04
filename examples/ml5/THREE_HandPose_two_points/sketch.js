@@ -54,6 +54,7 @@ let cameraMode = 'user';
 let mirrorVideo = true;
 let cameraSwitching = false;
 let cameraButton;
+let loadingOverlay;
 
 // Canvas dimensions (portrait orientation: 9:16 ratio)
 const canvasWidth = 405;
@@ -99,6 +100,8 @@ async function init() {
   // Set up Three.js scene (without video background yet)
   setupThreeJS();
   createCameraButton();
+  loadingOverlay = createMl5LoadingOverlay('#container');
+  showMl5LoadingOverlay(loadingOverlay, 'Waiting for camera');
   
   // Initialize camera using native WebRTC
   try {
@@ -108,11 +111,13 @@ async function init() {
     createVideoBackground();
     
     updateStatus('Camera ready, loading HandPose...', 'status');
+    showMl5LoadingOverlay(loadingOverlay, 'Loading HandPose');
     
     // Initialize ML5 HandPose model
     await loadHandPoseModel();
     
   } catch (error) {
+    hideMl5LoadingOverlay(loadingOverlay);
     updateStatus(`Camera error: ${error.message}`, 'error');
   }
 }
@@ -132,6 +137,7 @@ async function loadHandPoseModel() {
   updateStatus('HandPose model ready! Starting detection...', 'status');
   handPose.detectStart(videoElement, gotHands);
   updateStatus('Detection started!', 'status');
+  hideMl5LoadingOverlay(loadingOverlay);
   
   // Set up button
   document.getElementById('toggleVideo').addEventListener('click', toggleVideoVisibility);
@@ -326,6 +332,7 @@ async function switchCameraView(event) {
   cameraSwitching = true;
   hands = [];
   updateStatus('Switching camera...', 'status');
+  showMl5LoadingOverlay(loadingOverlay, 'Switching camera');
 
   if (handPose && handPose.detectStop) {
     handPose.detectStop();
@@ -349,7 +356,9 @@ async function switchCameraView(event) {
     }
 
     updateStatus('Detection started!', 'status');
+    hideMl5LoadingOverlay(loadingOverlay);
   } catch (error) {
+    hideMl5LoadingOverlay(loadingOverlay);
     updateStatus(`Camera error: ${error.message}`, 'error');
   }
 

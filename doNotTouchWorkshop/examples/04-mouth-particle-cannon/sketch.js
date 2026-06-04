@@ -20,10 +20,13 @@ function setup() {
   createCameraButton();
   enableCameraTap('Tap to enable camera');
 
+  setMl5Loading('Waiting for camera');
   cam.onReady(async () => {
+    setMl5Loading('Loading FaceMesh');
     let options = { maxFaces: 1, refineLandmarks: false, runtime: 'mediapipe', flipped: false };
     faceMesh = await loadMl5Model((modelLoaded) => ml5.faceMesh(options, modelLoaded));
     faceMesh.detectStart(cam.videoElement, gotFaces);
+    clearMl5Loading();
   });
 }
 
@@ -35,6 +38,7 @@ function draw() {
   drawMouthParticles();
   drawMouthOverlay();
   drawReadout();
+  drawMl5LoadingGraphic();
 }
 
 function loadMl5Model(createModel) {
@@ -146,6 +150,7 @@ function createCameraButton() {
 async function switchCameraView() {
   if (!cam || cameraSwitching) return false;
   cameraSwitching = true;
+  setMl5Loading('Switching camera');
   faces = [];
 
   if (faceMesh && faceMesh.detectStop) faceMesh.detectStop();
@@ -157,6 +162,7 @@ async function switchCameraView() {
   if (faceMesh && cam.videoElement) faceMesh.detectStart(cam.videoElement, gotFaces);
 
   cameraSwitching = false;
+  clearMl5Loading();
   return false;
 }
 

@@ -8,10 +8,8 @@ let fingerDistance = 0;
 let imageOpacity = 0;
 let thumbPoint = null;
 let indexPoint = null;
-let archiveImageLoading = true;
 let handTrackingLoading = false;
 let handTrackingReady = false;
-let loadingMessage = 'Loading image';
 
 const archiveImageUrl = 'https://dn710708.ca.archive.org/0/items/AILS_AC89-0437-6/AC89-0437-6.jpg';
 
@@ -37,25 +35,25 @@ function draw() {
 }
 
 async function loadArchiveImage() {
-  archiveImageLoading = true;
-  loadingMessage = 'Loading image';
+  setMl5Loading('Loading image');
   try {
     archiveImage = await loadImageAsync(archiveImageUrl);
   } catch (error) {
     archiveImage = null;
   }
-  archiveImageLoading = false;
+  clearMl5Loading();
 }
 
 async function prepareHandTracking() {
   handTrackingLoading = true;
   handTrackingReady = false;
-  loadingMessage = 'Loading hand tracking';
+  setMl5Loading('Loading hand tracking');
   let options = { maxHands: 1, runtime: 'mediapipe', flipped: false };
   handpose = await loadMl5Model((modelLoaded) => ml5.handPose(options, modelLoaded));
   handpose.detectStart(cam.videoElement, gotHands);
   handTrackingLoading = false;
   handTrackingReady = true;
+  clearMl5Loading();
 }
 
 function loadImageAsync(url) {
@@ -155,7 +153,7 @@ async function switchCameraView() {
   hands = [];
 
   if (handpose && handpose.detectStop) handpose.detectStop();
-  loadingMessage = 'Switching camera';
+  setMl5Loading('Switching camera');
   let useBackCamera = cam.active !== 'environment';
   cam.mirror = !useBackCamera;
   cam.active = useBackCamera ? 'environment' : 'user';
@@ -164,34 +162,12 @@ async function switchCameraView() {
   if (handpose && cam.videoElement) handpose.detectStart(cam.videoElement, gotHands);
 
   cameraSwitching = false;
+  clearMl5Loading();
   return false;
 }
 
 function drawLoadingGraphic() {
-  if (!window.cameraEnabled || (!archiveImageLoading && !handTrackingLoading && !cameraSwitching && handTrackingReady)) return;
-
-  let centerX = width / 2;
-  let centerY = height / 2;
-  let radius = 34;
-  let activeDot = frameCount % 12;
-
-  push();
-  noStroke();
-  fill(0, 180);
-  rect(0, 0, width, height);
-
-  for (let index = 0; index < 12; index += 1) {
-    let angle = TWO_PI * index / 12;
-    let alpha = map((index + 12 - activeDot) % 12, 0, 11, 255, 55);
-    fill(255, alpha);
-    circle(centerX + cos(angle) * radius, centerY + sin(angle) * radius, 9);
-  }
-
-  fill(255);
-  textAlign(CENTER, CENTER);
-  textSize(16);
-  text(loadingMessage, centerX, centerY + 70);
-  pop();
+  drawMl5LoadingGraphic();
 }
 
 function waitForCameraReady() {

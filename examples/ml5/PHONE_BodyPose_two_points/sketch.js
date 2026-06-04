@@ -107,7 +107,9 @@ function setup() {
   enableCameraTap();
   
   // Wait for camera to initialize, then create model and start detection
+  setMl5Loading('Waiting for camera');
   cam.onReady(async () => {
+    setMl5Loading('Loading BodyPose');
     // Configure ML5 BodyPose (BlazePose) AFTER camera is ready
     let options = {
       runtime: 'mediapipe',               // Use MediaPipe runtime
@@ -121,6 +123,7 @@ function setup() {
     // Create BodyPose model and start detection when ready
     bodypose = await loadMl5Model((modelLoaded) => ml5.bodyPose('BlazePose', options, modelLoaded));
     bodypose.detectStart(cam.videoElement, gotPoses);
+    clearMl5Loading();
   });
 }
 
@@ -154,6 +157,7 @@ async function switchCameraView() {
   }
 
   cameraSwitching = true;
+  setMl5Loading('Switching camera');
   poses = [];
 
   if (bodypose && bodypose.detectStop) {
@@ -172,6 +176,7 @@ async function switchCameraView() {
   }
 
   cameraSwitching = false;
+  clearMl5Loading();
   return false;
 }
 
@@ -247,6 +252,7 @@ function draw() {
   
   // Draw UI
   drawUI();
+  drawMl5LoadingGraphic();
 }
 
 // ==============================================

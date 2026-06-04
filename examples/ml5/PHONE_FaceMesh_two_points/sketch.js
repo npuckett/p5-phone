@@ -99,7 +99,9 @@ function setup() {
   enableCameraTap();
   
   // Wait for camera to initialize, then create model and start detection
+  setMl5Loading('Waiting for camera');
   cam.onReady(async () => {
+    setMl5Loading('Loading FaceMesh');
     // Configure ML5 FaceMesh AFTER camera is ready
     let options = {
       maxFaces: 1,           // Only detect 1 face
@@ -111,6 +113,7 @@ function setup() {
     // Create FaceMesh model and start detection when ready
     faceMesh = await loadMl5Model((modelLoaded) => ml5.faceMesh(options, modelLoaded));
     faceMesh.detectStart(cam.videoElement, gotFaces);
+    clearMl5Loading();
   });
 }
 
@@ -144,6 +147,7 @@ async function switchCameraView() {
   }
 
   cameraSwitching = true;
+  setMl5Loading('Switching camera');
   faces = [];
 
   if (faceMesh && faceMesh.detectStop) {
@@ -162,6 +166,7 @@ async function switchCameraView() {
   }
 
   cameraSwitching = false;
+  clearMl5Loading();
   return false;
 }
 
@@ -237,6 +242,7 @@ function draw() {
   
   // Draw UI
   drawUI();
+  drawMl5LoadingGraphic();
 }
 
 // ==============================================

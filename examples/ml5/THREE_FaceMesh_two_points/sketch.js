@@ -63,6 +63,7 @@ let cameraMode = 'user';
 let mirrorVideo = true;
 let cameraSwitching = false;
 let cameraButton;
+let loadingOverlay;
 
 // Canvas dimensions (portrait orientation)
 const canvasWidth = 405;
@@ -121,15 +122,19 @@ async function init() {
   // Setup Three.js scene, camera, and renderer
   setupThreeJS();
   createCameraButton();
+  loadingOverlay = createMl5LoadingOverlay('body');
+  showMl5LoadingOverlay(loadingOverlay, 'Waiting for camera');
 
   try {
     // Setup camera and load model
     await setupCamera();
+    showMl5LoadingOverlay(loadingOverlay, 'Loading FaceMesh');
     await loadFaceMeshModel();
 
     console.log('Initialization complete');
   } catch (error) {
     console.error('Initialization error:', error);
+    hideMl5LoadingOverlay(loadingOverlay);
     initErrorMessage = 'Camera error: ' + error.message;
     startAnimation();
   }
@@ -157,6 +162,7 @@ async function loadFaceMeshModel() {
   // Start detection
   faceMesh.detectStart(videoElement, gotFaces);
   console.log('Detection started');
+  hideMl5LoadingOverlay(loadingOverlay);
   
   // Start animation loop
   startAnimation();
@@ -349,6 +355,7 @@ async function switchCameraView(event) {
 
   cameraSwitching = true;
   initErrorMessage = '';
+  showMl5LoadingOverlay(loadingOverlay, 'Switching camera');
   faces = [];
 
   if (faceMesh && faceMesh.detectStop) {
@@ -369,8 +376,10 @@ async function switchCameraView(event) {
     if (faceMesh && videoElement) {
       faceMesh.detectStart(videoElement, gotFaces);
     }
+    hideMl5LoadingOverlay(loadingOverlay);
   } catch (error) {
     console.error('Camera switch error:', error);
+    hideMl5LoadingOverlay(loadingOverlay);
     initErrorMessage = 'Camera error: ' + error.message;
   }
 

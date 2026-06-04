@@ -98,7 +98,9 @@ function setup() {
   enableCameraTap();
   
   // Wait for camera to initialize, then create model and start detection
+  setMl5Loading('Waiting for camera');
   cam.onReady(async () => {
+    setMl5Loading('Loading HandPose');
     // Configure ML5 HandPose AFTER camera is ready
     let options = {
       maxHands: 1,           // Only detect 1 hand
@@ -109,6 +111,7 @@ function setup() {
     // Create HandPose model and start detection when ready
     handpose = await loadMl5Model((modelLoaded) => ml5.handPose(options, modelLoaded));
     handpose.detectStart(cam.videoElement, gotHands);
+    clearMl5Loading();
   });
 }
 
@@ -142,6 +145,7 @@ async function switchCameraView() {
   }
 
   cameraSwitching = true;
+  setMl5Loading('Switching camera');
   hands = [];
 
   if (handpose && handpose.detectStop) {
@@ -160,6 +164,7 @@ async function switchCameraView() {
   }
 
   cameraSwitching = false;
+  clearMl5Loading();
   return false;
 }
 
@@ -238,6 +243,7 @@ function draw() {
   
   // Draw UI
   drawUI();
+  drawMl5LoadingGraphic();
 }
 
 // ==============================================

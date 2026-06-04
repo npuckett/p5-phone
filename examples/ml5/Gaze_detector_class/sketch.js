@@ -130,6 +130,8 @@ function draw() {
     // Or draw everything at once:
     // gazeDetector.drawAll();
   }
+
+  drawMl5LoadingGraphic();
 }
 
 function updateGazeValues() {

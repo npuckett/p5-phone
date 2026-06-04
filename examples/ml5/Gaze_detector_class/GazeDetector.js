@@ -106,6 +106,7 @@ class GazeDetector {
    */
   _initializeCamera() {
     lockGestures();  // Prevent phone gestures
+    setMl5Loading('Waiting for camera');
     
     // Create phone camera
     this.cam = createPhoneCamera(this.cameraMode, this.mirror, this.displayMode);
@@ -113,6 +114,7 @@ class GazeDetector {
     
     // Wait for camera to be ready before creating model
     this.cam.onReady(async () => {
+      setMl5Loading('Loading FaceMesh');
       await this._initializeFaceMesh();
     });
   }
@@ -134,6 +136,7 @@ class GazeDetector {
       this.faces = results;
     });
     this.ready = true;
+    clearMl5Loading();
   }
 
   async switchCamera() {
@@ -143,6 +146,7 @@ class GazeDetector {
 
     this.cameraSwitching = true;
     this.ready = false;
+    setMl5Loading('Switching camera');
     this.faces = [];
     this.leftEarData = null;
     this.rightEarData = null;
@@ -168,6 +172,7 @@ class GazeDetector {
 
     this.ready = true;
     this.cameraSwitching = false;
+    clearMl5Loading();
     return true;
   }
 
