@@ -33,6 +33,7 @@ const maxVolume = 0.9;
 function setup()
 {
     createCanvas(windowWidth, windowHeight);
+    angleMode(DEGREES);
     lockGestures();
 
     createStartButton();
@@ -134,7 +135,7 @@ function drawWaitingState()
 
 function drawActiveState()
 {
-    let level = currentVolume * (0.86 + 0.14 * sin(frameCount * 0.08));
+    let level = currentVolume * (0.86 + 0.14 * sin(frameCount * 4.6));
     let pulseSize = map(level, 0, maxVolume, 120, min(width, height) * 0.82);
     let energySize = map(movementEnergy, 0, 8, 12, 90);
 
