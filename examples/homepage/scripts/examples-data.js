@@ -290,6 +290,45 @@ window.P5PHONE_EXAMPLES = [
     capabilities: ['vibration', 'touch']
   },
   {
+    id: 'torch-touch-toggle',
+    title: 'Torch Touch Toggle',
+    category: 'Output',
+    subcategory: 'Torch',
+    level: 'Starter',
+    p5: '1.x and 2.0',
+    description: 'Turn the Android flashlight on and off with touch using toggleTorch().',
+    path: 'Phone%20Sensor%20Examples/torch/01_torch_touch_toggle/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/torch/01_torch_touch_toggle',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/6bBT4VeRa',
+    capabilities: ['torch', 'flashlight', 'touch']
+  },
+  {
+    id: 'torch-disco',
+    title: 'Torch Disco',
+    category: 'Output',
+    subcategory: 'Torch',
+    level: 'Intermediate',
+    p5: '1.x and 2.0',
+    description: 'Pulse screen color, flashlight, and vibration together at a gentle non-strobey tempo.',
+    path: 'Phone%20Sensor%20Examples/torch/02_torch_disco/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/torch/02_torch_disco',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/049BpqM9K',
+    capabilities: ['torch', 'flashlight', 'vibration', 'touch']
+  },
+  {
+    id: 'shake-torch-toggle',
+    title: 'Shake Torch Toggle',
+    category: 'Output',
+    subcategory: 'Torch',
+    level: 'Intermediate',
+    p5: '1.x and 2.0',
+    description: 'Use deviceShaken() to toggle the flashlight without touching the screen.',
+    path: 'Phone%20Sensor%20Examples/torch/03_shake_toggle/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/torch/03_shake_toggle',
+    webEditor: 'https://editor.p5js.org/npuckett/sketches/OH_hsgddL',
+    capabilities: ['torch', 'flashlight', 'motion', 'deviceShaken']
+  },
+  {
     id: 'ml5-bodypose-phone',
     title: 'PHONE BodyPose Two Points',
     category: 'Input',

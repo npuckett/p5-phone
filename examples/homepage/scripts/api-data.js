@@ -4,10 +4,11 @@ window.P5PHONE_PERMISSION_MATRIX = [
   { capability: 'Sound output', status: 'window.soundEnabled', tap: 'enableSoundTap(message)', button: 'enableSoundButton(text)', canvas: 'enableSoundCanvas(message)', banner: 'enableSoundBanner(message, position)', custom: 'enableSoundOn(selector)', notes: 'Unlocks browser audio playback after a user gesture.' },
   { capability: 'Speech recognition', status: 'window.speechEnabled', tap: 'enableSpeechTap(message)', button: 'enableSpeechButton(text)', canvas: 'enableSpeechCanvas(message)', banner: 'enableSpeechBanner(message, position)', custom: 'enableSpeechOn(selector)', notes: 'Activates audio context. Create your own p5.SpeechRec after permission.' },
   { capability: 'Vibration', status: 'window.vibrationEnabled', tap: 'enableVibrationTap(message)', button: 'enableVibrationButton(text)', canvas: 'enableVibrationCanvas(message)', banner: 'enableVibrationBanner(message, position)', custom: 'enableVibrationOn(selector)', notes: 'Android-oriented. Use vibrate(pattern) for haptics.' },
+  { capability: 'Torch / flashlight', status: 'window.torchEnabled, window.torchActive', tap: 'enableTorchTap(message)', button: 'enableTorchButton(text)', canvas: 'enableTorchCanvas(message)', banner: 'enableTorchBanner(message, position)', custom: 'enableTorchOn(selector)', notes: 'Android Chrome-oriented. Starts a rear camera stream and controls the flashlight with torchOn(), torchOff(), and toggleTorch().' },
   { capability: 'NFC', status: 'window.nfcEnabled', tap: 'enableNfcTap(message)', button: 'enableNfcButton(text)', canvas: 'enableNfcCanvas(message)', banner: 'enableNfcBanner(message, position)', custom: 'enableNfcOn(selector)', notes: 'Android Chrome with HTTPS only. Use nfcRead(message, serialNumber).' },
   { capability: 'Camera', status: 'window.cameraEnabled || cam.ready', tap: 'enableCameraTap(message)', button: 'enableCameraButton(text)', canvas: 'enableCameraCanvas(message)', banner: 'enableCameraBanner(message, position)', custom: 'enableCameraOn(selector)', notes: 'Pair with createPhoneCamera() for ML5-friendly mapping.' },
   { capability: 'Motion + microphone', status: 'window.sensorsEnabled && window.micEnabled', tap: 'enableAllTap(message)', button: 'enableAllButton(text)', canvas: 'enableAllCanvas(message)', banner: 'enableAllBanner(message, position)', custom: 'enableAllOn(selector)', notes: 'Convenience flow for sketches that need both sensors and mic.' },
-  { capability: 'Any combination', status: 'depends on selected permissions', tap: "enablePermissionsTap(['sensors', 'mic'])", button: "enablePermissionsButton(['camera', 'mic'], text)", canvas: "enablePermissionsCanvas(['camera', 'mic'])", banner: "enablePermissionsBanner(['sensors', 'nfc'], msg)", custom: "enablePermissionsOn(selector, ['camera', 'mic'])", notes: 'Use sensors, mic, sound, speech, vibration, nfc, and camera in any combination. enableHardware* aliases are also available.' }
+  { capability: 'Any combination', status: 'depends on selected permissions', tap: "enablePermissionsTap(['sensors', 'torch'])", button: "enablePermissionsButton(['torch', 'vibration'], text)", canvas: "enablePermissionsCanvas(['camera', 'mic'])", banner: "enablePermissionsBanner(['sensors', 'nfc'], msg)", custom: "enablePermissionsOn(selector, ['camera', 'mic'])", notes: 'Use sensors, mic, sound, speech, vibration, torch, nfc, and camera in any combination. enableHardware* aliases are also available.' }
 ];
 
 window.P5PHONE_API_SECTIONS = [
@@ -105,6 +106,21 @@ window.P5PHONE_API_SECTIONS = [
       { name: 'enableVibrationTap', signature: 'enableVibrationTap(message)', summary: 'Checks vibration support from a tap and sets window.vibrationEnabled.', tags: ['vibration', 'tap'] },
       { name: 'vibrate', signature: 'vibrate(pattern)', summary: 'Triggers vibration. pattern can be a duration number or an array of on/off durations.', tags: ['haptics'] },
       { name: 'stopVibration', signature: 'stopVibration()', summary: 'Stops the current vibration pattern by calling navigator.vibrate(0).', tags: ['haptics'] }
+    ]
+  },
+  {
+    id: 'torch',
+    title: 'Torch / Flashlight',
+    description: 'Android Chrome-oriented flashlight control through the rear camera video track.',
+    items: [
+      { name: 'enableTorchTap', signature: 'enableTorchTap(message)', summary: 'Requests the rear camera stream required for torch control from a tap. Flashlight aliases such as enableFlashlightTap() are also available.', tags: ['torch', 'tap'] },
+      { name: 'enablePermissionsTap', signature: "enablePermissionsTap(['torch', 'vibration'], message)", summary: 'Torch can be requested with other hardware features through enablePermissions* or enableHardware* helpers.', tags: ['torch', 'combined'] },
+      { name: 'torchOn', signature: 'await torchOn()', summary: 'Turns the flashlight on. Returns true when the browser accepts the torch request.', tags: ['torch'] },
+      { name: 'torchOff', signature: 'await torchOff()', summary: 'Turns the flashlight off while keeping the internal camera stream available for later use.', tags: ['torch'] },
+      { name: 'toggleTorch', signature: 'await toggleTorch()', summary: 'Switches between on and off using window.torchActive as the current state.', tags: ['torch'] },
+      { name: 'setTorch', signature: 'await setTorch(true)', summary: 'Sets the flashlight to a specific boolean state. Aliased as setFlashlight().', tags: ['torch'] },
+      { name: 'stopTorch', signature: 'await stopTorch()', summary: 'Turns the flashlight off and releases the internal camera stream.', tags: ['torch'] },
+      { name: 'torch status', signature: 'window.torchEnabled, torchSupported, torchActive, torchError', summary: 'Status values for sketches and diagnostics. Support is device/browser dependent.', tags: ['status'] }
     ]
   },
   {

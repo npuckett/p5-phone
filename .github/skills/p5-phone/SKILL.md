@@ -1,6 +1,6 @@
 ---
 name: p5-phone
-description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, NFC, lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
+description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, torch/flashlight, NFC, lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
 argument-hint: "Describe the p5-phone example or API question"
 ---
 
@@ -10,7 +10,7 @@ Use this skill when the user asks for a p5-phone sketch, p5-phone example, mobil
 
 This is the canonical full skill. Portable entrypoints for other CLI/chat agents live at `.agents/skills/p5-phone/SKILL.md` and `.claude/skills/p5-phone/SKILL.md`; keep those short files aligned with this one when the API guidance changes.
 
-p5-phone is a p5.js helper library for mobile hardware access. It provides permission activation UI, arbitrary hardware-combination permission helpers, gesture locking, microphone and sound activation, speech activation, NFC helpers, vibration helpers, an on-device debug console, and `PhoneCamera` for camera/ML5 coordinate mapping.
+p5-phone is a p5.js helper library for mobile hardware access. It provides permission activation UI, arbitrary hardware-combination permission helpers, gesture locking, microphone and sound activation, speech activation, NFC helpers, vibration helpers, torch/flashlight helpers, an on-device debug console, and `PhoneCamera` for camera/ML5 coordinate mapping.
 
 ## Start Here
 
@@ -30,7 +30,7 @@ Use this HTML baseline for p5.js 2-compatible sketches:
   </style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.10.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.11.0/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>
@@ -88,12 +88,13 @@ Permission functions come in five activation styles: tap overlay, generated butt
 | Sound only | `enableSoundTap(msg)` | `enableSoundButton(text)` | `enableSoundCanvas(msg)` | `enableSoundBanner(msg)` | `enableSoundOn(selector)` |
 | Speech | `enableSpeechTap(msg)` | `enableSpeechButton(text)` | `enableSpeechCanvas(msg)` | `enableSpeechBanner(msg)` | `enableSpeechOn(selector)` |
 | Vibration | `enableVibrationTap(msg)` | `enableVibrationButton(text)` | `enableVibrationCanvas(msg)` | `enableVibrationBanner(msg)` | `enableVibrationOn(selector)` |
+| Torch / flashlight | `enableTorchTap(msg)` | `enableTorchButton(text)` | `enableTorchCanvas(msg)` | `enableTorchBanner(msg)` | `enableTorchOn(selector)` |
 | NFC | `enableNfcTap(msg)` | `enableNfcButton(text)` | `enableNfcCanvas(msg)` | `enableNfcBanner(msg)` | `enableNfcOn(selector)` |
 | Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllOn(selector)` |
 | Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraOn(selector)` |
 | Any combination | `enablePermissionsTap(list, msg)` | `enablePermissionsButton(list, text)` | `enablePermissionsCanvas(list, msg)` | `enablePermissionsBanner(list, msg)` | `enablePermissionsOn(selector, list)` |
 
-Use `enablePermissions*` when a sketch needs a custom combination such as `['sensors', 'mic', 'camera']`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `nfc`, and `camera`; aliases like `gyro`, `microphone`, `video`, and `haptics` also work. `enableHardware*` aliases are available for the same functions.
+Use `enablePermissions*` when a sketch needs a custom combination such as `['sensors', 'torch']`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, and `camera`; aliases like `gyro`, `microphone`, `video`, `haptics`, `flashlight`, and `flash` also work. `enableHardware*` aliases are available for the same functions.
 
 For sketches that need multiple hardware features, prefer one combined permission call over binding several single-permission helpers to the same gesture. This keeps iOS transient user activation intact and calls `userSetupComplete()` once.
 
@@ -122,6 +123,10 @@ Check status before using hardware-dependent data:
 - `window.micEnabled`
 - `window.speechEnabled`
 - `window.vibrationEnabled`
+- `window.torchEnabled`
+- `window.torchSupported`
+- `window.torchActive`
+- `window.torchError`
 - `window.nfcEnabled`
 - `window.cameraEnabled`
 - `window.lastNfcSerialNumber`
@@ -260,6 +265,26 @@ function mousePressed() {
 }
 ```
 
+## Torch / Flashlight
+
+Torch control is Android Chrome-oriented, requires HTTPS, and works through a rear camera stream. Use `enableTorch*()` or `enablePermissions*(['torch'])` first, then control the light with `torchOn()`, `torchOff()`, `toggleTorch()`, or `setTorch(value)`. Flashlight aliases such as `enableFlashlightTap()` and `toggleFlashlight()` also work.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enablePermissionsTap(['sensors', 'torch'], 'Tap to enable shake flashlight');
+}
+
+async function deviceShaken() {
+  if (window.sensorsEnabled && window.torchEnabled) {
+    await toggleTorch();
+  }
+}
+```
+
+For flashing effects, keep pulses slow and short, avoid rapid strobing, and call `torchOff()` or `stopTorch()` when the effect ends.
+
 ## Debug Console
 
 For mobile troubleshooting, call `showDebug()` once in `setup()` and log with:
@@ -277,11 +302,11 @@ Use debug output sparingly in examples. It is most useful for camera, NFC, and p
 When answering API questions:
 
 - Explain the browser permission reason, especially iOS transient user activation.
-- Distinguish sensors, mic, sound-only, speech, camera, vibration, and NFC permissions.
+- Distinguish sensors, mic, sound-only, speech, camera, vibration, torch, and NFC permissions.
 - Mention HTTPS requirements for mobile hardware.
 - Mention p5.js 2 event changes when touch callbacks are involved.
 - Point to existing examples in `examples/` when useful.
-- If a feature is browser-specific, say so clearly: NFC is Android Chrome; vibration is not supported on iOS; speech recognition depends on Web Speech API browser support.
+- If a feature is browser-specific, say so clearly: torch and NFC are Android Chrome-oriented; vibration is not supported on iOS; speech recognition depends on Web Speech API browser support.
 
 ## Example Quality Checklist
 

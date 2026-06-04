@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.10.0
+ * p5-phone v1.11.0
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -89,6 +89,11 @@ window.vibrationEnabled = false;
 window.speechEnabled = false;
 window.nfcEnabled = false;
 window.cameraEnabled = false;
+window.torchEnabled = false;
+window.torchSupported = false;
+window.torchActive = false;
+window.torchError = '';
+window.torchCapability = undefined;
 window.nfcError = '';
 window.nfcStatus = 'idle';
 window.nfcTagAliases = {};
@@ -100,6 +105,9 @@ window.lastNfcAlias = '';
 let _micInstance = null;
 let _nfcReader = null;
 let _nfcAbortController = null;
+let _torchStream = null;
+let _torchTrack = null;
+let _torchVideo = null;
 
 // p5.js version detection (1.x vs 2.x)
 const _p5MajorVersion = (typeof p5 !== 'undefined' && p5.VERSION)
@@ -246,6 +254,32 @@ function enableVibrationTap(message = 'Tap screen to enable vibration') {
 }
 
 /**
+ * Enable camera torch/flashlight with a button interface.
+ * Starts the rear camera stream required for torch control.
+ * Note: Torch is Android Chrome-oriented and requires HTTPS.
+ */
+function enableTorchButton(buttonText = 'ENABLE FLASHLIGHT', statusText = 'Starting flashlight...') {
+  _createPermissionButton(buttonText, statusText, async () => {
+    await _requestTorchPermission();
+    console.log('✅ Torch enabled via button');
+  });
+}
+
+/**
+ * Enable camera torch/flashlight with tap-to-start.
+ * Starts the rear camera stream required for torch control.
+ */
+function enableTorchTap(message = 'Tap screen to enable flashlight') {
+  _createTapToEnable(message, async () => {
+    await _requestTorchPermission();
+    console.log('✅ Torch enabled via tap');
+  });
+}
+
+const enableFlashlightButton = enableTorchButton;
+const enableFlashlightTap = enableTorchTap;
+
+/**
  * Enable NFC tag reading with a button interface
  * Creates a start button that user must click
  * Note: Web NFC is supported on Android Chrome 89+ only, not iOS
@@ -380,6 +414,18 @@ function enableVibrationCanvas(message = 'Touch to start') {
 }
 
 /**
+ * Enable torch/flashlight on first canvas touch
+ */
+function enableTorchCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestTorchPermission();
+    console.log('✅ Torch enabled via canvas touch');
+  });
+}
+
+const enableFlashlightCanvas = enableTorchCanvas;
+
+/**
  * Enable NFC on first canvas touch
  */
 function enableNfcCanvas(message = 'Touch to start') {
@@ -467,6 +513,15 @@ function enableVibrationBanner(message = 'Tap to enable vibration', position = '
   });
 }
 
+function enableTorchBanner(message = 'Tap to enable flashlight', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestTorchPermission();
+    console.log('✅ Torch enabled via banner');
+  });
+}
+
+const enableFlashlightBanner = enableTorchBanner;
+
 function enableNfcBanner(message = 'Tap to enable NFC', position = 'top') {
   _createBannerToEnable(message, position, async () => {
     await _requestNfcPermission();
@@ -542,6 +597,15 @@ function enableVibrationOn(selector) {
   });
 }
 
+function enableTorchOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestTorchPermission();
+    console.log('✅ Torch enabled via custom element');
+  });
+}
+
+const enableFlashlightOn = enableTorchOn;
+
 function enableNfcOn(selector) {
   _bindPermissionTo(selector, async () => {
     await _requestNfcPermission();
@@ -605,6 +669,96 @@ function stopVibration() {
     navigator.vibrate(0);
   }
 }
+
+/**
+ * Check whether the current torch stream reports controllable torch support.
+ * Some Android browsers may not report support even when setTorch() works.
+ */
+function isTorchSupported() {
+  return !!window.torchSupported;
+}
+
+/**
+ * Set camera torch/flashlight state.
+ * Starts a rear camera stream if one is not already active.
+ * @param {boolean} enabled - true to turn on, false to turn off
+ * @returns {Promise<boolean>} true when the browser accepts the torch request
+ */
+async function setTorch(enabled) {
+  try {
+    window.torchError = '';
+
+    if (!_torchTrack || _torchTrack.readyState !== 'live') {
+      await _requestTorchPermissionCore();
+    }
+
+    if (!_torchTrack || _torchTrack.readyState !== 'live') {
+      window.torchError = 'No live rear camera track is available for torch control.';
+      return false;
+    }
+
+    await _torchTrack.applyConstraints({ advanced: [{ torch: !!enabled }] });
+    window.torchActive = !!enabled;
+    _refreshTorchState();
+    return true;
+  } catch (error) {
+    window.torchError = error && error.message ? error.message : String(error);
+    console.warn('⚠️ Torch control failed:', error);
+    if (_debugVisible) {
+      debugWarn('Torch control failed: ' + window.torchError);
+    }
+    return false;
+  }
+}
+
+function torchOn() {
+  return setTorch(true);
+}
+
+function torchOff() {
+  return setTorch(false);
+}
+
+function toggleTorch() {
+  return setTorch(!window.torchActive);
+}
+
+const flashlightOn = torchOn;
+const flashlightOff = torchOff;
+const toggleFlashlight = toggleTorch;
+const setFlashlight = setTorch;
+
+/**
+ * Turn the torch off and release the internal camera stream.
+ */
+async function stopTorch() {
+  if (_torchTrack && _torchTrack.readyState === 'live') {
+    try {
+      await _torchTrack.applyConstraints({ advanced: [{ torch: false }] });
+    } catch (error) {
+      window.torchError = error && error.message ? error.message : String(error);
+    }
+  }
+
+  if (_torchStream) {
+    _torchStream.getTracks().forEach(track => track.stop());
+  }
+
+  if (_torchVideo) {
+    _torchVideo.pause();
+    _torchVideo.srcObject = null;
+  }
+
+  _torchStream = null;
+  _torchTrack = null;
+  _torchVideo = null;
+  window.torchEnabled = false;
+  window.torchSupported = false;
+  window.torchActive = false;
+  window.torchCapability = undefined;
+}
+
+const stopFlashlight = stopTorch;
 
 /**
  * Stop NFC scanning
@@ -815,6 +969,106 @@ async function _requestVibrationPermissionCore() {
   }
 }
 
+async function _requestTorchPermissionCore() {
+  try {
+    window.torchError = '';
+
+    if (_torchTrack && _torchTrack.readyState === 'live') {
+      _refreshTorchState();
+      return true;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      window.torchError = 'getUserMedia is not available in this browser.';
+      window.torchEnabled = false;
+      return false;
+    }
+
+    _torchStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 640 },
+        height: { ideal: 480 }
+      },
+      audio: false
+    });
+
+    _torchTrack = _torchStream.getVideoTracks()[0] || null;
+    if (!_torchTrack) {
+      window.torchError = 'No video track was returned for torch control.';
+      window.torchEnabled = false;
+      return false;
+    }
+
+    _torchVideo = document.createElement('video');
+    _torchVideo.muted = true;
+    _torchVideo.autoplay = true;
+    _torchVideo.playsInline = true;
+    _torchVideo.srcObject = _torchStream;
+
+    try {
+      await _torchVideo.play();
+    } catch (error) {
+      console.warn('p5-phone: Torch video preview could not play, continuing with live track.', error);
+    }
+
+    _refreshTorchState();
+    window.torchEnabled = _torchTrack.readyState === 'live';
+    console.log('✅ Torch camera stream ready');
+    return window.torchEnabled;
+  } catch (error) {
+    window.torchError = error && error.message ? error.message : String(error);
+    console.error('Torch permission error:', error);
+    if (_debugVisible) {
+      debugError('Torch permission error:', error);
+    }
+    await stopTorch();
+    return false;
+  }
+}
+
+function _refreshTorchState() {
+  window.torchSupported = false;
+  window.torchCapability = undefined;
+
+  if (!_torchTrack || _torchTrack.readyState !== 'live') {
+    window.torchEnabled = false;
+    window.torchActive = false;
+    return;
+  }
+
+  window.torchEnabled = true;
+
+  if (_torchTrack.getCapabilities) {
+    try {
+      const capabilities = _torchTrack.getCapabilities();
+      window.torchCapability = capabilities ? capabilities.torch : undefined;
+      window.torchSupported = _canControlTorch(window.torchCapability);
+    } catch (error) {
+      window.torchError = error && error.message ? error.message : String(error);
+    }
+  }
+
+  if (_torchTrack.getSettings) {
+    try {
+      const settings = _torchTrack.getSettings();
+      if (typeof settings.torch === 'boolean') {
+        window.torchActive = settings.torch;
+      }
+    } catch (error) {
+      window.torchError = error && error.message ? error.message : String(error);
+    }
+  }
+}
+
+function _canControlTorch(value) {
+  if (Array.isArray(value)) {
+    return value.includes(true) && value.includes(false);
+  }
+
+  return value === true;
+}
+
 async function _requestNfcPermissionCore() {
   try {
     if (window.nfcEnabled && _nfcReader) {
@@ -969,6 +1223,10 @@ function _normalizePermissionList(permissions) {
     vibrate: 'vibration',
     haptic: 'vibration',
     haptics: 'vibration',
+    torch: 'torch',
+    flashlight: 'torch',
+    flash: 'torch',
+    light: 'torch',
     nfc: 'nfc',
     tag: 'nfc',
     tags: 'nfc',
@@ -1007,7 +1265,7 @@ function _normalizePermissionList(permissions) {
   }
 
   if (normalized.length === 0) {
-    console.warn('p5-phone: No valid permission types provided. Use sensors, mic, sound, speech, vibration, nfc, or camera.');
+    console.warn('p5-phone: No valid permission types provided. Use sensors, mic, sound, speech, vibration, torch, nfc, or camera.');
   }
 
   return normalized;
@@ -1027,6 +1285,8 @@ async function _requestPermissionsCore(permissions) {
       await _requestSpeechPermissionCore();
     } else if (permission === 'vibration') {
       await _requestVibrationPermissionCore();
+    } else if (permission === 'torch') {
+      await _requestTorchPermissionCore();
     } else if (permission === 'nfc') {
       await _requestNfcPermissionCore();
     } else if (permission === 'camera') {
@@ -1063,6 +1323,12 @@ async function _requestVibrationPermission() {
   _notifySketchReady();
 }
 
+async function _requestTorchPermission() {
+  const enabled = await _requestTorchPermissionCore();
+  _notifySketchReady();
+  return enabled;
+}
+
 async function _requestNfcPermission() {
   const enabled = await _requestNfcPermissionCore();
   _notifySketchReady();
@@ -1083,6 +1349,7 @@ function _notifySketchReady() {
       sound: window.soundEnabled,
       speech: window.speechEnabled,
       vibration: window.vibrationEnabled,
+      torch: window.torchEnabled,
       nfc: window.nfcEnabled,
       camera: window.cameraEnabled,
       gestures: window.gesturesLocked
@@ -2705,6 +2972,27 @@ async function _requestCameraPermission() {
 window.createPhoneCamera = createPhoneCamera;
 window.enableCameraButton = enableCameraButton;
 window.enableCameraTap = enableCameraTap;
+window.enableTorchButton = enableTorchButton;
+window.enableTorchTap = enableTorchTap;
+window.enableTorchCanvas = enableTorchCanvas;
+window.enableTorchBanner = enableTorchBanner;
+window.enableTorchOn = enableTorchOn;
+window.enableFlashlightButton = enableFlashlightButton;
+window.enableFlashlightTap = enableFlashlightTap;
+window.enableFlashlightCanvas = enableFlashlightCanvas;
+window.enableFlashlightBanner = enableFlashlightBanner;
+window.enableFlashlightOn = enableFlashlightOn;
+window.setTorch = setTorch;
+window.torchOn = torchOn;
+window.torchOff = torchOff;
+window.toggleTorch = toggleTorch;
+window.stopTorch = stopTorch;
+window.isTorchSupported = isTorchSupported;
+window.setFlashlight = setFlashlight;
+window.flashlightOn = flashlightOn;
+window.flashlightOff = flashlightOff;
+window.toggleFlashlight = toggleFlashlight;
+window.stopFlashlight = stopFlashlight;
 
 // Override p5's image() function to support PhoneCamera
 if (typeof p5 !== 'undefined' && p5.prototype) {
@@ -2751,6 +3039,21 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableVibrationButton = enableVibrationButton;
   p5.prototype.vibrate = vibrate;
   p5.prototype.stopVibration = stopVibration;
+  p5.prototype.enableTorchTap = enableTorchTap;
+  p5.prototype.enableTorchButton = enableTorchButton;
+  p5.prototype.enableFlashlightTap = enableFlashlightTap;
+  p5.prototype.enableFlashlightButton = enableFlashlightButton;
+  p5.prototype.setTorch = setTorch;
+  p5.prototype.torchOn = torchOn;
+  p5.prototype.torchOff = torchOff;
+  p5.prototype.toggleTorch = toggleTorch;
+  p5.prototype.stopTorch = stopTorch;
+  p5.prototype.isTorchSupported = isTorchSupported;
+  p5.prototype.setFlashlight = setFlashlight;
+  p5.prototype.flashlightOn = flashlightOn;
+  p5.prototype.flashlightOff = flashlightOff;
+  p5.prototype.toggleFlashlight = toggleFlashlight;
+  p5.prototype.stopFlashlight = stopFlashlight;
   p5.prototype.enableNfcTap = enableNfcTap;
   p5.prototype.enableNfcButton = enableNfcButton;
   p5.prototype.stopNfc = stopNfc;
@@ -2771,6 +3074,8 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableSoundCanvas = enableSoundCanvas;
   p5.prototype.enableSpeechCanvas = enableSpeechCanvas;
   p5.prototype.enableVibrationCanvas = enableVibrationCanvas;
+  p5.prototype.enableTorchCanvas = enableTorchCanvas;
+  p5.prototype.enableFlashlightCanvas = enableFlashlightCanvas;
   p5.prototype.enableNfcCanvas = enableNfcCanvas;
   p5.prototype.enableAllCanvas = enableAllCanvas;
   p5.prototype.enableCameraCanvas = enableCameraCanvas;
@@ -2784,6 +3089,8 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableSoundBanner = enableSoundBanner;
   p5.prototype.enableSpeechBanner = enableSpeechBanner;
   p5.prototype.enableVibrationBanner = enableVibrationBanner;
+  p5.prototype.enableTorchBanner = enableTorchBanner;
+  p5.prototype.enableFlashlightBanner = enableFlashlightBanner;
   p5.prototype.enableNfcBanner = enableNfcBanner;
   p5.prototype.enableAllBanner = enableAllBanner;
   p5.prototype.enableCameraBanner = enableCameraBanner;
@@ -2797,6 +3104,8 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableSoundOn = enableSoundOn;
   p5.prototype.enableSpeechOn = enableSpeechOn;
   p5.prototype.enableVibrationOn = enableVibrationOn;
+  p5.prototype.enableTorchOn = enableTorchOn;
+  p5.prototype.enableFlashlightOn = enableFlashlightOn;
   p5.prototype.enableNfcOn = enableNfcOn;
   p5.prototype.enableAllOn = enableAllOn;
   p5.prototype.enableCameraOn = enableCameraOn;
@@ -2852,6 +3161,21 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableVibrationButton = enableVibrationButton;
       this.vibrate = vibrate;
       this.stopVibration = stopVibration;
+      this.enableTorchTap = enableTorchTap;
+      this.enableTorchButton = enableTorchButton;
+      this.enableFlashlightTap = enableFlashlightTap;
+      this.enableFlashlightButton = enableFlashlightButton;
+      this.setTorch = setTorch;
+      this.torchOn = torchOn;
+      this.torchOff = torchOff;
+      this.toggleTorch = toggleTorch;
+      this.stopTorch = stopTorch;
+      this.isTorchSupported = isTorchSupported;
+      this.setFlashlight = setFlashlight;
+      this.flashlightOn = flashlightOn;
+      this.flashlightOff = flashlightOff;
+      this.toggleFlashlight = toggleFlashlight;
+      this.stopFlashlight = stopFlashlight;
       this.enableNfcTap = enableNfcTap;
       this.enableNfcButton = enableNfcButton;
       this.stopNfc = stopNfc;
@@ -2872,6 +3196,8 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableSoundCanvas = enableSoundCanvas;
       this.enableSpeechCanvas = enableSpeechCanvas;
       this.enableVibrationCanvas = enableVibrationCanvas;
+      this.enableTorchCanvas = enableTorchCanvas;
+      this.enableFlashlightCanvas = enableFlashlightCanvas;
       this.enableNfcCanvas = enableNfcCanvas;
       this.enableAllCanvas = enableAllCanvas;
       this.enableCameraCanvas = enableCameraCanvas;
@@ -2885,6 +3211,8 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableSoundBanner = enableSoundBanner;
       this.enableSpeechBanner = enableSpeechBanner;
       this.enableVibrationBanner = enableVibrationBanner;
+      this.enableTorchBanner = enableTorchBanner;
+      this.enableFlashlightBanner = enableFlashlightBanner;
       this.enableNfcBanner = enableNfcBanner;
       this.enableAllBanner = enableAllBanner;
       this.enableCameraBanner = enableCameraBanner;
@@ -2898,6 +3226,8 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableSoundOn = enableSoundOn;
       this.enableSpeechOn = enableSpeechOn;
       this.enableVibrationOn = enableVibrationOn;
+      this.enableTorchOn = enableTorchOn;
+      this.enableFlashlightOn = enableFlashlightOn;
       this.enableNfcOn = enableNfcOn;
       this.enableAllOn = enableAllOn;
       this.enableCameraOn = enableCameraOn;
