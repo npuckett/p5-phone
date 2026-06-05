@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Example Card API Link Pattern - p5-phone</title>
+  <link rel="stylesheet" href="styles/main.css?v=card-filters-20260605">
+  <style>
+    .proposal-page {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .proposal-intro {
+      max-width: 820px;
+      margin-bottom: 28px;
+    }
+
+    .selected-layout {
+      display: grid;
+      grid-template-columns: minmax(300px, 390px) minmax(280px, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .proposal-label {
+      margin: 0 0 10px;
+      color: var(--accent-green);
+      font-size: 0.78rem;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .mock-qr {
+      width: 132px;
+      height: 132px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(90deg, #171717 10px, transparent 10px) 0 0 / 22px 22px,
+        linear-gradient(#171717 10px, transparent 10px) 0 0 / 22px 22px,
+        #ffffff;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .reference-drawer {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfbf8;
+    }
+
+    .reference-drawer summary {
+      min-height: 40px;
+      padding: 9px 12px;
+      cursor: pointer;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .reference-drawer summary::marker {
+      color: var(--accent-green);
+    }
+
+    .reference-body {
+      display: grid;
+      gap: 10px;
+      padding: 0 12px 12px;
+    }
+
+    .reference-group strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .reference-group a {
+      display: block;
+      padding: 4px 0;
+      color: var(--accent-blue);
+      font-size: 0.86rem;
+      font-weight: 720;
+      text-decoration: none;
+    }
+
+    .reference-group a:hover,
+    .tag-link:hover {
+      text-decoration: underline;
+    }
+
+    .tag-link {
+      text-decoration: none;
+    }
+
+    .tag-note {
+      margin: 0 0 18px;
+      padding: 14px 16px;
+      color: var(--muted);
+      background: #fff6dc;
+      border-left: 5px solid var(--accent-yellow);
+      border-radius: 8px;
+    }
+
+    .tag-note strong {
+      color: var(--ink);
+    }
+
+    .taxonomy-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .taxonomy-panel + .taxonomy-panel {
+      margin-top: 14px;
+    }
+
+    .taxonomy-panel h3 {
+      margin-bottom: 8px;
+    }
+
+    .taxonomy-panel p {
+      margin: 0 0 12px;
+      color: var(--muted);
+    }
+
+    .taxonomy-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .taxonomy-list li {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfbf8;
+    }
+
+    .taxonomy-list strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--ink);
+    }
+
+    .taxonomy-list span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 840px) {
+      .selected-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="main-content" style="margin-left: 0;">
+    <section class="content-section proposal-page">
+      <div class="proposal-intro">
+        <span class="eyebrow">Selected Pattern</span>
+        <h1 style="font-size: clamp(2.6rem, 6vw, 5rem);">Example Card API Links</h1>
+        <p class="hero-copy">Use the existing card shape, keep capability tags as filter links, and tuck method references into a closed-by-default drawer.</p>
+      </div>
+
+      <p class="tag-note"><strong>Tag filter idea:</strong> capability and platform tags can stay visually quiet, but become links to filtered catalog views such as all camera examples, all ML5 examples, or all Android-only examples.</p>
+
+      <div class="selected-layout" aria-label="Selected API link card pattern">
+        <section>
+          <p class="proposal-label">Example Card</p>
+          <article class="example-card">
+            <button class="qr-expand-button" type="button" aria-label="Expand QR code for FaceMesh Two Points">+</button>
+            <div class="qr-row">
+              <div class="mock-qr" aria-hidden="true"></div>
+              <span class="example-meta">Scan to open on phone</span>
+            </div>
+            <h4>PHONE FaceMesh Two Points</h4>
+            <div class="example-meta">Camera / Advanced / 1.x and 2.0</div>
+            <p>FaceMesh tracking with PhoneCamera coordinate mapping.</p>
+            <div class="tag-list">
+              <a class="tag tag-link" href="#filter-camera">camera</a>
+              <a class="tag tag-link" href="#filter-ml5">ml5</a>
+              <a class="tag tag-link" href="#filter-facemesh">facemesh</a>
+              <a class="tag tag-link" href="#filter-ios-android">iOS + Android</a>
+            </div>
+            <details class="reference-drawer">
+              <summary>API references</summary>
+              <div class="reference-body">
+                <div class="reference-group">
+                  <strong>p5-phone</strong>
+                  <a href="#internal">createPhoneCamera()</a>
+                  <a href="#internal">cam.mapKeypoint()</a>
+                  <a href="#internal">cam.onReady()</a>
+                </div>
+                <div class="reference-group">
+                  <strong>External</strong>
+                  <a href="#external">ml5.faceMesh()</a>
+                  <a href="#external">p5.image()</a>
+                </div>
+              </div>
+            </details>
+            <div class="card-actions">
+              <a href="#example">Link</a>
+              <span aria-disabled="true">Minimal</span>
+              <a href="#editor">Web Editor</a>
+              <a href="#source">Source</a>
+            </div>
+          </article>
+        </section>
+
+        <section aria-label="Example tag taxonomy">
+          <p class="proposal-label">Tag Taxonomy</p>
+          <div class="taxonomy-panel">
+            <h3>Capability Tags</h3>
+            <p>These describe what the sketch uses or demonstrates. They can filter to pages of related examples.</p>
+            <ul class="taxonomy-list">
+              <li><strong>Input</strong><span>camera, microphone, motion, touch, speech, NFC</span></li>
+              <li><strong>Output</strong><span>sound, vibration, torch, screen, haptics</span></li>
+              <li><strong>Technique</strong><span>ml5, facemesh, handpose, bodypose, color, tracking</span></li>
+            </ul>
+          </div>
+
+          <div class="taxonomy-panel">
+            <h3>Platform Tags</h3>
+            <p>These should be consistent, high-level filters for support expectations.</p>
+            <ul class="taxonomy-list">
+              <li><strong>iOS + Android</strong><span>Works broadly on current mobile browsers, subject to permission prompts.</span></li>
+              <li><strong>Android</strong><span>Requires Android browser support, such as NFC, vibration, or torch workflows.</span></li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

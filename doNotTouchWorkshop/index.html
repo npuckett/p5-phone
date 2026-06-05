@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Do Not Touch: Phones for Creative Interaction</title>
-  <link rel="stylesheet" href="../examples/homepage/styles/main.css">
+  <link rel="stylesheet" href="../examples/homepage/styles/main.css?v=card-filters-20260605">
   <link rel="stylesheet" href="styles/workshop.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="scripts/workshop-data.js" defer></script>
-  <script src="scripts/render.js" defer></script>
+  <script src="scripts/workshop-data.js?v=torch-platform-20260605" defer></script>
+  <script src="scripts/render.js?v=torch-platform-20260605" defer></script>
   <script src="../examples/homepage/scripts/card-expand.js" defer></script>
   <script src="../examples/homepage/scripts/navigation.js" defer></script>
 </head>
@@ -142,7 +142,7 @@
       <p class="section-note">Though your phone tries to <em>assign</em> use cases for its hardware components, you can actually treat them as generic components to <em>do what you want</em>.</p>
       <div class="split-layout hardware-lists">
         <article><h3>Inputs</h3><ul><li>Gyroscope and orientation</li><li>Accelerometer and movement</li><li>Microphone and speech</li><li>Front and back cameras</li><li>NFC reader on supported Android phones</li></ul></article>
-        <article><h3>Outputs</h3><ul><li>Screen graphics</li><li>Speaker sound</li><li>Vibration motors on supported Android phones</li><li>Flashlight/torch on supported Android Chrome phones</li><li>Camera-framed body, face, and hand tracking feedback</li></ul></article>
+        <article><h3>Outputs</h3><ul><li>Screen graphics</li><li>Speaker sound</li><li>Vibration motors on supported Android phones</li><li>Flashlight/torch on supported phones</li><li>Camera-framed body, face, and hand tracking feedback</li></ul></article>
       </div>
       <div class="workshop-block"><strong>Platform note:</strong> iOS supports motion, microphone, and camera permission flows, but Web NFC and browser vibration are primarily Android Chrome features.</div>
     </section>
@@ -172,6 +172,12 @@
 
     <section id="open-first" class="content-section">
       <div class="section-heading"><span class="eyebrow">Data Examples</span><h2>Pt 1 : Reading the Data</h2><p>Start with existing examples that show where values are stored in code, then remix one into a physical interaction.</p></div>
+      <div class="filter-panel workshop-filter-panel" aria-label="Workshop example filters">
+        <label>Search <input id="workshop-search" type="search" placeholder="motion, camera, torch, sound"></label>
+        <label>Platform <select id="workshop-platform-filter"></select></label>
+        <label>Tag <select id="workshop-tag-filter"></select></label>
+      </div>
+      <div class="catalog-status" id="workshop-catalog-status"></div>
       <div id="existing-example-grid" class="example-grid" aria-live="polite"></div>
     </section>
 

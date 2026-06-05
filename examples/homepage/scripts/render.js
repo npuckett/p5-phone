@@ -13,9 +13,101 @@
   }
 
   function renderSelect(select, values, label) {
+    if (!select) return;
     select.innerHTML = ['<option value="">All ' + escapeHtml(label) + '</option>']
       .concat(values.map(value => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>'))
       .join('');
+  }
+
+  const API_REFERENCE_RULES = [
+    { tags: ['setup'], group: 'p5-phone', label: 'lockGestures()', href: '#api-core' },
+    { tags: ['lockGestures'], group: 'p5-phone', label: 'lockGestures()', href: '#api-core' },
+    { tags: ['combined permissions'], group: 'p5-phone', label: 'enablePermissionsTap()', href: '#api-core' },
+    { tags: ['motion'], group: 'p5-phone', label: 'enableSensorTap()', href: '#api-motion' },
+    { tags: ['orientation'], group: 'External', label: 'rotationX / rotationY / rotationZ', href: 'https://p5js.org/reference/p5/rotationX/' },
+    { tags: ['gyroscope'], group: 'External', label: 'p5 rotation rates', href: 'https://p5js.org/reference/p5/rotationX/' },
+    { tags: ['accelerometer'], group: 'External', label: 'p5 acceleration values', href: 'https://p5js.org/reference/p5/accelerationX/' },
+    { tags: ['deviceShaken'], group: 'External', label: 'deviceShaken()', href: 'https://p5js.org/reference/p5/deviceShaken/' },
+    { tags: ['deviceMoved'], group: 'External', label: 'deviceMoved()', href: 'https://p5js.org/reference/p5/deviceMoved/' },
+    { tags: ['deviceOrientation'], group: 'External', label: 'deviceOrientation', href: 'https://p5js.org/reference/p5/deviceOrientation/' },
+    { tags: ['threshold'], group: 'External', label: 'setMoveThreshold()', href: 'https://p5js.org/reference/p5/setMoveThreshold/' },
+    { tags: ['microphone'], group: 'p5-phone', label: 'enableMicTap()', href: '#api-audio' },
+    { tags: ['p5.sound'], group: 'External', label: 'p5.sound', href: 'https://p5js.org/reference/#/libraries/p5.sound' },
+    { tags: ['speech'], group: 'p5-phone', label: 'enableSpeechTap()', href: '#api-audio' },
+    { tags: ['speech'], group: 'External', label: 'Web Speech API', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API' },
+    { tags: ['nfc'], group: 'p5-phone', label: 'enableNfcTap()', href: '#api-nfc' },
+    { tags: ['aliases'], group: 'p5-phone', label: 'isNfcTag()', href: '#api-nfc' },
+    { tags: ['sound'], group: 'p5-phone', label: 'enableSoundTap()', href: '#api-audio' },
+    { tags: ['vibration'], group: 'p5-phone', label: 'enableVibrationTap()', href: '#api-vibration' },
+    { tags: ['vibration'], group: 'p5-phone', label: 'vibrate()', href: '#api-vibration' },
+    { tags: ['torch'], group: 'p5-phone', label: 'enableTorchTap()', href: '#api-torch' },
+    { tags: ['torch'], group: 'p5-phone', label: 'toggleTorch()', href: '#api-torch' },
+    { tags: ['camera'], group: 'p5-phone', label: 'createPhoneCamera()', href: '#api-camera' },
+    { tags: ['camera'], group: 'p5-phone', label: 'PhoneCamera', href: '#api-camera' },
+    { tags: ['color'], group: 'External', label: 'p5 pixels[]', href: 'https://p5js.org/reference/p5/pixels/' },
+    { tags: ['ml5'], group: 'External', label: 'ml5.js', href: 'https://docs.ml5js.org/' },
+    { tags: ['facemesh'], group: 'External', label: 'ml5.faceMesh()', href: 'https://docs.ml5js.org/#/reference/facemesh' },
+    { tags: ['handpose'], group: 'External', label: 'ml5.handPose()', href: 'https://docs.ml5js.org/#/reference/handpose' },
+    { tags: ['bodypose'], group: 'External', label: 'ml5.bodyPose()', href: 'https://docs.ml5js.org/#/reference/bodypose' }
+  ];
+
+  function normalizeTags(example) {
+    return (example.capabilities || []).filter(Boolean);
+  }
+
+  function normalizePlatforms(example) {
+    if (example.platforms && example.platforms.length) return example.platforms;
+    const tags = normalizeTags(example).map(tag => tag.toLowerCase());
+    if (tags.includes('nfc')) return ['Android'];
+    if (tags.includes('vibration')) return ['Android'];
+    return ['iOS + Android'];
+  }
+
+  function inferApiReferences(example) {
+    if (example.apiReferences) return example.apiReferences;
+    const tags = normalizeTags(example);
+    const groups = [];
+
+    API_REFERENCE_RULES.forEach(rule => {
+      if (!rule.tags.some(tag => tags.includes(tag))) return;
+      let group = groups.find(item => item.group === rule.group);
+      if (!group) {
+        group = { group: rule.group, links: [] };
+        groups.push(group);
+      }
+      if (!group.links.some(link => link.label === rule.label)) {
+        group.links.push({ label: rule.label, href: rule.href });
+      }
+    });
+
+    return groups;
+  }
+
+  function tagHref(tag) {
+    return '#examples?tag=' + encodeURIComponent(tag);
+  }
+
+  function renderTagLinks(tags, kind) {
+    return tags.map(tag => '<a class="tag tag-link" href="' + tagHref(tag) + '" data-filter-' + kind + '="' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</a>').join('');
+  }
+
+  function renderReferenceDrawer(example) {
+    const references = inferApiReferences(example).filter(group => group.links && group.links.length);
+    if (!references.length) return '';
+
+    return `
+      <details class="reference-drawer">
+        <summary>API references</summary>
+        <div class="reference-body">
+          ${references.map(group => `
+            <div class="reference-group">
+              <strong>${escapeHtml(group.group)}</strong>
+              ${group.links.map(link => '<a href="' + escapeHtml(link.href) + '" target="_blank" rel="noreferrer">' + escapeHtml(link.label) + '</a>').join('')}
+            </div>
+          `).join('')}
+        </div>
+      </details>
+    `;
   }
 
   function renderPermissionMatrix() {
@@ -102,13 +194,16 @@
       example.family,
       example.level,
       example.p5,
-      (example.capabilities || []).join(' ')
+      normalizePlatforms(example).join(' '),
+      normalizeTags(example).join(' ')
     ].join(' ').toLowerCase();
 
     if (filters.search && !queryText.includes(filters.search)) return false;
     if (filters.category && example.subcategory !== filters.category) return false;
     if (filters.level && example.level !== filters.level) return false;
     if (filters.version && example.p5 !== filters.version) return false;
+    if (filters.platform && !normalizePlatforms(example).includes(filters.platform)) return false;
+    if (filters.tag && !normalizeTags(example).includes(filters.tag)) return false;
     return true;
   }
 
@@ -123,7 +218,8 @@
 
   function renderExampleCard(example) {
     const qrId = 'qr-' + example.id;
-    const capabilities = (example.capabilities || []).map(tag => '<span class="tag">' + escapeHtml(tag) + '</span>').join('');
+    const capabilities = renderTagLinks(normalizeTags(example), 'tag');
+    const platforms = renderTagLinks(normalizePlatforms(example), 'platform');
     const githubBase = window.P5PHONE_GITHUB_BASE_URL || '';
 
     return `
@@ -136,7 +232,8 @@
         <h4>${escapeHtml(example.title)}</h4>
         <div class="example-meta">${escapeHtml(example.subcategory)} / ${escapeHtml(example.level)} / ${escapeHtml(example.p5)}</div>
         <p>${escapeHtml(example.description)}</p>
-        <div class="tag-list">${capabilities}</div>
+        <div class="tag-list">${capabilities}${platforms}</div>
+        ${renderReferenceDrawer(example)}
         <div class="card-actions">
           ${linkOrMissing('Link', pageHref(example.path))}
           ${linkOrMissing('Minimal', example.minimalPath ? pageHref(example.minimalPath) : '')}
@@ -226,7 +323,9 @@
       search: (document.getElementById('example-search').value || '').trim().toLowerCase(),
       category: document.getElementById('category-filter').value,
       level: document.getElementById('level-filter').value,
-      version: document.getElementById('version-filter').value
+      version: document.getElementById('version-filter').value,
+      platform: document.getElementById('platform-filter').value,
+      tag: document.getElementById('tag-filter').value
     };
 
     const filtered = examples.filter(example => exampleMatches(example, filters));
@@ -282,15 +381,30 @@
     const categoryFilter = document.getElementById('category-filter');
     const levelFilter = document.getElementById('level-filter');
     const versionFilter = document.getElementById('version-filter');
+    const platformFilter = document.getElementById('platform-filter');
+    const tagFilter = document.getElementById('tag-filter');
     const search = document.getElementById('example-search');
 
     renderSelect(categoryFilter, uniqueValues(examples, item => item.subcategory), 'types');
     renderSelect(levelFilter, uniqueValues(examples, item => item.level), 'levels');
     renderSelect(versionFilter, uniqueValues(examples, item => item.p5), 'versions');
+    renderSelect(platformFilter, uniqueValues(examples.flatMap(normalizePlatforms), item => item), 'platforms');
+    renderSelect(tagFilter, uniqueValues(examples.flatMap(normalizeTags), item => item), 'tags');
 
-    [categoryFilter, levelFilter, versionFilter, search].forEach(control => {
+    [categoryFilter, levelFilter, versionFilter, platformFilter, tagFilter, search].forEach(control => {
       control.addEventListener('input', renderExamples);
       control.addEventListener('change', renderExamples);
+    });
+
+    document.addEventListener('click', event => {
+      const platformLink = event.target.closest('[data-filter-platform]');
+      const tagLink = event.target.closest('[data-filter-tag]');
+      if (!platformLink && !tagLink) return;
+      event.preventDefault();
+      if (platformLink) platformFilter.value = platformLink.dataset.filterPlatform;
+      if (tagLink) tagFilter.value = tagLink.dataset.filterTag;
+      renderExamples();
+      document.getElementById('examples').scrollIntoView({ block: 'start' });
     });
   }
 

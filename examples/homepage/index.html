@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>p5-phone</title>
-  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/main.css?v=card-filters-20260605">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="scripts/api-data.js" defer></script>
-  <script src="scripts/examples-data.js" defer></script>
-  <script src="scripts/render.js" defer></script>
+  <script src="scripts/examples-data.js?v=torch-platform-20260605" defer></script>
+  <script src="scripts/render.js?v=torch-platform-20260605" defer></script>
   <script src="scripts/card-expand.js" defer></script>
   <script src="scripts/navigation.js" defer></script>
 </head>
@@ -217,6 +217,8 @@ function draw() {
         <label>Type <select id="category-filter"></select></label>
         <label>Level <select id="level-filter"></select></label>
         <label>p5 version <select id="version-filter"></select></label>
+        <label>Platform <select id="platform-filter"></select></label>
+        <label>Tag <select id="tag-filter"></select></label>
       </div>
       <div class="catalog-status" id="catalog-status"></div>
       <div id="example-results" class="example-results" aria-live="polite"></div>

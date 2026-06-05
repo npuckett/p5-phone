@@ -296,10 +296,11 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'Torch',
     level: 'Starter',
     p5: '1.x and 2.0',
-    description: 'Turn the Android flashlight on and off with touch using toggleTorch().',
+    description: 'Turn the phone flashlight on and off with touch using toggleTorch().',
     path: 'Phone%20Sensor%20Examples/torch/01_torch_touch_toggle/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/torch/01_torch_touch_toggle',
     webEditor: 'https://editor.p5js.org/npuckett/sketches/6bBT4VeRa',
+    platforms: ['iOS + Android'],
     capabilities: ['torch', 'flashlight', 'touch']
   },
   {
@@ -313,6 +314,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/torch/02_torch_disco/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/torch/02_torch_disco',
     webEditor: 'https://editor.p5js.org/npuckett/sketches/049BpqM9K',
+    platforms: ['iOS + Android'],
     capabilities: ['torch', 'flashlight', 'vibration', 'touch']
   },
   {
@@ -326,6 +328,7 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/torch/03_shake_toggle/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/torch/03_shake_toggle',
     webEditor: 'https://editor.p5js.org/npuckett/sketches/OH_hsgddL',
+    platforms: ['iOS + Android'],
     capabilities: ['torch', 'flashlight', 'motion', 'deviceShaken']
   },
   {
@@ -336,7 +339,7 @@ window.P5PHONE_EXAMPLES = [
     family: 'Camera Basics',
     level: 'Intermediate',
     p5: '1.x and 2.0',
-    description: 'Average the camera color inside a square and compare it to a target color with a tolerance slider.',
+    description: 'Average the camera color inside a square, tap the square to set the target, and compare with a fixed tolerance.',
     path: 'Phone%20Sensor%20Examples/camera/01_color_tracking/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/camera/01_color_tracking',
     webEditor: 'https://editor.p5js.org/npuckett/sketches/n9kyBCsHl',
