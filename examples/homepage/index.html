@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="styles/main.css?v=card-filters-20260605">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="scripts/api-data.js" defer></script>
-  <script src="scripts/examples-data.js?v=torch-platform-20260605" defer></script>
-  <script src="scripts/render.js?v=torch-platform-20260605" defer></script>
+  <script src="scripts/examples-data.js?v=filter-sync-20260606" defer></script>
+  <script src="scripts/catalog-filters.js?v=filter-sync-20260606" defer></script>
+  <script src="scripts/render.js?v=filter-sync-20260606" defer></script>
   <script src="scripts/card-expand.js" defer></script>
   <script src="scripts/navigation.js" defer></script>
 </head>
@@ -214,7 +215,7 @@ function draw() {
       </div>
       <div class="filter-panel" aria-label="Example filters">
         <label>Search <input id="example-search" type="search" placeholder="motion, NFC, face, sound"></label>
-        <label>Type <select id="category-filter"></select></label>
+        <label>Subcategory <select id="category-filter"></select></label>
         <label>Level <select id="level-filter"></select></label>
         <label>p5 version <select id="version-filter"></select></label>
         <label>Platform <select id="platform-filter"></select></label>

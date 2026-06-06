@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="../examples/homepage/styles/main.css?v=card-filters-20260605">
   <link rel="stylesheet" href="styles/workshop.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="scripts/workshop-data.js?v=torch-platform-20260605" defer></script>
-  <script src="scripts/render.js?v=torch-platform-20260605" defer></script>
+  <script src="scripts/workshop-data.js?v=filter-sync-20260606" defer></script>
+  <script src="../examples/homepage/scripts/catalog-filters.js?v=filter-sync-20260606" defer></script>
+  <script src="scripts/render.js?v=filter-sync-20260606" defer></script>
   <script src="../examples/homepage/scripts/card-expand.js" defer></script>
   <script src="../examples/homepage/scripts/navigation.js" defer></script>
 </head>
@@ -172,6 +173,7 @@
 
     <section id="open-first" class="content-section">
       <div class="section-heading"><span class="eyebrow">Data Examples</span><h2>Pt 1 : Reading the Data</h2><p>Start with existing examples that show where values are stored in code, then remix one into a physical interaction.</p></div>
+      <p class="section-note filter-scope-note">Filters below apply to both Pt 1 and Pt 2 example cards.</p>
       <div class="filter-panel workshop-filter-panel" aria-label="Workshop example filters">
         <label>Search <input id="workshop-search" type="search" placeholder="motion, camera, torch, sound"></label>
         <label>Platform <select id="workshop-platform-filter"></select></label>
@@ -189,6 +191,7 @@
 
     <section id="workshop-examples" class="content-section">
       <div class="section-heading"><span class="eyebrow">Starter Sketches</span><h2>Pt 2 : Creating interactions</h2><p>These sketches are made for the no-touch rule. Each one exposes the main sensor or tracking values as global variables so it is easy to swap the output.</p></div>
+      <div class="catalog-status" id="workshop-catalog-status-pt2" aria-live="polite"></div>
       <div id="new-example-grid" class="example-grid" aria-live="polite"></div>
     </section>
 

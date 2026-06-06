@@ -1,11 +1,8 @@
 (function() {
+  const CF = window.P5PHONE_CATALOG_FILTERS;
+
   function escapeHtml(value) {
-    return String(value == null ? '' : value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+    return CF.escapeHtml(value);
   }
 
   function linkOrMissing(label, href) {
@@ -13,15 +10,12 @@
     return '<a href="' + escapeHtml(href) + '" target="_blank" rel="noreferrer">' + escapeHtml(label) + '</a>';
   }
 
-  function uniqueValues(items) {
-    return Array.from(new Set(items.filter(Boolean))).sort();
+  function normalizeTags(example) {
+    return CF.normalizeTags(example);
   }
 
-  function renderSelect(select, values, label) {
-    if (!select) return;
-    select.innerHTML = ['<option value="">All ' + escapeHtml(label) + '</option>']
-      .concat(values.map(value => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>'))
-      .join('');
+  function normalizePlatforms(example) {
+    return CF.normalizePlatforms(example);
   }
 
   const API_REFERENCE_RULES = [
@@ -30,6 +24,7 @@
     { tags: ['gyroscope'], group: 'External', label: 'p5 rotation rates', href: 'https://p5js.org/reference/p5/rotationX/' },
     { tags: ['accelerometer'], group: 'External', label: 'p5 acceleration values', href: 'https://p5js.org/reference/p5/accelerationX/' },
     { tags: ['deviceShaken'], group: 'External', label: 'deviceShaken()', href: 'https://p5js.org/reference/p5/deviceShaken/' },
+    { tags: ['deviceMoved'], group: 'External', label: 'deviceMoved()', href: 'https://p5js.org/reference/p5/deviceMoved/' },
     { tags: ['microphone'], group: 'p5-phone', label: 'enableMicTap()', href: '../examples/homepage/#api-audio' },
     { tags: ['sound'], group: 'p5-phone', label: 'enableSoundTap()', href: '../examples/homepage/#api-audio' },
     { tags: ['nfc'], group: 'p5-phone', label: 'enableNfcTap()', href: '../examples/homepage/#api-nfc' },
@@ -39,43 +34,15 @@
     { tags: ['color'], group: 'External', label: 'p5 pixels[]', href: 'https://p5js.org/reference/p5/pixels/' },
     { tags: ['ml5'], group: 'External', label: 'ml5.js', href: 'https://docs.ml5js.org/' },
     { tags: ['facemesh'], group: 'External', label: 'ml5.faceMesh()', href: 'https://docs.ml5js.org/#/reference/facemesh' },
-    { tags: ['handpose'], group: 'External', label: 'ml5.handPose()', href: 'https://docs.ml5js.org/#/reference/handpose' }
+    { tags: ['handpose'], group: 'External', label: 'ml5.handPose()', href: 'https://docs.ml5js.org/#/reference/handpose' },
+    { tags: ['gaze'], group: 'External', label: 'GazeDetector', href: '../examples/ml5/Gaze_detector_class/' }
   ];
 
-  function includesAny(text, terms) {
-    const value = text.toLowerCase();
-    return terms.some(term => value.includes(term));
-  }
-
-  function normalizePlatforms(example) {
-    if (example.platforms && example.platforms.length) return example.platforms;
-    const platform = String(example.platform || 'iOS + Android').toLowerCase();
-    if (platform.includes('android chrome') && !platform.includes('iphone')) return ['Android'];
-    return ['iOS + Android'];
-  }
-
-  function normalizeTags(example) {
-    if (example.capabilities && example.capabilities.length) return example.capabilities;
-    const source = [example.id, example.title, example.focus, example.description].join(' ');
-    const tags = [];
-    if (includesAny(source, ['motion', 'tilt', 'orientation', 'shake', 'movement', 'rotation'])) tags.push('motion');
-    if (includesAny(source, ['orientation', 'tilt'])) tags.push('orientation');
-    if (includesAny(source, ['rotational', 'gyroscope'])) tags.push('gyroscope');
-    if (includesAny(source, ['acceleration'])) tags.push('accelerometer');
-    if (includesAny(source, ['shake'])) tags.push('deviceShaken');
-    if (includesAny(source, ['microphone', 'breath', 'sound range'])) tags.push('microphone');
-    if (includesAny(source, ['sound', 'synth', 'pitch', 'volume'])) tags.push('sound');
-    if (includesAny(source, ['nfc', 'tag'])) tags.push('nfc');
-    if (includesAny(source, ['vibration', 'haptic'])) tags.push('vibration');
-    if (includesAny(source, ['torch', 'flashlight'])) tags.push('torch');
-    if (includesAny(source, ['camera', 'facemesh', 'handpose', 'gaze', 'tracking'])) tags.push('camera');
-    if (includesAny(source, ['ml5', 'facemesh', 'handpose', 'gaze', 'tracking'])) tags.push('ml5');
-    if (includesAny(source, ['face', 'facemesh', 'mouth', 'gaze'])) tags.push('facemesh');
-    if (includesAny(source, ['hand', 'thumb-index'])) tags.push('handpose');
-    if (includesAny(source, ['color'])) tags.push('color');
-    if (includesAny(source, ['gif'])) tags.push('gif');
-    return uniqueValues(tags);
-  }
+  const FILTER_SCHEMA = {
+    search: 'workshop-search',
+    platform: 'workshop-platform-filter',
+    tag: 'workshop-tag-filter'
+  };
 
   function inferApiReferences(example) {
     if (example.apiReferences) return example.apiReferences;
@@ -97,12 +64,8 @@
     return groups;
   }
 
-  function tagHref(tag) {
-    return '#open-first?tag=' + encodeURIComponent(tag);
-  }
-
   function renderTagLinks(tags, kind) {
-    return tags.map(tag => '<a class="tag tag-link" href="' + tagHref(tag) + '" data-workshop-' + kind + '="' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</a>').join('');
+    return CF.renderTagLinks(tags, kind, 'open-first');
   }
 
   function renderReferenceDrawer(example) {
@@ -127,7 +90,7 @@
     const queryText = [
       example.title,
       example.focus,
-      example.platform,
+      CF.formatPlatformSummary(example),
       example.description,
       normalizePlatforms(example).join(' '),
       normalizeTags(example).join(' ')
@@ -137,6 +100,10 @@
     if (filters.platform && !normalizePlatforms(example).includes(filters.platform)) return false;
     if (filters.tag && !normalizeTags(example).includes(filters.tag)) return false;
     return true;
+  }
+
+  function readFilters() {
+    return CF.readFilterValues(FILTER_SCHEMA);
   }
 
   function renderCard(example) {
@@ -151,7 +118,7 @@
           <span class="example-meta">Scan to open on phone</span>
         </div>
         <h4>${escapeHtml(example.title)}</h4>
-        <div class="example-meta"><strong>${escapeHtml(example.focus)}</strong> / ${escapeHtml(example.platform)}</div>
+        <div class="example-meta"><strong>${escapeHtml(example.focus)}</strong> / ${escapeHtml(CF.formatPlatformSummary(example))}</div>
         <p>${escapeHtml(example.description)}</p>
         <div class="tag-list">${tags}${platforms}</div>
         ${renderReferenceDrawer(example)}
@@ -188,50 +155,39 @@
   function renderWorkshopExamples() {
     const existing = window.DONOTTOUCH_EXISTING_EXAMPLES || [];
     const fresh = window.DONOTTOUCH_NEW_EXAMPLES || [];
-    const all = existing.concat(fresh);
-    const filters = {
-      search: (document.getElementById('workshop-search').value || '').trim().toLowerCase(),
-      platform: document.getElementById('workshop-platform-filter').value,
-      tag: document.getElementById('workshop-tag-filter').value
-    };
+    const filters = readFilters();
     const filteredExisting = existing.filter(example => exampleMatches(example, filters));
     const filteredFresh = fresh.filter(example => exampleMatches(example, filters));
     const status = document.getElementById('workshop-catalog-status');
+    const statusPt2 = document.getElementById('workshop-catalog-status-pt2');
+    const totalShown = filteredExisting.length + filteredFresh.length;
+    const totalAll = existing.length + fresh.length;
+    const statusText = totalShown + ' of ' + totalAll + ' workshop examples shown';
 
-    if (status) status.textContent = (filteredExisting.length + filteredFresh.length) + ' of ' + all.length + ' workshop examples shown';
+    if (status) status.textContent = statusText + ' (' + filteredExisting.length + ' in Pt 1, ' + filteredFresh.length + ' in Pt 2)';
+    if (statusPt2) statusPt2.textContent = filteredFresh.length + ' of ' + fresh.length + ' starter sketches shown (filters apply from Pt 1)';
     renderCards('existing-example-grid', filteredExisting);
     renderCards('new-example-grid', filteredFresh);
   }
 
   function setupWorkshopFilters() {
     const examples = (window.DONOTTOUCH_EXISTING_EXAMPLES || []).concat(window.DONOTTOUCH_NEW_EXAMPLES || []);
-    const search = document.getElementById('workshop-search');
-    const platformFilter = document.getElementById('workshop-platform-filter');
-    const tagFilter = document.getElementById('workshop-tag-filter');
 
-    renderSelect(platformFilter, uniqueValues(examples.flatMap(normalizePlatforms)), 'platforms');
-    renderSelect(tagFilter, uniqueValues(examples.flatMap(normalizeTags)), 'tags');
-
-    [search, platformFilter, tagFilter].forEach(control => {
-      control.addEventListener('input', renderWorkshopExamples);
-      control.addEventListener('change', renderWorkshopExamples);
-    });
-
-    document.addEventListener('click', event => {
-      const platformLink = event.target.closest('[data-workshop-platform]');
-      const tagLink = event.target.closest('[data-workshop-tag]');
-      if (!platformLink && !tagLink) return;
-      event.preventDefault();
-      if (platformLink) platformFilter.value = platformLink.dataset.workshopPlatform;
-      if (tagLink) tagFilter.value = tagLink.dataset.workshopTag;
-      renderWorkshopExamples();
-      document.getElementById('open-first').scrollIntoView({ block: 'start' });
+    CF.setupCatalogFilters({
+      sectionId: 'open-first',
+      alternateSectionIds: ['workshop-examples'],
+      schema: FILTER_SCHEMA,
+      populateSelects: function() {
+        CF.renderSelect(document.getElementById('workshop-platform-filter'), CF.uniqueValues(examples.flatMap(normalizePlatforms), item => item), 'platforms');
+        CF.renderSelect(document.getElementById('workshop-tag-filter'), CF.uniqueValues(examples.flatMap(normalizeTags), item => item), 'tags');
+      },
+      onChange: renderWorkshopExamples,
+      scrollTargetId: 'open-first'
     });
   }
 
   document.addEventListener('DOMContentLoaded', function() {
     makeQr('workshop-page-qr', window.DONOTTOUCH_PAGE_URL, 184);
     setupWorkshopFilters();
-    renderWorkshopExamples();
   });
 })();

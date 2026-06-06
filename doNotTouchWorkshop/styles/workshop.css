@@ -20,6 +20,7 @@
 .workshop-card .example-meta strong { color: var(--ink); }
 .workshop-card .card-actions { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
 .workshop-filter-panel { margin-bottom: 14px; }
+.filter-scope-note { margin: -8px 0 14px; }
 .reference-actions { max-width: 760px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .reference-grid .card-actions { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .workshop-block { max-width: 920px; margin-top: 18px; }

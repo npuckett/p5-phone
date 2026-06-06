@@ -9,14 +9,21 @@
   }
 
   function uniqueValues(items, getter) {
-    return Array.from(new Set(items.map(getter).filter(Boolean))).sort();
+    return window.P5PHONE_CATALOG_FILTERS.uniqueValues(items, getter);
   }
 
   function renderSelect(select, values, label) {
-    if (!select) return;
-    select.innerHTML = ['<option value="">All ' + escapeHtml(label) + '</option>']
-      .concat(values.map(value => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>'))
-      .join('');
+    window.P5PHONE_CATALOG_FILTERS.renderSelect(select, values, label);
+  }
+
+  const CF = window.P5PHONE_CATALOG_FILTERS;
+
+  function normalizeTags(example) {
+    return CF.normalizeTags(example);
+  }
+
+  function normalizePlatforms(example) {
+    return CF.normalizePlatforms(example);
   }
 
   const API_REFERENCE_RULES = [
@@ -51,18 +58,6 @@
     { tags: ['bodypose'], group: 'External', label: 'ml5.bodyPose()', href: 'https://docs.ml5js.org/#/reference/bodypose' }
   ];
 
-  function normalizeTags(example) {
-    return (example.capabilities || []).filter(Boolean);
-  }
-
-  function normalizePlatforms(example) {
-    if (example.platforms && example.platforms.length) return example.platforms;
-    const tags = normalizeTags(example).map(tag => tag.toLowerCase());
-    if (tags.includes('nfc')) return ['Android'];
-    if (tags.includes('vibration')) return ['Android'];
-    return ['iOS + Android'];
-  }
-
   function inferApiReferences(example) {
     if (example.apiReferences) return example.apiReferences;
     const tags = normalizeTags(example);
@@ -83,12 +78,8 @@
     return groups;
   }
 
-  function tagHref(tag) {
-    return '#examples?tag=' + encodeURIComponent(tag);
-  }
-
   function renderTagLinks(tags, kind) {
-    return tags.map(tag => '<a class="tag tag-link" href="' + tagHref(tag) + '" data-filter-' + kind + '="' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</a>').join('');
+    return CF.renderTagLinks(tags, kind, 'examples');
   }
 
   function renderReferenceDrawer(example) {
@@ -313,20 +304,34 @@
       .concat(available.filter(subcategory => !preferred.includes(subcategory)).sort());
   }
 
+  const FILTER_SCHEMA = {
+    search: 'example-search',
+    subcategory: 'category-filter',
+    level: 'level-filter',
+    version: 'version-filter',
+    platform: 'platform-filter',
+    tag: 'tag-filter'
+  };
+
+  function readFilters() {
+    const raw = CF.readFilterValues(FILTER_SCHEMA);
+    return {
+      search: raw.search,
+      category: raw.subcategory,
+      level: raw.level,
+      version: raw.version,
+      platform: raw.platform,
+      tag: raw.tag
+    };
+  }
+
   function renderExamples() {
     const examples = window.P5PHONE_EXAMPLES || [];
     const target = document.getElementById('example-results');
     const status = document.getElementById('catalog-status');
     if (!target || !status) return;
 
-    const filters = {
-      search: (document.getElementById('example-search').value || '').trim().toLowerCase(),
-      category: document.getElementById('category-filter').value,
-      level: document.getElementById('level-filter').value,
-      version: document.getElementById('version-filter').value,
-      platform: document.getElementById('platform-filter').value,
-      tag: document.getElementById('tag-filter').value
-    };
+    const filters = readFilters();
 
     const filtered = examples.filter(example => exampleMatches(example, filters));
     const grouped = groupExamples(filtered);
@@ -378,33 +383,19 @@
 
   function setupFilters() {
     const examples = window.P5PHONE_EXAMPLES || [];
-    const categoryFilter = document.getElementById('category-filter');
-    const levelFilter = document.getElementById('level-filter');
-    const versionFilter = document.getElementById('version-filter');
-    const platformFilter = document.getElementById('platform-filter');
-    const tagFilter = document.getElementById('tag-filter');
-    const search = document.getElementById('example-search');
 
-    renderSelect(categoryFilter, uniqueValues(examples, item => item.subcategory), 'types');
-    renderSelect(levelFilter, uniqueValues(examples, item => item.level), 'levels');
-    renderSelect(versionFilter, uniqueValues(examples, item => item.p5), 'versions');
-    renderSelect(platformFilter, uniqueValues(examples.flatMap(normalizePlatforms), item => item), 'platforms');
-    renderSelect(tagFilter, uniqueValues(examples.flatMap(normalizeTags), item => item), 'tags');
-
-    [categoryFilter, levelFilter, versionFilter, platformFilter, tagFilter, search].forEach(control => {
-      control.addEventListener('input', renderExamples);
-      control.addEventListener('change', renderExamples);
-    });
-
-    document.addEventListener('click', event => {
-      const platformLink = event.target.closest('[data-filter-platform]');
-      const tagLink = event.target.closest('[data-filter-tag]');
-      if (!platformLink && !tagLink) return;
-      event.preventDefault();
-      if (platformLink) platformFilter.value = platformLink.dataset.filterPlatform;
-      if (tagLink) tagFilter.value = tagLink.dataset.filterTag;
-      renderExamples();
-      document.getElementById('examples').scrollIntoView({ block: 'start' });
+    CF.setupCatalogFilters({
+      sectionId: 'examples',
+      schema: FILTER_SCHEMA,
+      populateSelects: function() {
+        renderSelect(document.getElementById('category-filter'), uniqueValues(examples, item => item.subcategory), 'subcategories');
+        renderSelect(document.getElementById('level-filter'), uniqueValues(examples, item => item.level), 'levels');
+        renderSelect(document.getElementById('version-filter'), uniqueValues(examples, item => item.p5), 'versions');
+        renderSelect(document.getElementById('platform-filter'), uniqueValues(examples.flatMap(normalizePlatforms), item => item), 'platforms');
+        renderSelect(document.getElementById('tag-filter'), uniqueValues(examples.flatMap(normalizeTags), item => item), 'tags');
+      },
+      onChange: renderExamples,
+      scrollTargetId: 'examples'
     });
   }
 
@@ -412,6 +403,5 @@
     renderPermissionMatrix();
     renderApi();
     setupFilters();
-    renderExamples();
   });
 })();
