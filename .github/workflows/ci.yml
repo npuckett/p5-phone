@@ -27,6 +27,9 @@ jobs:
     - name: Run tests
       run: npm test
     
+    - name: Build library
+      run: npm run build
+    
     - name: Validate package.json
       run: npm run validate --if-present || echo "No validation script found"
     

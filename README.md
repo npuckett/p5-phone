@@ -4,6 +4,12 @@
 
 ##  [Link for Interactive Examples](https://npuckett.github.io/p5-phone/examples/homepage)
 
+## Maintainers
+
+- **npm release and Web Editor sync:** [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Web Editor batch workflow (CORS server, catalog updates):** [docs/web-editor/](docs/web-editor/)
+- **Migration log of sketch URLs:** [webeditorLinks.md](webeditorLinks.md)
+
 # Overview
 P5.js on mobile provides unique opportunities and challenges. The main P5 framework does an excellent job of making it easy to read data from various phone inputs and sensors, however it doesn't deal with the realities of contemporary browser's built in gestures and security protocols.
 That's where this library comes in:
@@ -71,6 +77,7 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
 ## Table of Contents
 
 - [Link for Interactive Examples](#link-for-interactive-examples)
+- [Maintainers](#maintainers)
 - [Browser Compatibility](#browser-compatibility)
 - [p5.js Version Compatibility](#p5js-version-compatibility)
 - [CDN (Recommended)](#cdn-recommended)

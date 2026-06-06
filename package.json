@@ -20,7 +20,9 @@
     "release:patch": "npm version patch",
     "release:minor": "npm version minor",
     "release:major": "npm version major",
-    "release:dry": "npm version --dry-run"
+    "release:dry": "npm version --dry-run",
+    "serve:docs": "http-server . -p 8765 -c-1",
+    "serve:cors": "http-server . -p 8876 --cors -c-1"
   },
   "repository": {
     "type": "git",
@@ -54,6 +56,7 @@
     "p5": "^1.0.0 || ^2.0.0"
   },
   "devDependencies": {
+    "http-server": "^14.1.1",
     "terser": "^5.44.0"
   },
   "engines": {

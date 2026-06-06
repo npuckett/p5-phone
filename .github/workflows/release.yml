@@ -48,19 +48,16 @@ jobs:
           
           ## CDN Usage
           
-          Include in your HTML:
+          Release tag: `${{ github.ref_name }}`
+          
+          Replace `VERSION` with the npm version (tag without the leading `v`, e.g. `1.11.0`):
+          
           ```html
-          <!-- Touch only -->
-          <script src="https://cdn.jsdelivr.net/gh/DigitalFuturesOCADU/mobile-p5-permissions@${{ github.ref_name }}/src/permissionsGesture.js"></script>
-          
-          <!-- Motion sensors -->
-          <script src="https://cdn.jsdelivr.net/gh/DigitalFuturesOCADU/mobile-p5-permissions@${{ github.ref_name }}/src/permissionsGyro.js"></script>
-          
-          <!-- Microphone -->
-          <script src="https://cdn.jsdelivr.net/gh/DigitalFuturesOCADU/mobile-p5-permissions@${{ github.ref_name }}/src/permissionMic.js"></script>
-          
-          <!-- All permissions -->
-          <script src="https://cdn.jsdelivr.net/gh/DigitalFuturesOCADU/mobile-p5-permissions@${{ github.ref_name }}/src/permissionsAll.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/p5-phone@VERSION/dist/p5-phone.min.js"></script>
           ```
+          
+          Interactive examples: https://npuckett.github.io/p5-phone/examples/homepage/
         draft: false
         prerelease: false

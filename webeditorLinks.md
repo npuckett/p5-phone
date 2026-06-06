@@ -1,15 +1,10 @@
-# Major link and file update
-Several of the examples have links to the p5 web editor as this is a key way to allow for easy editing of the starter examples and hosting the code for phones.
+# Web Editor migration log
 
-However - several of the links are outdated, using the wrong version of the library and p5.
+Maintainer workflow (CORS server, batch sync, validation): [docs/web-editor/batch-sync.md](docs/web-editor/batch-sync.md)
 
-# The plan - Automate the creation of new files
-- I can log into my p5 web editor account in the built-in browser
-- You can create a new file for each example using the local code files and operating the browser,
-- Link the existing docs to the newly created files
+Several examples link to the p5 Web Editor so users can edit starter sketches and host code for phones. This file records sketch IDs and verification status. Update it after every migration batch.
 
-
-# Migration log
+## Migration log
 
 ## Verified on phone
 
@@ -57,7 +52,7 @@ These sketches were created under `npuckett`, loaded in public full-preview page
 
 ## Created with assets pending
 
-These sketches were created under `npuckett` with `index.html`, `sketch.js`, and an empty `gifs/` folder. The code references the filenames below; upload those files into each Web Editor project's `gifs/` folder before treating the full preview as complete.
+These sketches were created under `npuckett` with `index.html`, `sketch.js`, and an empty `gifs/` folder. The code references the filenames below; upload those files into each Web Editor project's `gifs/` folder before treating the full preview as complete. **GIF binaries are not in the git repo** — source them locally or from the original asset collection, then upload via the Web Editor file panel.
 
 | Catalog id | Title | Web Editor | Full preview | Asset to upload |
 | --- | --- | --- | --- | --- |

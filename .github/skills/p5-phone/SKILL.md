@@ -306,6 +306,7 @@ When answering API questions:
 - Mention HTTPS requirements for mobile hardware.
 - Mention p5.js 2 event changes when touch callbacks are involved.
 - Point to existing examples in `examples/` when useful.
+- When migrating examples to p5 Web Editor, follow [docs/web-editor/batch-sync.md](../../../docs/web-editor/batch-sync.md) and record links in [webeditorLinks.md](../../../webeditorLinks.md).
 - If a feature is browser-specific, say so clearly: torch and NFC are Android Chrome-oriented; vibration is not supported on iOS; speech recognition depends on Web Speech API browser support.
 
 ## Example Quality Checklist
