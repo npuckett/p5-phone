@@ -1,0 +1,8 @@
+P5PhoneBLE	KEYWORD1
+sendFloat	KEYWORD2
+receiveByte	KEYWORD2
+begin	KEYWORD2
+update	KEYWORD2
+set	KEYWORD2
+getInt	KEYWORD2
+isReady	KEYWORD2

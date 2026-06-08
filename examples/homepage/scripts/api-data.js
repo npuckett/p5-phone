@@ -6,6 +6,7 @@ window.P5PHONE_PERMISSION_MATRIX = [
   { capability: 'Vibration', status: 'window.vibrationEnabled', tap: 'enableVibrationTap(message)', button: 'enableVibrationButton(text)', canvas: 'enableVibrationCanvas(message)', banner: 'enableVibrationBanner(message, position)', custom: 'enableVibrationOn(selector)', notes: 'Android-oriented. Use vibrate(pattern) for haptics.' },
   { capability: 'Torch / flashlight', status: 'window.torchEnabled, window.torchActive', tap: 'enableTorchTap(message)', button: 'enableTorchButton(text)', canvas: 'enableTorchCanvas(message)', banner: 'enableTorchBanner(message, position)', custom: 'enableTorchOn(selector)', notes: 'Android Chrome-oriented. Starts a rear camera stream and controls the flashlight with torchOn(), torchOff(), and toggleTorch().' },
   { capability: 'NFC', status: 'window.nfcEnabled', tap: 'enableNfcTap(message)', button: 'enableNfcButton(text)', canvas: 'enableNfcCanvas(message)', banner: 'enableNfcBanner(message, position)', custom: 'enableNfcOn(selector)', notes: 'Android Chrome with HTTPS only. Use nfcRead(message, serialNumber).' },
+  { capability: 'Bluetooth (BLE)', status: 'window.bleConnected', tap: 'enableBleTap(options?)', button: 'enableBleButton(options?)', canvas: 'enableBleCanvas(options?)', banner: 'enableBleBanner(options?)', custom: 'enableBleOn(selector)', notes: 'Call bleSetup() first. Chrome/Edge over HTTPS. iOS: Bluefy browser. iframe needs allow="bluetooth".' },
   { capability: 'Camera', status: 'window.cameraEnabled || cam.ready', tap: 'enableCameraTap(message)', button: 'enableCameraButton(text)', canvas: 'enableCameraCanvas(message)', banner: 'enableCameraBanner(message, position)', custom: 'enableCameraOn(selector)', notes: 'Pair with createPhoneCamera() for ML5-friendly mapping.' },
   { capability: 'Motion + microphone', status: 'window.sensorsEnabled && window.micEnabled', tap: 'enableAllTap(message)', button: 'enableAllButton(text)', canvas: 'enableAllCanvas(message)', banner: 'enableAllBanner(message, position)', custom: 'enableAllOn(selector)', notes: 'Convenience flow for sketches that need both sensors and mic.' },
   { capability: 'Any combination', status: 'depends on selected permissions', tap: "enablePermissionsTap(['sensors', 'torch'])", button: "enablePermissionsButton(['torch', 'vibration'], text)", canvas: "enablePermissionsCanvas(['camera', 'mic'])", banner: "enablePermissionsBanner(['sensors', 'nfc'], msg)", custom: "enablePermissionsOn(selector, ['camera', 'mic'])", notes: 'Use sensors, mic, sound, speech, vibration, torch, nfc, and camera in any combination. enableHardware* aliases are also available.' }
@@ -23,7 +24,8 @@ window.P5PHONE_API_SECTIONS = [
       { label: 'touches', href: 'https://beta.p5js.org/reference/p5/touches/', summary: 'Array of current touch points for multi-touch sketches.' }
     ],
     items: [
-      { name: 'lockGestures', signature: 'lockGestures()', summary: 'Disables browser gestures that interfere with full-screen mobile sketches, including scroll, zoom, pull-to-refresh, context menu, and back-swipe behavior.', tags: ['setup', 'mobile'] },
+      { name: 'lockGestures', signature: 'lockGestures(options?)', summary: 'Disables browser gestures that interfere with mobile sketches. Default fullscreen mode blocks scroll, zoom, pull-to-refresh, context menu, and back-swipe page-wide. Use { mode: "embedded", element: canvas } for canvases inside scrollable multi-page sites.', tags: ['setup', 'mobile'] },
+      { name: 'unlockGestures', signature: 'unlockGestures()', summary: 'Removes gesture blocking listeners and restores saved handlers. Called automatically on p.remove().', tags: ['setup', 'mobile'] },
       { name: 'userSetupComplete', signature: 'function userSetupComplete() { ... }', summary: 'Optional sketch callback. p5-phone calls it after a permission request completes successfully.', tags: ['callback'] }
     ]
   },
@@ -87,6 +89,19 @@ window.P5PHONE_API_SECTIONS = [
     ]
   },
   {
+    id: 'ble',
+    title: 'Bluetooth Low Energy',
+    description: 'Web Bluetooth helpers for typed send/receive with Arduino-class BLE peripherals. Call bleSetup() in setup(), then connect from a user gesture.',
+    items: [
+      { name: 'bleSetup', signature: 'bleSetup({ serviceUUID, namePrefix, characteristics })', summary: 'Declares the BLE service profile before connecting. Characteristics need name, type, and read/write/notify flags. UUIDs auto-derive when omitted.', tags: ['ble', 'setup'] },
+      { name: 'enableBleButton', signature: "enableBleButton({ label: 'Connect device' })", summary: 'Shows a connect button. Other styles: enableBleTap, enableBleCanvas, enableBleBanner, enableBleOn.', tags: ['ble', 'button'] },
+      { name: 'bleWrite', signature: "bleWrite('brightness', value, { ack: false })", summary: 'Writes a typed value to a declared characteristic. Default uses writeWithResponse; ack:false streams without response.', tags: ['ble'] },
+      { name: 'bleValues', signature: 'bleValues.temp', summary: 'Object of latest decoded notification values. Read synchronously in draw().', tags: ['ble', 'status'] },
+      { name: 'bleReceive', signature: 'function bleReceive(name, value) { ... }', summary: 'Optional callback fired on each notification, like nfcRead for NFC.', tags: ['callback', 'ble'] },
+      { name: 'isBleSupported', signature: 'isBleSupported()', summary: 'Returns whether Web Bluetooth is available. Sets bleSupported and bleError when unsupported.', tags: ['ble', 'status'] }
+    ]
+  },
+  {
     id: 'nfc',
     title: 'NFC',
     description: 'Web NFC helpers for Android Chrome sketches that read physical tags and assign aliases.',
@@ -141,6 +156,7 @@ window.P5PHONE_API_SECTIONS = [
     items: [
       { name: 'permission flags', signature: 'window.sensorsEnabled, micEnabled, soundEnabled, speechEnabled, vibrationEnabled, nfcEnabled', summary: 'Boolean flags for the currently enabled hardware paths.', tags: ['status'] },
       { name: 'NFC state', signature: 'window.nfcStatus, nfcError, lastNfcMessage, lastNfcSerialNumber, lastNfcAlias, nfcTagAliases', summary: 'NFC diagnostic and tag alias state for sketches and debug screens.', tags: ['nfc', 'status'] },
+      { name: 'BLE state', signature: 'window.bleSupported, bleConnected, bleStatus, bleError, bleDeviceName, bleValues', summary: 'Web Bluetooth connection state and latest decoded characteristic values.', tags: ['ble', 'status'] },
       { name: 'gesture state', signature: 'window.gesturesLocked', summary: 'True after lockGestures() has installed the mobile gesture prevention handlers.', tags: ['status'] }
     ]
   }

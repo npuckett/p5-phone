@@ -65,6 +65,7 @@ p5-phone supports both **p5.js 1.x** and **p5.js 2.0+**.
 | Camera (PhoneCamera) | ✅ | ✅ |
 | Vibration | ✅ | ✅ |
 | NFC Tag Reading (Android only) | ✅ | ✅ |
+| Bluetooth Low Energy (Web Bluetooth) | ✅ | ✅ |
 | Debug console | ✅ | ✅ |
 | lockGestures() | ✅ | ✅ |
 | `touchStarted()` / `touchEnded()` | ✅ | ❌ Use `mousePressed()` / `mouseReleased()` |
@@ -390,19 +391,49 @@ function draw() {
 
 **When to use:** Call once in your `setup()` function after creating the canvas.
 
+**Modes:**
+- **fullscreen** (default) — page-wide gesture blocking for full-viewport sketches
+- **embedded** — canvas-scoped blocking for sketches inside scrollable multi-page sites
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `mode` | `'fullscreen'` | `'fullscreen'` or `'embedded'` |
+| `element` | canvas element | Target element for embedded mode |
+| `warnBeforeLeave` | `false` | Show browser "Leave site?" dialog on navigation |
+| `trapHistory` | `true` in fullscreen | Block back-swipe via history manipulation |
+
 **What it blocks:**
 - **Pinch-to-zoom** - Prevents users from accidentally zooming the page
 - **Pull-to-refresh** - Stops the browser refresh gesture when pulling down
-- **Swipe navigation** - Disables back/forward swipe gestures
+- **Swipe navigation** - Disables back/forward swipe gestures (fullscreen mode)
 - **Long-press context menus** - Prevents copy/paste menus from appearing
 - **Text selection** - Stops accidental text highlighting on touch and hold
 - **Double-tap zoom** - Eliminates double-tap to zoom behavior
 
 ```javascript
+// Full-screen mobile sketch (default)
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  lockGestures(); // Essential for smooth mobile interaction
+  lockGestures();
 }
+
+// Embedded canvas in a scrollable tutorial page
+function setup() {
+  createCanvas(560, 400);
+  lockGestures({ mode: 'embedded', element: canvas });
+}
+```
+
+### unlockGestures()
+
+**Purpose:** Remove gesture blocking listeners and restore saved handlers.
+
+**When to use:** Call before navigating away in SPAs, or rely on automatic cleanup when calling `p.remove()`.
+
+```javascript
+unlockGestures();
 ```
 
 ### Motion Sensor Activation
@@ -870,6 +901,87 @@ NFC tags contain NDEF records. The most common types are:
 - Use `window.lastNfcMessage` in `draw()` for displaying the most recent tag
 - Test on Android devices with Chrome — NFC is not available on iOS or desktop browsers
 - Tags must be NDEF-formatted to be read by the Web NFC API
+
+### Bluetooth Low Energy (Web Bluetooth)
+
+**Purpose:** Send and receive typed values between a p5.js sketch and an Arduino-class BLE peripheral (companion **P5PhoneBLE** Arduino library). Ideal for sensor dashboards, physical controllers, and bidirectional installations.
+
+**Platform Support:**
+- ✅ **Android** — Chrome
+- ✅ **Desktop** — Chrome, Edge
+- ❌ **iOS Safari / Chrome** — Web Bluetooth not available; use the free **Bluefy** browser app on iPhone/iPad
+- Requires **HTTPS** (or `localhost`)
+- **Embedded iframes** (Canvas LMS, editor previews) need `allow="bluetooth"` on the iframe
+
+**Two-step workflow:**
+
+1. Call `bleSetup()` in `setup()` to declare the service profile (no user gesture needed).
+2. Call `enableBleButton()` (or another `enableBle*` helper) so the user can connect from a tap.
+
+**Commands:**
+- `bleSetup({ serviceUUID, namePrefix, characteristics })` — declare typed characteristics (`read`, `write`, `notify`)
+- `enableBleTap(options?)`, `enableBleButton(options?)`, `enableBleCanvas(options?)`, `enableBleBanner(options?)`, `enableBleOn(selector)` — gesture-gated connect UI
+- `bleConnect()` — low-level connect (must run inside a user gesture)
+- `bleDisconnect()` — disconnect from the peripheral
+- `bleWrite(name, value, { ack: false })` — send a typed value (default: reliable write with response)
+- `isBleSupported()` — check Web Bluetooth availability
+
+**Status variables:**
+- `window.bleSupported` — browser exposes Web Bluetooth
+- `window.bleConnected` — GATT link is up
+- `window.bleStatus` — `'idle' | 'requesting' | 'connecting' | 'connected' | 'disconnected' | 'error' | 'unsupported'`
+- `window.bleError` — latest error message
+- `window.bleDeviceName` — connected device name
+- `window.bleValues` — latest decoded values keyed by characteristic name (read in `draw()`)
+
+**Optional callbacks:**
+
+```javascript
+function bleReceive(name, value) { /* fired on each notification */ }
+function bleReady(deviceName) { /* fired once connected */ }
+function bleClosed() { /* fired on disconnect */ }
+```
+
+**Usage:**
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+
+  bleSetup({
+    namePrefix: 'p5phone',
+    characteristics: [
+      { name: 'temp', type: 'float', notify: true },
+      { name: 'brightness', type: 'uint8', write: true }
+    ]
+  });
+
+  enableBleButton({ label: 'Connect device' });
+  showDebug();
+}
+
+function draw() {
+  background(20);
+  if (bleConnected) {
+    text('temp: ' + (bleValues.temp ?? '—'), 20, 40);
+  }
+}
+
+function mousePressed() {
+  if (bleConnected) {
+    bleWrite('brightness', floor(map(mouseX, 0, width, 0, 255)));
+  }
+}
+```
+
+Omit characteristic `uuid` fields to auto-derive them from the service UUID and declaration order — the same contract used by the P5PhoneBLE Arduino library. All numeric types use **little-endian** byte order.
+
+**Best practices:**
+- Call `bleSetup()` before any connect helper
+- Read `bleValues` in `draw()`; do not assume a fresh value every frame
+- Use `showDebug()` when testing on phones without devtools
+- Pair with a matching P5PhoneBLE Arduino sketch (same names, types, and order)
 
 ### Speech Recognition Activation
 

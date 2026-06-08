@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [1.12.0] - 2026-06-08
+
+### Added
+- Added Web Bluetooth (BLE) support for typed send/receive between p5.js sketches and Arduino-class peripherals.
+- Added `bleSetup()`, `bleConnect()`, `bleDisconnect()`, `bleWrite()`, and `isBleSupported()`.
+- Added `enableBleTap()`, `enableBleButton()`, `enableBleCanvas()`, `enableBleBanner()`, and `enableBleOn()` gesture-gated connect helpers.
+- Added BLE status globals: `window.bleSupported`, `bleConnected`, `bleStatus`, `bleError`, `bleDeviceName`, and `bleValues`.
+- Added optional sketch callbacks: `bleReceive(name, value)`, `bleReady(deviceName)`, and `bleClosed()`.
+- Added UUID auto-derivation in `bleSetup()` when characteristic UUIDs are omitted (matches the P5PhoneBLE Arduino contract).
+- Added `examples/Phone Sensor Examples/ble/01_send_receive/`.
+
+### Notes
+- Web Bluetooth requires HTTPS (or localhost). iOS Safari/Chrome do not support it; use the Bluefy browser on iPhone/iPad.
+- Embedded iframes (e.g. Canvas LMS) need `allow="bluetooth"` on the iframe element.
+
 ## [1.11.0] - 2026-06-02
 
 ### Added

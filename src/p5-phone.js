@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.11.0
+ * p5-phone v1.12.0
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -100,6 +100,12 @@ window.nfcTagAliases = {};
 window.lastNfcMessage = null;
 window.lastNfcSerialNumber = null;
 window.lastNfcAlias = '';
+window.bleSupported = false;
+window.bleConnected = false;
+window.bleStatus = 'idle';
+window.bleError = '';
+window.bleDeviceName = '';
+window.bleValues = {};
 
 // Internal state
 let _micInstance = null;
@@ -108,6 +114,53 @@ let _nfcAbortController = null;
 let _torchStream = null;
 let _torchTrack = null;
 let _torchVideo = null;
+let _bleDevice = null;
+let _bleServer = null;
+let _bleChars = {};
+let _bleProfile = null;
+let _bleReconnectTimer = null;
+const _BLE_DEFAULT_SERVICE_UUID = '19b10000-e8f2-537e-4f6c-d104768a1214';
+const _BLE_VALID_TYPES = new Set([
+  'bool', 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
+  'float', 'double', 'string', 'bytes'
+]);
+
+const _gestureLockState = {
+  locked: false,
+  mode: null,
+  target: null,
+  listeners: [],
+  historyTrapped: false,
+  savedHandlers: {},
+  appliedStyles: {}
+};
+
+function _resetGestureLockState() {
+  _gestureLockState.locked = false;
+  _gestureLockState.mode = null;
+  _gestureLockState.target = null;
+  _gestureLockState.listeners = [];
+  _gestureLockState.historyTrapped = false;
+  _gestureLockState.savedHandlers = {};
+  _gestureLockState.appliedStyles = {};
+}
+
+function _addTrackedListener(node, type, handler, options) {
+  node.addEventListener(type, handler, options);
+  _gestureLockState.listeners.push({ node, type, handler, options });
+}
+
+function _isPermissionUIElement(target) {
+  if (!target) return false;
+  return (
+    target.id === 'tapOverlay' ||
+    target.closest('#tapOverlay') ||
+    target.id === 'permissionButton' ||
+    target.id === 'permissionStatus' ||
+    target.closest('#permissionButton') ||
+    target.closest('#permissionStatus')
+  );
+}
 
 // p5.js version detection (1.x vs 2.x)
 const _p5MajorVersion = (typeof p5 !== 'undefined' && p5.VERSION)
@@ -122,15 +175,84 @@ const _isP5v2 = _p5MajorVersion >= 2;
 /**
  * Lock mobile gestures to prevent browser interference
  * Call this in your setup() function
+ * @param {Object} [options]
+ * @param {'fullscreen'|'embedded'} [options.mode='fullscreen']
+ * @param {HTMLElement} [options.element] - Canvas or container for embedded mode
+ * @param {boolean} [options.warnBeforeLeave=false]
+ * @param {boolean} [options.trapHistory] - Defaults to true in fullscreen mode
  */
-function lockGestures() {
-  if (window.gesturesLocked) return;
-  
-  console.log('🔒 Locking mobile gestures...');
-  _initializeGestureBlocking();
+function lockGestures(options = {}) {
+  if (window.gesturesLocked) {
+    unlockGestures();
+  }
+
+  const mode = options.mode === 'embedded' ? 'embedded' : 'fullscreen';
+  const warnBeforeLeave = options.warnBeforeLeave === true;
+  const trapHistory = options.trapHistory !== undefined
+    ? options.trapHistory
+    : mode === 'fullscreen';
+
+  let target = options.element || null;
+  if (mode === 'embedded') {
+    if (!target) {
+      target = document.querySelector('canvas');
+    }
+    if (!target) {
+      console.warn('p5-phone: lockGestures embedded mode requires a canvas element. Falling back to document.');
+      target = document;
+    }
+  }
+
+  console.log(`🔒 Locking mobile gestures (${mode})...`);
+
+  _gestureLockState.locked = true;
+  _gestureLockState.mode = mode;
+  _gestureLockState.target = target;
+
+  if (mode === 'embedded') {
+    _lockGesturesEmbedded(target);
+  } else {
+    _lockGesturesFullscreen({ warnBeforeLeave, trapHistory });
+  }
+
   _initializeP5TouchOverrides();
   window.gesturesLocked = true;
   console.log('✅ Mobile gestures locked');
+}
+
+/**
+ * Remove gesture blocking listeners and restore saved handlers
+ */
+function unlockGestures() {
+  if (!_gestureLockState.locked && !window.gesturesLocked) return;
+
+  _gestureLockState.listeners.forEach(({ node, type, handler, options }) => {
+    node.removeEventListener(type, handler, options);
+  });
+
+  if (_gestureLockState.savedHandlers.onpopstate !== undefined) {
+    window.onpopstate = _gestureLockState.savedHandlers.onpopstate;
+  }
+
+  if (_gestureLockState.savedHandlers.oncontextmenu !== undefined) {
+    window.oncontextmenu = _gestureLockState.savedHandlers.oncontextmenu;
+  }
+
+  const saved = _gestureLockState.savedHandlers.p5Callbacks || {};
+  if (saved.mousePressed !== undefined) window.mousePressed = saved.mousePressed;
+  if (saved.mouseDragged !== undefined) window.mouseDragged = saved.mouseDragged;
+  if (saved.mouseReleased !== undefined) window.mouseReleased = saved.mouseReleased;
+  if (saved.touchStarted !== undefined) window.touchStarted = saved.touchStarted;
+  if (saved.touchMoved !== undefined) window.touchMoved = saved.touchMoved;
+  if (saved.touchEnded !== undefined) window.touchEnded = saved.touchEnded;
+
+  if (_gestureLockState.target && _gestureLockState.appliedStyles.touchAction !== undefined) {
+    _gestureLockState.target.style.touchAction = _gestureLockState.appliedStyles.touchAction;
+  }
+
+  _resetGestureLockState();
+  window.gesturesLocked = false;
+  console.log('🔓 Mobile gestures unlocked');
 }
 
 /**
@@ -610,6 +732,52 @@ function enableNfcOn(selector) {
   _bindPermissionTo(selector, async () => {
     await _requestNfcPermission();
     console.log('✅ NFC enabled via custom element');
+  });
+}
+
+function _bleConnectFromUI(source) {
+  if (!_bleProfile) {
+    debugWarn('Call bleSetup() in setup() before connecting.');
+    return;
+  }
+  bleConnect().then(() => {
+    console.log('✅ BLE connect initiated via ' + source);
+  }).catch(() => {});
+}
+
+function enableBleButton(options = {}) {
+  const label = options.label || 'Connect device';
+  const status = options.statusText || 'Connecting...';
+  _createPermissionButton(label, status, () => {
+    _bleConnectFromUI('button');
+  });
+}
+
+function enableBleTap(options = {}) {
+  const message = options.label || options.message || 'Tap to connect Bluetooth device';
+  _createTapToEnable(message, () => {
+    _bleConnectFromUI('tap');
+  });
+}
+
+function enableBleCanvas(options = {}) {
+  const message = options.label || options.message || 'Touch to connect';
+  _createCanvasToEnable(message, () => {
+    _bleConnectFromUI('canvas');
+  });
+}
+
+function enableBleBanner(options = {}) {
+  const message = options.label || options.message || 'Tap to connect Bluetooth';
+  const position = options.position || 'top';
+  _createBannerToEnable(message, position, () => {
+    _bleConnectFromUI('banner');
+  });
+}
+
+function enableBleOn(selector) {
+  _bindPermissionTo(selector, () => {
+    _bleConnectFromUI('custom element');
   });
 }
 
@@ -1200,6 +1368,339 @@ async function _requestNfcPermissionCore() {
   }
 }
 
+// =========================================
+// BLUETOOTH LOW ENERGY (Web Bluetooth)
+// Typed characteristics, little-endian wire format.
+// Call bleSetup() in setup(); connect via enableBle* or bleConnect() from a user gesture.
+// =========================================
+
+function _bleDeriveUUID(serviceUUID, index) {
+  const normalized = String(serviceUUID).toLowerCase();
+  const parts = normalized.split('-');
+  if (parts.length !== 5 || parts[0].length < 4) {
+    return normalized;
+  }
+  parts[0] = parts[0].slice(0, -4) + index.toString(16).padStart(4, '0');
+  return parts.join('-');
+}
+
+function isBleSupported() {
+  if (window.isSecureContext === false) {
+    window.bleSupported = false;
+    window.bleStatus = 'unsupported';
+    window.bleError = 'Web Bluetooth requires HTTPS. Serve this sketch from an HTTPS URL, not plain HTTP.';
+    return false;
+  }
+
+  if (!('bluetooth' in navigator)) {
+    window.bleSupported = false;
+    window.bleStatus = 'unsupported';
+    window.bleError =
+      'Web Bluetooth is unavailable. Use Chrome/Edge on desktop or Chrome on Android, ' +
+      'over HTTPS. On iPhone/iPad, install the free "Bluefy" browser app and open this ' +
+      'page there.';
+    return false;
+  }
+
+  window.bleSupported = true;
+  if (window.bleStatus === 'unsupported') {
+    window.bleStatus = 'idle';
+    window.bleError = '';
+  }
+  return true;
+}
+
+function bleSetup(config) {
+  if (!config || !Array.isArray(config.characteristics) || config.characteristics.length === 0) {
+    debugError('bleSetup() requires a characteristics array with at least one entry.');
+    return false;
+  }
+
+  const serviceUUID = (config.serviceUUID || _BLE_DEFAULT_SERVICE_UUID).toLowerCase();
+  const characteristics = [];
+
+  for (let i = 0; i < config.characteristics.length; i++) {
+    const entry = config.characteristics[i];
+    const name = entry && entry.name;
+    const type = entry && entry.type;
+
+    if (!name || typeof name !== 'string') {
+      debugError('bleSetup(): each characteristic needs a name string.');
+      return false;
+    }
+    if (!_BLE_VALID_TYPES.has(type)) {
+      debugError('bleSetup(): unknown type "' + type + '" for "' + name + '".');
+      return false;
+    }
+    if (!entry.read && !entry.write && !entry.notify) {
+      debugError('bleSetup(): characteristic "' + name + '" needs read, write, and/or notify.');
+      return false;
+    }
+
+    characteristics.push({
+      name: name,
+      uuid: (entry.uuid || _bleDeriveUUID(serviceUUID, i + 1)).toLowerCase(),
+      type: type,
+      read: !!entry.read,
+      write: !!entry.write,
+      notify: !!entry.notify
+    });
+  }
+
+  _bleProfile = {
+    serviceUUID: serviceUUID,
+    namePrefix: config.namePrefix || '',
+    autoReconnect: config.autoReconnect === true,
+    characteristics: characteristics
+  };
+
+  window.bleValues = {};
+  window.bleStatus = isBleSupported() ? 'idle' : 'unsupported';
+  debug('BLE profile ready: ' + characteristics.length + ' characteristic(s)');
+  return true;
+}
+
+function _bleEncode(type, value) {
+  let view;
+  switch (type) {
+    case 'bool':
+      view = new DataView(new ArrayBuffer(1));
+      view.setUint8(0, value ? 1 : 0);
+      return view.buffer;
+    case 'int8':
+      view = new DataView(new ArrayBuffer(1));
+      view.setInt8(0, value);
+      return view.buffer;
+    case 'uint8':
+      view = new DataView(new ArrayBuffer(1));
+      view.setUint8(0, value);
+      return view.buffer;
+    case 'int16':
+      view = new DataView(new ArrayBuffer(2));
+      view.setInt16(0, value, true);
+      return view.buffer;
+    case 'uint16':
+      view = new DataView(new ArrayBuffer(2));
+      view.setUint16(0, value, true);
+      return view.buffer;
+    case 'int32':
+      view = new DataView(new ArrayBuffer(4));
+      view.setInt32(0, value, true);
+      return view.buffer;
+    case 'uint32':
+      view = new DataView(new ArrayBuffer(4));
+      view.setUint32(0, value, true);
+      return view.buffer;
+    case 'float':
+      view = new DataView(new ArrayBuffer(4));
+      view.setFloat32(0, value, true);
+      return view.buffer;
+    case 'double':
+      view = new DataView(new ArrayBuffer(8));
+      view.setFloat64(0, value, true);
+      return view.buffer;
+    case 'string':
+      return new TextEncoder().encode(String(value));
+    case 'bytes':
+      if (value instanceof ArrayBuffer) return value;
+      if (ArrayBuffer.isView(value)) return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
+      return value;
+    default:
+      return new ArrayBuffer(0);
+  }
+}
+
+function _bleDecode(type, dataView) {
+  switch (type) {
+    case 'bool':
+      return dataView.getUint8(0) !== 0;
+    case 'int8':
+      return dataView.getInt8(0);
+    case 'uint8':
+      return dataView.getUint8(0);
+    case 'int16':
+      return dataView.getInt16(0, true);
+    case 'uint16':
+      return dataView.getUint16(0, true);
+    case 'int32':
+      return dataView.getInt32(0, true);
+    case 'uint32':
+      return dataView.getUint32(0, true);
+    case 'float':
+      return dataView.getFloat32(0, true);
+    case 'double':
+      return dataView.getFloat64(0, true);
+    case 'string': {
+      const decoded = new TextDecoder().decode(dataView);
+      if (decoded.length > 20) {
+        debugWarn('BLE notified string exceeds 20 bytes; phase 1 may truncate or miss data.');
+      }
+      return decoded;
+    }
+    case 'bytes':
+      return new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
+    default:
+      return undefined;
+  }
+}
+
+function _bleHandleNotify(name, type, event) {
+  const value = _bleDecode(type, event.target.value);
+  window.bleValues[name] = value;
+  debug('BLE ' + name + ' = ' + value);
+  if (typeof bleReceive === 'function') {
+    bleReceive(name, value);
+  }
+}
+
+async function _bleAttachCharacteristics(service) {
+  _bleChars = {};
+  for (const c of _bleProfile.characteristics) {
+    const ch = await service.getCharacteristic(c.uuid);
+    _bleChars[c.name] = { ch: ch, type: c.type };
+    if (c.notify) {
+      await ch.startNotifications();
+      ch.addEventListener('characteristicvaluechanged', (e) => {
+        _bleHandleNotify(c.name, c.type, e);
+      });
+    }
+  }
+}
+
+async function bleConnect() {
+  if (!isBleSupported()) {
+    debugError(window.bleError || 'Web Bluetooth is not supported.');
+    return false;
+  }
+  if (!_bleProfile) {
+    debugError('Call bleSetup() in setup() before bleConnect().');
+    return false;
+  }
+
+  try {
+    if (navigator.bluetooth.getAvailability) {
+      const available = await navigator.bluetooth.getAvailability();
+      if (!available) {
+        window.bleStatus = 'error';
+        window.bleError = 'Bluetooth adapter is unavailable or powered off.';
+        debugError(window.bleError);
+        return false;
+      }
+    }
+
+    window.bleStatus = 'requesting';
+    window.bleError = '';
+
+    const filters = _bleProfile.namePrefix
+      ? [{ namePrefix: _bleProfile.namePrefix, services: [_bleProfile.serviceUUID] }]
+      : [{ services: [_bleProfile.serviceUUID] }];
+
+    _bleDevice = await navigator.bluetooth.requestDevice({
+      filters: filters,
+      optionalServices: [_bleProfile.serviceUUID]
+    });
+
+    _bleDevice.addEventListener('gattserverdisconnected', _bleOnDisconnected);
+
+    window.bleStatus = 'connecting';
+    _bleServer = await _bleDevice.gatt.connect();
+    const service = await _bleServer.getPrimaryService(_bleProfile.serviceUUID);
+    await _bleAttachCharacteristics(service);
+
+    window.bleConnected = true;
+    window.bleStatus = 'connected';
+    window.bleDeviceName = _bleDevice.name || 'device';
+    debug('BLE connected: ' + window.bleDeviceName);
+    if (typeof bleReady === 'function') {
+      bleReady(window.bleDeviceName);
+    }
+    return true;
+  } catch (err) {
+    if (err.name === 'NotFoundError') {
+      window.bleStatus = 'idle';
+      window.bleError = '';
+      debug('BLE device picker cancelled.');
+      return false;
+    }
+    window.bleStatus = 'error';
+    window.bleConnected = false;
+    window.bleError = err && err.message ? err.message : 'BLE connect failed.';
+    debugError('BLE connect failed: ' + window.bleError);
+    return false;
+  }
+}
+
+function _bleOnDisconnected() {
+  window.bleConnected = false;
+  window.bleStatus = 'disconnected';
+  _bleServer = null;
+  _bleChars = {};
+  debugWarn('BLE disconnected');
+  if (typeof bleClosed === 'function') {
+    bleClosed();
+  }
+
+  if (_bleProfile && _bleProfile.autoReconnect && _bleDevice) {
+    if (_bleReconnectTimer) {
+      clearTimeout(_bleReconnectTimer);
+    }
+    _bleReconnectTimer = setTimeout(async () => {
+      _bleReconnectTimer = null;
+      if (!_bleDevice || !_bleDevice.gatt) return;
+      try {
+        window.bleStatus = 'connecting';
+        _bleServer = await _bleDevice.gatt.connect();
+        const service = await _bleServer.getPrimaryService(_bleProfile.serviceUUID);
+        await _bleAttachCharacteristics(service);
+        window.bleConnected = true;
+        window.bleStatus = 'connected';
+        debug('BLE reconnected: ' + (window.bleDeviceName || 'device'));
+        if (typeof bleReady === 'function') {
+          bleReady(window.bleDeviceName);
+        }
+      } catch (e) {
+        window.bleStatus = 'disconnected';
+        debugWarn('BLE auto-reconnect failed');
+      }
+    }, 1500);
+  }
+}
+
+function bleDisconnect() {
+  if (_bleReconnectTimer) {
+    clearTimeout(_bleReconnectTimer);
+    _bleReconnectTimer = null;
+  }
+  if (_bleDevice && _bleDevice.gatt && _bleDevice.gatt.connected) {
+    _bleDevice.gatt.disconnect();
+  }
+  window.bleConnected = false;
+  window.bleStatus = 'idle';
+  _bleServer = null;
+  _bleChars = {};
+  debug('BLE disconnected by sketch');
+}
+
+async function bleWrite(name, value, opts = {}) {
+  const entry = _bleChars[name];
+  if (!entry) {
+    debugError('BLE no characteristic named "' + name + '"');
+    return false;
+  }
+  const data = _bleEncode(entry.type, value);
+  try {
+    if (opts.ack === false) {
+      await entry.ch.writeValueWithoutResponse(data);
+    } else {
+      await entry.ch.writeValueWithResponse(data);
+    }
+    return true;
+  } catch (err) {
+    debugError('BLE write "' + name + '" failed: ' + (err && err.message ? err.message : err));
+    return false;
+  }
+}
+
 function _normalizePermissionList(permissions) {
   const aliasMap = {
     sensor: 'sensors',
@@ -1713,107 +2214,162 @@ function _bindPermissionTo(selector, onActivateHandler) {
 // GESTURE BLOCKING IMPLEMENTATION
 // =========================================
 
-function _initializeGestureBlocking() {
-  // Prevent back navigation
-  window.history.pushState(null, '', window.location.href);
-  window.onpopstate = function() {
-    window.history.pushState(null, '', window.location.href);
-  };
-  
-  // Warn before leaving
-  window.addEventListener('beforeunload', function(e) {
-    e.preventDefault();
-    e.returnValue = '';
-  });
-  
-  _initializeEdgeSwipePrevention();
-  _initializeOtherGesturePrevention();
-}
+function _lockGesturesEmbedded(target) {
+  _gestureLockState.appliedStyles.touchAction = target.style.touchAction;
+  target.style.touchAction = 'none';
 
-function _initializeEdgeSwipePrevention() {
   let touchStartX = 0;
   let touchStartY = 0;
-  const edgeThreshold = 20;
-  
-  document.addEventListener('touchstart', function(e) {
-    if (e.touches && e.touches.length > 0) {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-      
-      // Prevent edge swipes
-      if (touchStartX < edgeThreshold || 
-          touchStartX > window.innerWidth - edgeThreshold) {
-        e.preventDefault();
-      }
-    }
-  }, { passive: false, capture: true });
-  
-  document.addEventListener('touchmove', function(e) {
+  let touchStartedOnTarget = false;
+
+  const touchStartHandler = function(e) {
+    touchStartedOnTarget = target.contains(e.target);
+    if (!touchStartedOnTarget || !e.touches || e.touches.length === 0) return;
+
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  };
+
+  const touchMoveHandler = function(e) {
+    if (!touchStartedOnTarget || !target.contains(e.target)) return;
     if (!e.touches || e.touches.length === 0) return;
-    
-    let currentX = e.touches[0].clientX;
-    let currentY = e.touches[0].clientY;
-    let deltaX = currentX - touchStartX;
-    let deltaY = currentY - touchStartY;
-    
-    // Prevent horizontal edge swipes (back/forward)
-    if ((touchStartX < edgeThreshold && deltaX > 0) ||
-        (touchStartX > window.innerWidth - edgeThreshold && deltaX < 0)) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
-    // Prevent pull-to-refresh
+
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY;
+
     if (window.pageYOffset === 0 && deltaY > 0) {
       e.preventDefault();
+      return;
     }
-    
-    // Prevent canvas touches but not on permission UI
-    if (e.target && e.target.tagName === 'CANVAS' && 
-        !document.getElementById('tapOverlay') && 
-        !document.getElementById('permissionButton')) {
-      e.preventDefault();
-    }
-  }, { passive: false, capture: true });
-}
 
-function _initializeOtherGesturePrevention() {
-  // Prevent pinch zoom
-  document.addEventListener('gesturestart', function(e) {
+    if (_isPermissionUIElement(e.target)) return;
+
     e.preventDefault();
-  });
-  
-  document.addEventListener('gesturechange', function(e) {
-    e.preventDefault();
-  });
-  
-  document.addEventListener('gestureend', function(e) {
-    e.preventDefault();
-  });
-  
-  // Prevent double-tap zoom
+  };
+
   let lastTouchEnd = 0;
-  document.addEventListener('touchend', function(e) {
-    // Don't prevent clicks on permission UI elements
-    if (e.target && (
-        e.target.id === 'tapOverlay' || 
-        e.target.closest('#tapOverlay') || 
-        e.target.id === 'permissionButton' ||
-        e.target.id === 'permissionStatus' ||
-        e.target.closest('#permissionButton') ||
-        e.target.closest('#permissionStatus')
-    )) {
-      return; // Allow clicks on permission UI
-    }
-    
+  const touchEndHandler = function(e) {
+    if (!touchStartedOnTarget || !target.contains(e.target)) return;
+    if (_isPermissionUIElement(e.target)) return;
+
     const now = Date.now();
     if (now - lastTouchEnd <= 300) {
       e.preventDefault();
     }
     lastTouchEnd = now;
-  }, false);
-  
-  // Prevent long-press context menu
+  };
+
+  const gestureHandler = function(e) {
+    if (target.contains(e.target)) {
+      e.preventDefault();
+    }
+  };
+
+  const contextMenuHandler = function(e) {
+    if (target.contains(e.target)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
+  const captureOptions = { passive: false, capture: true };
+  _addTrackedListener(target, 'touchstart', touchStartHandler, captureOptions);
+  _addTrackedListener(target, 'touchmove', touchMoveHandler, captureOptions);
+  _addTrackedListener(target, 'touchend', touchEndHandler, false);
+  _addTrackedListener(target, 'gesturestart', gestureHandler, false);
+  _addTrackedListener(target, 'gesturechange', gestureHandler, false);
+  _addTrackedListener(target, 'gestureend', gestureHandler, false);
+  _addTrackedListener(target, 'contextmenu', contextMenuHandler, false);
+}
+
+function _lockGesturesFullscreen(options) {
+  const { warnBeforeLeave, trapHistory } = options;
+
+  if (trapHistory) {
+    _gestureLockState.savedHandlers.onpopstate = window.onpopstate;
+    window.history.pushState(null, '', window.location.href);
+    _gestureLockState.historyTrapped = true;
+
+    const popstateHandler = function() {
+      window.history.pushState(null, '', window.location.href);
+    };
+    window.onpopstate = popstateHandler;
+  }
+
+  if (warnBeforeLeave) {
+    const beforeUnloadHandler = function(e) {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    _addTrackedListener(window, 'beforeunload', beforeUnloadHandler, false);
+  }
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  const edgeThreshold = 20;
+
+  const touchStartHandler = function(e) {
+    if (e.touches && e.touches.length > 0) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+
+      if (touchStartX < edgeThreshold ||
+          touchStartX > window.innerWidth - edgeThreshold) {
+        e.preventDefault();
+      }
+    }
+  };
+
+  const touchMoveHandler = function(e) {
+    if (!e.touches || e.touches.length === 0) return;
+
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const deltaX = currentX - touchStartX;
+    const deltaY = currentY - touchStartY;
+
+    if ((touchStartX < edgeThreshold && deltaX > 0) ||
+        (touchStartX > window.innerWidth - edgeThreshold && deltaX < 0)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (window.pageYOffset === 0 && deltaY > 0) {
+      e.preventDefault();
+    }
+
+    if (e.target && e.target.tagName === 'CANVAS' &&
+        !document.getElementById('tapOverlay') &&
+        !document.getElementById('permissionButton')) {
+      e.preventDefault();
+    }
+  };
+
+  const captureOptions = { passive: false, capture: true };
+  _addTrackedListener(document, 'touchstart', touchStartHandler, captureOptions);
+  _addTrackedListener(document, 'touchmove', touchMoveHandler, captureOptions);
+
+  const gestureHandler = function(e) {
+    e.preventDefault();
+  };
+  _addTrackedListener(document, 'gesturestart', gestureHandler, false);
+  _addTrackedListener(document, 'gesturechange', gestureHandler, false);
+  _addTrackedListener(document, 'gestureend', gestureHandler, false);
+
+  let lastTouchEnd = 0;
+  const touchEndHandler = function(e) {
+    if (_isPermissionUIElement(e.target)) return;
+
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  };
+  _addTrackedListener(document, 'touchend', touchEndHandler, false);
+
+  _gestureLockState.savedHandlers.oncontextmenu = window.oncontextmenu;
   window.oncontextmenu = function(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -1846,51 +2402,55 @@ function _initializeP5TouchOverrides() {
 }
 
 function _overrideP5Touch() {
-  const origMousePressed = window.mousePressed || function() {};
-  const origMouseDragged = window.mouseDragged || function() {};
-  const origMouseReleased = window.mouseReleased || function() {};
-  
+  if (_gestureLockState.savedHandlers.p5Callbacks) return;
+
+  const saved = {
+    mousePressed: window.mousePressed || function() {},
+    mouseDragged: window.mouseDragged || function() {},
+    mouseReleased: window.mouseReleased || function() {}
+  };
+
   // In p5.js 2.0, touch and mouse are unified via Pointer API.
   // mousePressed/mouseDragged/mouseReleased fire for ALL pointer types (mouse + touch).
   // In p5.js 1.x, touchStarted/touchMoved/touchEnded are separate from mouse callbacks.
   // We wrap both sets for 1.x, and only mouse callbacks for 2.0.
   if (!_isP5v2) {
-    // p5.js 1.x: also wrap touch-specific callbacks
-    const origTouchStarted = window.touchStarted || function() {};
-    const origTouchMoved = window.touchMoved || function() {};
-    const origTouchEnded = window.touchEnded || function() {};
-    
+    saved.touchStarted = window.touchStarted || function() {};
+    saved.touchMoved = window.touchMoved || function() {};
+    saved.touchEnded = window.touchEnded || function() {};
+
     window.touchStarted = function(e) {
-      origTouchStarted(e);
+      saved.touchStarted(e);
       return false;
     };
-    
+
     window.touchMoved = function(e) {
-      origTouchMoved(e);
+      saved.touchMoved(e);
       return false;
     };
-    
+
     window.touchEnded = function(e) {
-      origTouchEnded(e);
+      saved.touchEnded(e);
       return false;
     };
   }
-  
-  // Mouse callbacks — work in both 1.x and 2.0
+
   window.mousePressed = function(e) {
-    origMousePressed(e);
+    saved.mousePressed(e);
     return false;
   };
-  
+
   window.mouseDragged = function(e) {
-    origMouseDragged(e);
+    saved.mouseDragged(e);
     return false;
   };
-  
+
   window.mouseReleased = function(e) {
-    origMouseReleased(e);
+    saved.mouseReleased(e);
     return false;
   };
+
+  _gestureLockState.savedHandlers.p5Callbacks = saved;
 }
 
 // =========================================
@@ -1917,7 +2477,7 @@ document.addEventListener('DOMContentLoaded', function() {
       statusText.classList.add('hidden');
     });
     
-    lockGestures(); // Auto-lock gestures for legacy mode
+    lockGestures({ mode: 'fullscreen' }); // Auto-lock gestures for legacy mode
   }
 });
 
@@ -2090,6 +2650,7 @@ window.toggleDebug = toggleDebug;
 
 // Make permission functions globally accessible
 window.lockGestures = lockGestures;
+window.unlockGestures = unlockGestures;
 window.enableGyroTap = enableGyroTap;
 window.enableGyroButton = enableGyroButton;
 window.enableSensorTap = enableGyroTap;
@@ -2110,6 +2671,13 @@ window.stopNfc = stopNfc;
 window.setNfcTagAlias = setNfcTagAlias;
 window.getNfcTagAlias = getNfcTagAlias;
 window.isNfcTag = isNfcTag;
+window.isBleSupported = isBleSupported;
+window.bleSetup = bleSetup;
+window.bleConnect = bleConnect;
+window.bleDisconnect = bleDisconnect;
+window.bleWrite = bleWrite;
+window.enableBleTap = enableBleTap;
+window.enableBleButton = enableBleButton;
 window.enableAllTap = enableAllTap;
 window.enableAllButton = enableAllButton;
 window.enablePermissionsTap = enablePermissionsTap;
@@ -2125,6 +2693,7 @@ window.enableSoundCanvas = enableSoundCanvas;
 window.enableSpeechCanvas = enableSpeechCanvas;
 window.enableVibrationCanvas = enableVibrationCanvas;
 window.enableNfcCanvas = enableNfcCanvas;
+window.enableBleCanvas = enableBleCanvas;
 window.enableAllCanvas = enableAllCanvas;
 window.enableCameraCanvas = enableCameraCanvas;
 window.enablePermissionsCanvas = enablePermissionsCanvas;
@@ -2138,6 +2707,7 @@ window.enableSoundBanner = enableSoundBanner;
 window.enableSpeechBanner = enableSpeechBanner;
 window.enableVibrationBanner = enableVibrationBanner;
 window.enableNfcBanner = enableNfcBanner;
+window.enableBleBanner = enableBleBanner;
 window.enableAllBanner = enableAllBanner;
 window.enableCameraBanner = enableCameraBanner;
 window.enablePermissionsBanner = enablePermissionsBanner;
@@ -2151,6 +2721,7 @@ window.enableSoundOn = enableSoundOn;
 window.enableSpeechOn = enableSpeechOn;
 window.enableVibrationOn = enableVibrationOn;
 window.enableNfcOn = enableNfcOn;
+window.enableBleOn = enableBleOn;
 window.enableAllOn = enableAllOn;
 window.enableCameraOn = enableCameraOn;
 window.enablePermissionsOn = enablePermissionsOn;
@@ -3025,6 +3596,7 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
 if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'function') {
   // Core permission functions
   p5.prototype.lockGestures = lockGestures;
+  p5.prototype.unlockGestures = unlockGestures;
   p5.prototype.enableGyroTap = enableGyroTap;
   p5.prototype.enableGyroButton = enableGyroButton;
   p5.prototype.enableSensorTap = enableGyroTap;
@@ -3060,6 +3632,13 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.setNfcTagAlias = setNfcTagAlias;
   p5.prototype.getNfcTagAlias = getNfcTagAlias;
   p5.prototype.isNfcTag = isNfcTag;
+  p5.prototype.isBleSupported = isBleSupported;
+  p5.prototype.bleSetup = bleSetup;
+  p5.prototype.bleConnect = bleConnect;
+  p5.prototype.bleDisconnect = bleDisconnect;
+  p5.prototype.bleWrite = bleWrite;
+  p5.prototype.enableBleTap = enableBleTap;
+  p5.prototype.enableBleButton = enableBleButton;
   p5.prototype.enableAllTap = enableAllTap;
   p5.prototype.enableAllButton = enableAllButton;
   p5.prototype.enablePermissionsTap = enablePermissionsTap;
@@ -3077,6 +3656,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableTorchCanvas = enableTorchCanvas;
   p5.prototype.enableFlashlightCanvas = enableFlashlightCanvas;
   p5.prototype.enableNfcCanvas = enableNfcCanvas;
+  p5.prototype.enableBleCanvas = enableBleCanvas;
   p5.prototype.enableAllCanvas = enableAllCanvas;
   p5.prototype.enableCameraCanvas = enableCameraCanvas;
   p5.prototype.enablePermissionsCanvas = enablePermissionsCanvas;
@@ -3092,6 +3672,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableTorchBanner = enableTorchBanner;
   p5.prototype.enableFlashlightBanner = enableFlashlightBanner;
   p5.prototype.enableNfcBanner = enableNfcBanner;
+  p5.prototype.enableBleBanner = enableBleBanner;
   p5.prototype.enableAllBanner = enableAllBanner;
   p5.prototype.enableCameraBanner = enableCameraBanner;
   p5.prototype.enablePermissionsBanner = enablePermissionsBanner;
@@ -3107,6 +3688,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableTorchOn = enableTorchOn;
   p5.prototype.enableFlashlightOn = enableFlashlightOn;
   p5.prototype.enableNfcOn = enableNfcOn;
+  p5.prototype.enableBleOn = enableBleOn;
   p5.prototype.enableAllOn = enableAllOn;
   p5.prototype.enableCameraOn = enableCameraOn;
   p5.prototype.enablePermissionsOn = enablePermissionsOn;
@@ -3147,6 +3729,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
     lifecycles.presetup = function() {
       // Core permission functions
       this.lockGestures = lockGestures;
+      this.unlockGestures = unlockGestures;
       this.enableGyroTap = enableGyroTap;
       this.enableGyroButton = enableGyroButton;
       this.enableSensorTap = enableGyroTap;
@@ -3182,6 +3765,13 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.setNfcTagAlias = setNfcTagAlias;
       this.getNfcTagAlias = getNfcTagAlias;
       this.isNfcTag = isNfcTag;
+      this.isBleSupported = isBleSupported;
+      this.bleSetup = bleSetup;
+      this.bleConnect = bleConnect;
+      this.bleDisconnect = bleDisconnect;
+      this.bleWrite = bleWrite;
+      this.enableBleTap = enableBleTap;
+      this.enableBleButton = enableBleButton;
       this.enableAllTap = enableAllTap;
       this.enableAllButton = enableAllButton;
       this.enablePermissionsTap = enablePermissionsTap;
@@ -3199,6 +3789,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableTorchCanvas = enableTorchCanvas;
       this.enableFlashlightCanvas = enableFlashlightCanvas;
       this.enableNfcCanvas = enableNfcCanvas;
+      this.enableBleCanvas = enableBleCanvas;
       this.enableAllCanvas = enableAllCanvas;
       this.enableCameraCanvas = enableCameraCanvas;
       this.enablePermissionsCanvas = enablePermissionsCanvas;
@@ -3214,6 +3805,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableTorchBanner = enableTorchBanner;
       this.enableFlashlightBanner = enableFlashlightBanner;
       this.enableNfcBanner = enableNfcBanner;
+      this.enableBleBanner = enableBleBanner;
       this.enableAllBanner = enableAllBanner;
       this.enableCameraBanner = enableCameraBanner;
       this.enablePermissionsBanner = enablePermissionsBanner;
@@ -3229,6 +3821,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableTorchOn = enableTorchOn;
       this.enableFlashlightOn = enableFlashlightOn;
       this.enableNfcOn = enableNfcOn;
+      this.enableBleOn = enableBleOn;
       this.enableAllOn = enableAllOn;
       this.enableCameraOn = enableCameraOn;
       this.enablePermissionsOn = enablePermissionsOn;
@@ -3246,6 +3839,10 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.debug = debug;
       this.debugError = debugError;
       this.debugWarn = debugWarn;
+    };
+
+    lifecycles.preremove = function() {
+      unlockGestures();
     };
 
     console.log('✅ Mobile p5.js Permissions: registered as p5.js 2.0 addon');

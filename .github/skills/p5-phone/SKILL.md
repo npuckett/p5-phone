@@ -1,6 +1,6 @@
 ---
 name: p5-phone
-description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, torch/flashlight, NFC, lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
+description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, torch/flashlight, NFC, Bluetooth BLE, lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
 argument-hint: "Describe the p5-phone example or API question"
 ---
 
@@ -30,7 +30,7 @@ Use this HTML baseline for p5.js 2-compatible sketches:
   </style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.11.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.0/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>
@@ -49,6 +49,9 @@ Place p5.sound after p5 and before `p5-phone`/`sketch.js` unless the local examp
 ## Core Sketch Pattern
 
 Every mobile p5-phone sketch should call `lockGestures()` in `setup()` and request permissions from a user action.
+
+- Use bare `lockGestures()` for full-screen mobile sketches.
+- Use `lockGestures({ mode: 'embedded', element: canvas })` for canvases inside scrollable multi-page sites.
 
 ```javascript
 function setup() {
@@ -90,6 +93,7 @@ Permission functions come in five activation styles: tap overlay, generated butt
 | Vibration | `enableVibrationTap(msg)` | `enableVibrationButton(text)` | `enableVibrationCanvas(msg)` | `enableVibrationBanner(msg)` | `enableVibrationOn(selector)` |
 | Torch / flashlight | `enableTorchTap(msg)` | `enableTorchButton(text)` | `enableTorchCanvas(msg)` | `enableTorchBanner(msg)` | `enableTorchOn(selector)` |
 | NFC | `enableNfcTap(msg)` | `enableNfcButton(text)` | `enableNfcCanvas(msg)` | `enableNfcBanner(msg)` | `enableNfcOn(selector)` |
+| Bluetooth (BLE) | `enableBleTap(opts?)` | `enableBleButton(opts?)` | `enableBleCanvas(opts?)` | `enableBleBanner(opts?)` | `enableBleOn(selector)` |
 | Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllOn(selector)` |
 | Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraOn(selector)` |
 | Any combination | `enablePermissionsTap(list, msg)` | `enablePermissionsButton(list, text)` | `enablePermissionsCanvas(list, msg)` | `enablePermissionsBanner(list, msg)` | `enablePermissionsOn(selector, list)` |
@@ -128,6 +132,11 @@ Check status before using hardware-dependent data:
 - `window.torchActive`
 - `window.torchError`
 - `window.nfcEnabled`
+- `window.bleSupported`
+- `window.bleConnected`
+- `window.bleStatus`
+- `window.bleError`
+- `window.bleValues`
 - `window.cameraEnabled`
 - `window.lastNfcSerialNumber`
 - `window.lastNfcAlias`
@@ -251,6 +260,52 @@ function draw() {
 ```
 
 Useful helpers: `setNfcTagAlias(id, alias)`, `getNfcTagAlias(id)`, `isNfcTag(aliasOrSerialNumber)`, and `stopNfc()`.
+
+## Bluetooth Low Energy (BLE)
+
+Web Bluetooth sends and receives typed values with Arduino-class peripherals. Call `bleSetup()` in `setup()` before any connect helper. Connect requires a user gesture via `enableBle*`.
+
+Platform notes:
+- Chrome/Edge on Android and desktop over HTTPS (or localhost)
+- iOS Safari/Chrome: not supported; use the **Bluefy** browser app
+- Embedded iframes need `allow="bluetooth"`
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+
+  bleSetup({
+    namePrefix: 'p5phone',
+    characteristics: [
+      { name: 'temp', type: 'float', notify: true },
+      { name: 'brightness', type: 'uint8', write: true }
+    ]
+  });
+
+  enableBleButton({ label: 'Connect device' });
+  showDebug();
+}
+
+function draw() {
+  background(20);
+  if (bleConnected) {
+    text('temp: ' + (bleValues.temp ?? '—'), 20, 40);
+  }
+}
+
+function mousePressed() {
+  if (bleConnected) {
+    bleWrite('brightness', floor(map(mouseX, 0, width, 0, 255)));
+  }
+}
+
+function bleReceive(name, value) {
+  debug('BLE ' + name + ' = ' + value);
+}
+```
+
+Omit characteristic UUIDs to auto-derive from the service UUID and declaration order (must match P5PhoneBLE Arduino side). Numeric types use little-endian byte order.
 
 ## Vibration
 
