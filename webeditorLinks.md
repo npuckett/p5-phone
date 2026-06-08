@@ -16,6 +16,8 @@ Several examples link to the p5 Web Editor so users can edit starter sketches an
 
 These sketches were created under `npuckett`, loaded in public full-preview pages, and verified for canvas creation, `p5@2.2.3`, `p5-phone@1.11.0`, and no runtime/page errors in browser smoke testing. Existing hosted HTML files were updated to `p5-phone@1.11.0` on 2026-06-02.
 
+**2026-06-08:** Local examples and `webeditor/projects/` export pins updated to `p5-phone@1.12.0`. Run `npm run sync:webeditor` after `npx p5-webeditor-sync login` to push updates to the sketches below.
+
 | Catalog id | Title | Web Editor | Full preview | Replaces |
 | --- | --- | --- | --- | --- |
 | blank-template | Blank Template | https://editor.p5js.org/npuckett/sketches/X9JmobuuM | https://editor.p5js.org/npuckett/full/X9JmobuuM | https://editor.p5js.org/creationcomputation/sketches/R-c_HpeUg |

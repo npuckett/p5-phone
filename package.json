@@ -22,7 +22,13 @@
     "release:major": "npm version major",
     "release:dry": "npm version --dry-run",
     "serve:docs": "http-server . -p 8765 -c-1",
-    "serve:cors": "http-server . -p 8876 --cors -c-1"
+    "serve:cors": "http-server . -p 8876 --cors -c-1",
+    "export:webeditor": "node scripts/webeditor/export-projects.mjs",
+    "login:webeditor": "p5-webeditor-sync login",
+    "prepare:webeditor": "npm run export:webeditor && p5-webeditor-sync prepare --batch all",
+    "sync:webeditor": "npm run export:webeditor && p5-webeditor-sync sync --batch all",
+    "sync:webeditor:dry": "npm run export:webeditor && p5-webeditor-sync sync --batch all --dry-run",
+    "verify:webeditor": "p5-webeditor-sync verify --batch all"
   },
   "repository": {
     "type": "git",
@@ -57,10 +63,12 @@
   },
   "devDependencies": {
     "http-server": "^14.1.1",
+    "p5-webeditor-sync": "file:../p5-webeditor-sync",
+    "playwright": "^1.60.0",
     "terser": "^5.44.0"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public",

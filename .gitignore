@@ -45,6 +45,9 @@ siteDev/
 dist/
 build/
 
+# Web Editor sync artifacts (generated payloads/results; projects are exported source)
+webeditor/.sync/
+
 # Environment variables
 .env
 .env.local

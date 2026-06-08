@@ -6,6 +6,60 @@ Use this when local examples have changed, existing Web Editor links are stale, 
 
 See also: [README.md](./README.md) for server setup, [webeditorLinks.md](../../webeditorLinks.md) for the migration log.
 
+## p5-webeditor-sync (recommended)
+
+This repo uses [p5-webeditor-sync](https://github.com/npuckett/p5-webeditor-sync) to export local examples and push updates to existing Web Editor projects.
+
+### One-time setup
+
+Run these **one at a time** from the repo root (do not paste comment lines into the terminal):
+
+```bash
+npm install
+npm install -D playwright
+npx playwright install chromium
+npm run login:webeditor
+```
+
+When the browser opens, sign in at editor.p5js.org and wait for `Session saved for npuckett`.
+
+Confirm:
+
+```bash
+npx p5-webeditor-sync session
+```
+
+Should print `npuckett`. If you see `403` on push or `Session cookie was rejected`, your cookies are stale — run `npm run login:webeditor` again. Logging into editor.p5js.org in your normal browser does **not** wire up the CLI.
+
+Alternative without Playwright:
+
+```bash
+p5-webeditor-sync cookie import --cookie 'connect.sid=...; ...'
+```
+
+Or set `P5_EDITOR_COOKIE` for a one-off run — see [p5-webeditor-sync AUTH](https://github.com/npuckett/p5-webeditor-sync/blob/main/docs/AUTH.md).
+
+### Version bump batch (e.g. p5-phone@1.12.0)
+
+After local `examples/` HTML pins and npm publish are updated:
+
+```bash
+npm run sync:webeditor:dry   # export + dry-run sync
+npm run sync:webeditor       # export + sync (prepare + push)
+npm run verify:webeditor     # optional verify pass
+
+# New BLE examples (creates Web Editor projects on first push):
+# npm run export:webeditor && p5-webeditor-sync sync --batch ble
+```
+
+`sync:webeditor` runs `export:webeditor` then `p5-webeditor-sync sync --batch all` (prepare + push). Unchanged sketches are skipped by content hash. Verify uses **local file mode** — checks `index.html` for `p5-phone@VERSION`; sketches without the pin are skipped, not failed.
+
+`export:webeditor` copies catalog examples with `webEditor` or `webEditorSync` into `webeditor/projects/{catalog-id}/`, including `meta.json` with `editorSketchId` when known.
+
+Record the batch in [webeditorLinks.md](../../webeditorLinks.md) and smoke-test previews before closing the release.
+
+---
+
 ## Goals
 
 - Create or update p5 Web Editor sketches from the current local example files
@@ -124,7 +178,7 @@ For each preview, verify:
 - Sound examples do not request stale `tracks/` files unless the asset is intentionally pending
 - GIF code-only examples are not listed as fully verified until assets have been uploaded
 
-`lockGestures()` commonly triggers beforeunload dialogs while moving between previews. Accept them and continue.
+`lockGestures()` no longer installs a `beforeunload` handler by default. If you need the old "Leave site?" warning during preview testing, call `lockGestures({ warnBeforeLeave: true })`.
 
 For camera examples, desktop browser automation may deny camera permission. Treat that as expected only if the preview otherwise loads the app surface, scripts, helper files, and canvas/video without unrelated runtime errors.
 
@@ -224,7 +278,7 @@ Once sketches are in the Web Editor, they load p5-phone from jsDelivr (not the l
 ```html
 <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.11.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.0/dist/p5-phone.min.js"></script>
 <script src="sketch.js"></script>
 ```
 

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://unpkg.com/p5-webeditor-sync/schema/config.json",
+  "account": "npuckett",
+  "projectsDir": "webeditor/projects",
+  "syncDir": "webeditor/.sync",
+  "registryFile": "webeditor/.sync/registry.json",
+  "namePrefix": "p5-phone — ",
+  "visibility": "Public",
+  "batches": {
+    "starter": [
+      "blank-template",
+      "touch-basic",
+      "orientation-basic",
+      "device-shaken",
+      "combined-permissions"
+    ],
+    "input": [
+      "touch-zones",
+      "touch-count",
+      "touch-distance",
+      "touch-angle",
+      "rotational-velocity",
+      "acceleration",
+      "device-moved",
+      "device-orientation",
+      "mic-level",
+      "speech-recognition",
+      "camera-color-tracking",
+      "ble-input",
+      "ble-both"
+    ],
+    "output": [
+      "sound-basic",
+      "volume-touches",
+      "motion-synth",
+      "haptic-feedback",
+      "torch-touch-toggle",
+      "torch-disco",
+      "shake-torch-toggle",
+      "ble-output"
+    ],
+    "ble": [
+      "ble-input",
+      "ble-output",
+      "ble-both"
+    ],
+    "ml5": [
+      "ml5-bodypose-phone",
+      "ml5-facemesh-phone",
+      "ml5-handpose-phone",
+      "gaze-detector",
+      "three-bodypose",
+      "three-facemesh",
+      "three-handpose"
+    ],
+    "reference": [
+      "ui-banner",
+      "ui-canvas",
+      "ui-custom-element",
+      "gif-fetch",
+      "gif-collision",
+      "gif-fly",
+      "gif-roll"
+    ],
+    "all": []
+  },
+  "verify": {
+    "enabled": true,
+    "signature": "p5-phone@1.12.0"
+  }
+}

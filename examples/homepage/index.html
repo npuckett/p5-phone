@@ -40,6 +40,7 @@
             <a href="#api-audio">Audio</a>
             <a href="#api-camera">Camera</a>
             <a href="#api-nfc">NFC</a>
+            <a href="#api-ble">Bluetooth (BLE)</a>
             <a href="#api-vibration">Vibration</a>
             <a href="#api-torch">Torch / Flashlight</a>
             <a href="#api-debug">Debug</a>
@@ -55,6 +56,7 @@
             <a class="nav-subitem" href="#examples-input-movement">Movement</a>
             <a class="nav-subitem" href="#examples-input-microphone">Microphone</a>
             <a class="nav-subitem" href="#examples-input-speech">Speech</a>
+            <a class="nav-subitem" href="#examples-input-ble">BLE</a>
             <a class="nav-subitem" href="#examples-input-nfc">NFC</a>
             <a class="nav-subitem" href="#examples-input-camera">Camera</a>
             <a class="nav-subitem" href="#examples-input-camera-camera-basics">Camera Basics</a>
@@ -64,6 +66,7 @@
             <a class="nav-subitem" href="#examples-output-sound">Sound</a>
             <a class="nav-subitem" href="#examples-output-vibration">Vibration</a>
             <a class="nav-subitem" href="#examples-output-torch">Torch</a>
+            <a class="nav-subitem" href="#examples-output-ble">BLE</a>
             <a href="#examples-reference">Reference</a>
             <a class="nav-subitem" href="#examples-reference-ui-styles">UI Styles</a>
             <a class="nav-subitem" href="#examples-reference-phone-and-gif">Phone and GIF</a>
@@ -171,6 +174,22 @@ function draw() {
   if (isNfcTag('shirt')) {
     drawShirtEffect();
   }
+}</code></pre>
+        </article>
+
+        <article class="starter-card">
+          <h3>Bluetooth (BLE)</h3>
+          <pre><code>function setup() {
+  bleSetup({
+    characteristics: [
+      { name: 'temp', type: 'float', notify: true }
+    ]
+  });
+  enableBleTap();
+}
+
+function bleReceive(name, value) {
+  debug(name + ' = ' + value);
 }</code></pre>
         </article>
 

@@ -53,8 +53,8 @@ flowchart LR
   end
 
   subgraph sync [Batch sync]
-    fetch["Fetch local files from :8876"]
-    api["POST/PUT /editor/projects"]
+    export["npm run export:webeditor"]
+    syncCmd["p5-webeditor-sync sync"]
     preview["Smoke-test full preview URL"]
   end
 
@@ -64,18 +64,23 @@ flowchart LR
     validate["node --check + homepage verify"]
   end
 
-  publish --> fetch
-  login --> api
-  corsSrv --> fetch
-  fetch --> api --> preview --> log --> catalog --> validate
+  publish --> export
+  login --> syncCmd
+  export --> syncCmd --> preview --> log --> catalog --> validate
   docsSrv --> validate
 ```
 
 ## Quick paths
 
-| Task | Document |
+| Task | Command / document |
 |------|----------|
-| Full batch sync (automation or manual) | [batch-sync.md](./batch-sync.md) |
+| Log in (Playwright) | `npm run login:webeditor` |
+| Log in (DevTools cookie) | `p5-webeditor-sync cookie import --cookie '...'` |
+| Export + sync all linked examples | `npm run sync:webeditor` → [batch-sync.md](./batch-sync.md) |
+| Dry run before upload | `npm run sync:webeditor:dry` |
+| Verify uploaded sketches | `npm run verify:webeditor` |
+| Full batch sync (manual fallback) | [batch-sync.md](./batch-sync.md) |
+| p5-webeditor-sync CLI reference | [COMMANDS.md](https://github.com/npuckett/p5-webeditor-sync/blob/main/docs/COMMANDS.md) |
 | Record sketch URLs after migration | [webeditorLinks.md](../../webeditorLinks.md) |
 | npm release + version pin sweep | [CONTRIBUTING.md](../../CONTRIBUTING.md) |
 | End-user duplicate-and-edit workflow | [doNotTouchWorkshop/index.html](../../doNotTouchWorkshop/index.html) |

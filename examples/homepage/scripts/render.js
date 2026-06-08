@@ -44,6 +44,7 @@
     { tags: ['speech'], group: 'External', label: 'Web Speech API', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API' },
     { tags: ['nfc'], group: 'p5-phone', label: 'enableNfcTap()', href: '#api-nfc' },
     { tags: ['aliases'], group: 'p5-phone', label: 'isNfcTag()', href: '#api-nfc' },
+    { tags: ['ble'], group: 'p5-phone', label: 'bleSetup() / enableBleTap()', href: '#api-ble' },
     { tags: ['sound'], group: 'p5-phone', label: 'enableSoundTap()', href: '#api-audio' },
     { tags: ['vibration'], group: 'p5-phone', label: 'enableVibrationTap()', href: '#api-vibration' },
     { tags: ['vibration'], group: 'p5-phone', label: 'vibrate()', href: '#api-vibration' },
@@ -293,8 +294,8 @@
   function orderedSubcategories(category, groupedCategory) {
     const preferredOrder = {
       Start: ['Starter'],
-      Input: ['Touch', 'Movement', 'Microphone', 'Speech', 'NFC', 'Camera'],
-      Output: ['Sound', 'Vibration', 'Torch'],
+      Input: ['Touch', 'Movement', 'Microphone', 'Speech', 'BLE', 'NFC', 'Camera'],
+      Output: ['Sound', 'Vibration', 'Torch', 'BLE'],
       Reference: ['UI Styles', 'Phone and GIF', 'UX Compare']
     };
     const available = Object.keys(groupedCategory || {});

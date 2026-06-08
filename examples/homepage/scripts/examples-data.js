@@ -210,6 +210,48 @@ window.P5PHONE_EXAMPLES = [
     capabilities: ['speech', 'microphone']
   },
   {
+    id: 'ble-input',
+    title: 'BLE Input',
+    category: 'Input',
+    subcategory: 'BLE',
+    level: 'Starter',
+    p5: '1.x and 2.0',
+    description: 'Connect to a BLE sensor and receive float temperature notifications.',
+    path: 'Phone%20Sensor%20Examples/ble/01_ble_input/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/ble/01_ble_input',
+    webEditorSync: true,
+    platforms: ['Android Chrome', 'Desktop Chrome', 'Bluefy iOS'],
+    capabilities: ['ble', 'input']
+  },
+  {
+    id: 'ble-output',
+    title: 'BLE Output',
+    category: 'Output',
+    subcategory: 'BLE',
+    level: 'Starter',
+    p5: '1.x and 2.0',
+    description: 'Connect to a BLE device and write uint8 brightness values from touch.',
+    path: 'Phone%20Sensor%20Examples/ble/02_ble_output/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/ble/02_ble_output',
+    webEditorSync: true,
+    platforms: ['Android Chrome', 'Desktop Chrome', 'Bluefy iOS'],
+    capabilities: ['ble', 'output']
+  },
+  {
+    id: 'ble-both',
+    title: 'BLE Send and Receive',
+    category: 'Input',
+    subcategory: 'BLE',
+    level: 'Intermediate',
+    p5: '1.x and 2.0',
+    description: 'Receive temp notifications and send brightness on one BLE connection.',
+    path: 'Phone%20Sensor%20Examples/ble/03_ble_both/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/ble/03_ble_both',
+    webEditorSync: true,
+    platforms: ['Android Chrome', 'Desktop Chrome', 'Bluefy iOS'],
+    capabilities: ['ble', 'input', 'output']
+  },
+  {
     id: 'nfc-tag-identifier',
     title: 'NFC Tag Identifier',
     category: 'Input',
