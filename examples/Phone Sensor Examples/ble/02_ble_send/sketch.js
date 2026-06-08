@@ -1,5 +1,5 @@
-// BLE Output Example
-// Send a uint8 brightness value to a BLE peripheral (write).
+// BLE Send Only Example
+// Send a uint8 brightness value to a BLE peripheral (write only).
 // Pair with P5PhoneBLE Arduino LED or any device using the same profile.
 // Chrome/Edge over HTTPS. iPhone/iPad: Bluefy browser.
 
@@ -20,7 +20,7 @@ function setup() {
     ]
   });
 
-  enableBleButton({ label: 'Connect BLE output' });
+  enableBleButton({ label: 'Connect BLE send' });
   showDebug();
 }
 
@@ -42,7 +42,7 @@ function draw() {
     text(previewLevel, width / 2, height * 0.38);
     textSize(min(width * 0.04, 18));
     text('brightness (uint8, write)', width / 2, height * 0.48);
-    text('Drag vertically to send 0–255', width / 2, height * 0.58, width * 0.82);
+    text('Send only — drag vertically to write brightness', width / 2, height * 0.58, width * 0.82);
 
     if (lastSent !== null) {
       textSize(min(width * 0.035, 16));
@@ -52,7 +52,7 @@ function draw() {
     text(bleStatusText(), width / 2, height * 0.42, width * 0.82);
     textSize(min(width * 0.038, 17));
     fill(40, 40, 48);
-    text('Output only — phone writes brightness to the device', width / 2, height * 0.56, width * 0.82);
+    text('Send only — phone writes brightness to the device', width / 2, height * 0.56, width * 0.82);
   }
 }
 

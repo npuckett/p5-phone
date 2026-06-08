@@ -37,11 +37,11 @@
       "torch-touch-toggle",
       "torch-disco",
       "shake-torch-toggle",
-      "ble-output"
+      "ble-send"
     ],
     "ble": [
       "ble-input",
-      "ble-output",
+      "ble-send",
       "ble-both"
     ],
     "ml5": [

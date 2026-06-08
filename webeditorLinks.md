@@ -63,6 +63,16 @@ These sketches were created under `npuckett` with `index.html`, `sketch.js`, and
 | gif-fly | Phone and GIF Fly | https://editor.p5js.org/npuckett/sketches/9QJ58vzOU | https://editor.p5js.org/npuckett/full/9QJ58vzOU | `gifs/comparison.gif` |
 | gif-roll | Phone and GIF Roll | https://editor.p5js.org/npuckett/sketches/FgHXAZajKF | https://editor.p5js.org/npuckett/full/FgHXAZajKF | `gifs/how-penciles-are-made.gif` |
 
+## BLE examples (2026-06-08)
+
+Created under `npuckett` with p5-phone@1.12.0. Pair with a P5PhoneBLE Arduino sketch or compatible peripheral.
+
+| Catalog id | Title | Web Editor | Full preview |
+| --- | --- | --- | --- |
+| ble-input | BLE Input | https://editor.p5js.org/npuckett/sketches/R_B8pEHK5 | https://editor.p5js.org/npuckett/full/R_B8pEHK5 |
+| ble-send | BLE Send Only | https://editor.p5js.org/npuckett/sketches/IefGlj-5t | https://editor.p5js.org/npuckett/full/IefGlj-5t |
+| ble-both | BLE Send and Receive | https://editor.p5js.org/npuckett/sketches/J3-X0BAKb | https://editor.p5js.org/npuckett/full/J3-X0BAKb |
+
 ## Not migrated
 
 NFC examples are intentionally not linked to p5 Web Editor. Even the Web Editor full-page preview is contained inside a frame, which blocks Web NFC; host these examples directly on an HTTPS server instead.
