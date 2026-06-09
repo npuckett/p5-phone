@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>p5-phone</title>
-  <link rel="stylesheet" href="styles/main.css?v=hero-top-20260609">
+  <link rel="stylesheet" href="styles/main.css?v=quickstart-combined-20260609">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="scripts/api-data.js" defer></script>
   <script src="scripts/examples-data.js?v=filter-sync-20260606" defer></script>
@@ -141,6 +141,40 @@ function draw() {
       <div class="note-band">
         <strong>Permission pattern:</strong> put code that uses phone hardware inside a positive enabled check. Write sketches as <code>if (window.sensorsEnabled) { ... }</code>, <code>if (window.micEnabled) { ... }</code>, or the matching status flag for the capability you enabled.
       </div>
+
+      <article class="quickstart-combined">
+        <h3>Multiple capabilities</h3>
+        <p>Request more than one permission from the same tap with <code>enablePermissionsTap()</code> or <code>enableHardwareTap()</code>. Each capability still sets its own <code>window.*Enabled</code> flag—check every flag your sketch needs before using that hardware.</p>
+        <pre><code>function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  mic = new p5.AudioIn();
+  enablePermissionsTap(['sensors', 'mic'], 'Tap to enable motion + microphone');
+}
+
+function draw() {
+  background(245);
+  textAlign(CENTER, CENTER);
+
+  if (!window.sensorsEnabled || !window.micEnabled) {
+    text('Tap to enable motion + microphone', width / 2, height / 2);
+    return;
+  }
+
+  circle(
+    width / 2 + rotationY * 3,
+    height / 2 + rotationX * 3,
+    80 + mic.getLevel() * 400
+  );
+}</code></pre>
+        <p class="quickstart-combined-note">When different parts of your sketch use different hardware, check flags separately in the same loop:</p>
+        <pre><code>if (window.sensorsEnabled) {
+  circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
+}
+if (window.micEnabled) {
+  circle(width / 2, height / 2, mic.getLevel() * 500);
+}</code></pre>
+      </article>
 
       <div class="starter-grid" aria-label="Positive permission examples">
         <article class="starter-card">
