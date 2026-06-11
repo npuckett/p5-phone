@@ -21,6 +21,30 @@ npm run serve:cors   # http://127.0.0.1:8876 — CORS file server for migration
 
 See [docs/web-editor/README.md](docs/web-editor/README.md) for the full Web Editor workflow.
 
+## npm authentication
+
+Store your npm access token in `.env/keys.txt` (gitignored):
+
+```bash
+NPM_TOKEN=npm_...
+```
+
+Create the token at [npmjs.com](https://www.npmjs.com/) → Access Tokens. The `.env/` folder is ignored by git — do not commit secrets.
+
+For p5 Web Editor sync, store editor credentials in `.env/p5login.txt`:
+
+```bash
+login: your-username
+password: your-password
+```
+
+Then authenticate the CLI:
+
+```bash
+npm run login:webeditor:env
+npx p5-webeditor-sync session
+```
+
 ## npm release checklist
 
 1. Update [CHANGELOG.md](CHANGELOG.md) with release notes
@@ -31,6 +55,7 @@ See [docs/web-editor/README.md](docs/web-editor/README.md) for the full Web Edit
    The `postversion` hook pushes commits and tags to origin.
 3. Publish to npm:
    ```bash
+   export $(grep -v '^#' .env/keys.txt | xargs)
    npm publish
    ```
 4. Update CDN version pins (`p5-phone@VERSION`) in:

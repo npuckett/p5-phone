@@ -25,6 +25,7 @@
     "serve:cors": "http-server . -p 8876 --cors -c-1",
     "export:webeditor": "node scripts/webeditor/export-projects.mjs",
     "login:webeditor": "p5-webeditor-sync login",
+    "login:webeditor:env": "node scripts/webeditor/login-from-env.mjs",
     "prepare:webeditor": "npm run export:webeditor && p5-webeditor-sync prepare --batch all",
     "sync:webeditor": "npm run export:webeditor && p5-webeditor-sync sync --batch all",
     "sync:webeditor:dry": "npm run export:webeditor && p5-webeditor-sync sync --batch all --dry-run",

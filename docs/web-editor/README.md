@@ -16,7 +16,7 @@ Fork maintainers: replace `npuckett` with your Web Editor username when recordin
 
 ## Prerequisites
 
-1. **npm publish complete** if the batch depends on a new CDN version
+1. **npm publish complete** if the batch depends on a new CDN version (`export $(grep -v '^#' .env/keys.txt | xargs)` then `npm publish`; see [CONTRIBUTING.md](../../CONTRIBUTING.md#npm-authentication))
 2. **Logged in** to [editor.p5js.org](https://editor.p5js.org/) as the target account
 3. **Node.js** and repo dependencies installed (`npm install`)
 

@@ -48,9 +48,11 @@ build/
 # Web Editor sync artifacts (generated payloads/results; projects are exported source)
 webeditor/.sync/
 
-# Environment variables
+# Environment variables and local secrets
+.env/
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+keys.txt

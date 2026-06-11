@@ -18,10 +18,16 @@ Run these **one at a time** from the repo root (do not paste comment lines into 
 npm install
 npm install -D playwright
 npx playwright install chromium
+npm run login:webeditor:env
+```
+
+Or use the interactive browser flow:
+
+```bash
 npm run login:webeditor
 ```
 
-When the browser opens, sign in at editor.p5js.org and wait for `Session saved for npuckett`.
+When login succeeds, wait for `Session saved for npuckett`.
 
 Confirm:
 
@@ -74,7 +80,7 @@ Record the batch in [webeditorLinks.md](../../webeditorLinks.md) and smoke-test 
 - [ ] `npm install` completed in the repo
 - [ ] `npm run serve:docs` running (port **8765**) if you will verify the homepage catalog locally
 - [ ] `npm run serve:cors` running (port **8876**) for automation or manual file reference
-- [ ] `npm publish` done if this batch depends on a new `p5-phone@VERSION` CDN pin
+- [ ] `npm publish` done if this batch depends on a new `p5-phone@VERSION` CDN pin (load auth from `.env/keys.txt`; see [CONTRIBUTING.md](../../CONTRIBUTING.md#npm-authentication))
 
 ## Required state
 
