@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.12.0
+ * p5-phone v1.12.1
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 

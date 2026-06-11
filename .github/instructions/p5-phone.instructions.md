@@ -8,7 +8,7 @@ applyTo: "**/sketch.js"
 p5-phone provides mobile hardware access for p5.js sketches. Include it via CDN:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.11.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.min.js"></script>
 ```
 
 ## Essential Pattern
@@ -111,7 +111,7 @@ debugError('error');   // Red error
 
 - iOS requires a **user tap** before granting sensor/mic access — cannot auto-trigger.
 - Always serve over **HTTPS** — sensors and mic are blocked on HTTP.
-- Call `lockGestures()` in `setup()` to prevent browser default touch behaviors.
+- Call `lockGestures()` in `setup()` to prevent browser default touch behaviors. Use `lockGestures({ mode: 'embedded', element: canvas })` for canvases inside scrollable multi-page sites.
 - **Torch / flashlight** is Android Chrome-oriented, requires HTTPS and camera permission, and is controlled through a rear camera stream. Use `torchOn()`, `torchOff()`, `toggleTorch()`, or `setTorch(value)` after `enableTorch*()` or `enablePermissions*(['torch'])`.
 - **NFC** is Android-only (Chrome 89+). Define `nfcRead(message, serialNumber)` in your sketch to receive tag data. Use `setNfcTagAlias(id, alias)` and `isNfcTag(aliasOrId)` for named tag workflows. Use `stopNfc()` to stop scanning.
 - **PhoneCamera + ML5**: Use `cam.mapKeypoint()` / `cam.mapKeypoints()` for landmark models and `cam.mapBox()` / `cam.mapBoxes()` for object-detection boxes. Set ML5 `flipped: false` when available because PhoneCamera handles mirroring.
@@ -145,7 +145,7 @@ function mousePressed() {
   <style>body { margin: 0; padding: 0; overflow: hidden; }</style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.11.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>

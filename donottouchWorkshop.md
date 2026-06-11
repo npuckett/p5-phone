@@ -120,7 +120,7 @@ Click Create QR Code
 
 - If you start with a blank file, include the library as a script tag
 <script
-  src="https://cdn.jsdelivr.net/npm/p5-phone@1.11.0/dist/p5-phone.min.js">
+  src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.min.js">
 </script>
 and follow Quick Start: https://npuckett.github.io/p5-phone/examples/homepage/#quick-start
 

@@ -39,7 +39,7 @@ p5-webeditor-sync cookie import --cookie 'connect.sid=...; ...'
 
 Or set `P5_EDITOR_COOKIE` for a one-off run — see [p5-webeditor-sync AUTH](https://github.com/npuckett/p5-webeditor-sync/blob/main/docs/AUTH.md).
 
-### Version bump batch (e.g. p5-phone@1.12.0)
+### Version bump batch (e.g. p5-phone@1.12.1)
 
 After local `examples/` HTML pins and npm publish are updated:
 
@@ -278,7 +278,7 @@ Once sketches are in the Web Editor, they load p5-phone from jsDelivr (not the l
 ```html
 <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.0/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.min.js"></script>
 <script src="sketch.js"></script>
 ```
 

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [1.12.1] - 2026-06-11
+
+### Added
+- Added `bleRead()` for polling read-only BLE characteristics.
+- Wired `npm test` to `test-ble-contract.js`, testing the shipped encode/decode helpers.
+
+### Fixed
+- Fixed duplicate BLE notification listeners stacking on auto-reconnect.
+- Fixed BLE auto-reconnect giving up after a single failed attempt; retries now use backoff until `bleDisconnect()`.
+- Fixed `bleSetup()` accepting duplicate characteristic names silently.
+- Fixed unbounded canvas permission polling in `_createCanvasToEnable`.
+- Fixed `PhoneCamera.remove()` leaving instances in `window._phoneCameras`.
+- Fixed p5 version detection defaulting to v1 when p5-phone loads before p5.js.
+- Fixed debug panel HTML injection via `innerHTML`.
+- Added warnings for oversized BLE string writes and read-only BLE profiles.
+
 ## [1.12.0] - 2026-06-08
 
 ### Added
