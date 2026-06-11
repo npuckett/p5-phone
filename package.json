@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "npx terser src/p5-phone.js --compress --mangle --output dist/p5-phone.min.js && cp src/p5-phone.js dist/p5-phone.js",
-    "test": "echo \"No tests specified\" && exit 0",
+    "test": "node test-ble-contract.js",
     "prepublishOnly": "npm run build",
     "prepare": "npm run build",
     "version": "echo \"Version bumped to $npm_package_version\"",

@@ -119,6 +119,10 @@ let _bleServer = null;
 let _bleChars = {};
 let _bleProfile = null;
 let _bleReconnectTimer = null;
+let _bleReconnectAttempt = 0;
+let _bleReconnectStopped = false;
+let _bleNotifyHandlers = {};
+const _BLE_RECONNECT_DELAYS = [1500, 3000, 6000, 12000];
 const _BLE_DEFAULT_SERVICE_UUID = '19b10000-e8f2-537e-4f6c-d104768a1214';
 const _BLE_VALID_TYPES = new Set([
   'bool', 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
@@ -162,11 +166,18 @@ function _isPermissionUIElement(target) {
   );
 }
 
-// p5.js version detection (1.x vs 2.x)
-const _p5MajorVersion = (typeof p5 !== 'undefined' && p5.VERSION)
-  ? parseInt(p5.VERSION.split('.')[0], 10)
-  : 1; // Default to 1 if p5 not loaded yet
-const _isP5v2 = _p5MajorVersion >= 2;
+// p5.js version detection (1.x vs 2.x) — evaluated at call time, not script load
+function _getP5MajorVersion() {
+  return (typeof p5 !== 'undefined' && p5.VERSION)
+    ? parseInt(p5.VERSION.split('.')[0], 10)
+    : 1;
+}
+function _isP5v2Runtime() {
+  return _getP5MajorVersion() >= 2;
+}
+if (typeof p5 === 'undefined') {
+  console.warn('p5-phone: load p5.js before p5-phone.js for correct version detection and prototype hooks.');
+}
 
 // =========================================
 // PUBLIC API - CALL THESE FROM YOUR P5 SKETCH
@@ -1418,6 +1429,12 @@ function bleSetup(config) {
 
   const serviceUUID = (config.serviceUUID || _BLE_DEFAULT_SERVICE_UUID).toLowerCase();
   const characteristics = [];
+  const seenNames = new Set();
+
+  const uuidParts = serviceUUID.split('-');
+  if (uuidParts.length !== 5 || uuidParts[0].length < 4) {
+    debugWarn('bleSetup(): serviceUUID should be a hyphenated 128-bit UUID; auto-derivation requires that format.');
+  }
 
   for (let i = 0; i < config.characteristics.length; i++) {
     const entry = config.characteristics[i];
@@ -1428,6 +1445,11 @@ function bleSetup(config) {
       debugError('bleSetup(): each characteristic needs a name string.');
       return false;
     }
+    if (seenNames.has(name)) {
+      debugError('bleSetup(): duplicate characteristic name "' + name + '".');
+      return false;
+    }
+    seenNames.add(name);
     if (!_BLE_VALID_TYPES.has(type)) {
       debugError('bleSetup(): unknown type "' + type + '" for "' + name + '".');
       return false;
@@ -1435,6 +1457,9 @@ function bleSetup(config) {
     if (!entry.read && !entry.write && !entry.notify) {
       debugError('bleSetup(): characteristic "' + name + '" needs read, write, and/or notify.');
       return false;
+    }
+    if (entry.read && !entry.write && !entry.notify) {
+      debugWarn('bleSetup(): "' + name + '" is read-only; call bleRead("' + name + '") to poll values.');
     }
 
     characteristics.push({
@@ -1553,18 +1578,67 @@ function _bleHandleNotify(name, type, event) {
   }
 }
 
+function _bleDetachNotificationListeners() {
+  for (const name in _bleNotifyHandlers) {
+    const entry = _bleNotifyHandlers[name];
+    if (entry && entry.ch && entry.handler) {
+      entry.ch.removeEventListener('characteristicvaluechanged', entry.handler);
+    }
+  }
+  _bleNotifyHandlers = {};
+}
+
 async function _bleAttachCharacteristics(service) {
+  _bleDetachNotificationListeners();
   _bleChars = {};
   for (const c of _bleProfile.characteristics) {
     const ch = await service.getCharacteristic(c.uuid);
     _bleChars[c.name] = { ch: ch, type: c.type };
     if (c.notify) {
       await ch.startNotifications();
-      ch.addEventListener('characteristicvaluechanged', (e) => {
+      const handler = (e) => {
         _bleHandleNotify(c.name, c.type, e);
-      });
+      };
+      ch.addEventListener('characteristicvaluechanged', handler);
+      _bleNotifyHandlers[c.name] = { ch: ch, handler: handler };
     }
   }
+}
+
+function _bleScheduleReconnect() {
+  if (!_bleProfile || !_bleProfile.autoReconnect || !_bleDevice || _bleReconnectStopped) {
+    return;
+  }
+  if (_bleReconnectTimer) {
+    clearTimeout(_bleReconnectTimer);
+  }
+  const delay = _BLE_RECONNECT_DELAYS[
+    Math.min(_bleReconnectAttempt, _BLE_RECONNECT_DELAYS.length - 1)
+  ];
+  _bleReconnectTimer = setTimeout(async () => {
+    _bleReconnectTimer = null;
+    if (!_bleDevice || !_bleDevice.gatt || _bleReconnectStopped) {
+      return;
+    }
+    try {
+      window.bleStatus = 'connecting';
+      _bleServer = await _bleDevice.gatt.connect();
+      const service = await _bleServer.getPrimaryService(_bleProfile.serviceUUID);
+      await _bleAttachCharacteristics(service);
+      window.bleConnected = true;
+      window.bleStatus = 'connected';
+      _bleReconnectAttempt = 0;
+      debug('BLE reconnected: ' + (window.bleDeviceName || 'device'));
+      if (typeof bleReady === 'function') {
+        bleReady(window.bleDeviceName);
+      }
+    } catch (e) {
+      _bleReconnectAttempt++;
+      window.bleStatus = 'disconnected';
+      debugWarn('BLE auto-reconnect failed (attempt ' + _bleReconnectAttempt + ')');
+      _bleScheduleReconnect();
+    }
+  }, delay);
 }
 
 async function bleConnect() {
@@ -1610,6 +1684,8 @@ async function bleConnect() {
     window.bleConnected = true;
     window.bleStatus = 'connected';
     window.bleDeviceName = _bleDevice.name || 'device';
+    _bleReconnectStopped = false;
+    _bleReconnectAttempt = 0;
     debug('BLE connected: ' + window.bleDeviceName);
     if (typeof bleReady === 'function') {
       bleReady(window.bleDeviceName);
@@ -1634,39 +1710,21 @@ function _bleOnDisconnected() {
   window.bleConnected = false;
   window.bleStatus = 'disconnected';
   _bleServer = null;
+  _bleDetachNotificationListeners();
   _bleChars = {};
   debugWarn('BLE disconnected');
   if (typeof bleClosed === 'function') {
     bleClosed();
   }
 
-  if (_bleProfile && _bleProfile.autoReconnect && _bleDevice) {
-    if (_bleReconnectTimer) {
-      clearTimeout(_bleReconnectTimer);
-    }
-    _bleReconnectTimer = setTimeout(async () => {
-      _bleReconnectTimer = null;
-      if (!_bleDevice || !_bleDevice.gatt) return;
-      try {
-        window.bleStatus = 'connecting';
-        _bleServer = await _bleDevice.gatt.connect();
-        const service = await _bleServer.getPrimaryService(_bleProfile.serviceUUID);
-        await _bleAttachCharacteristics(service);
-        window.bleConnected = true;
-        window.bleStatus = 'connected';
-        debug('BLE reconnected: ' + (window.bleDeviceName || 'device'));
-        if (typeof bleReady === 'function') {
-          bleReady(window.bleDeviceName);
-        }
-      } catch (e) {
-        window.bleStatus = 'disconnected';
-        debugWarn('BLE auto-reconnect failed');
-      }
-    }, 1500);
+  if (_bleProfile && _bleProfile.autoReconnect && _bleDevice && !_bleReconnectStopped) {
+    _bleScheduleReconnect();
   }
 }
 
 function bleDisconnect() {
+  _bleReconnectStopped = true;
+  _bleReconnectAttempt = 0;
   if (_bleReconnectTimer) {
     clearTimeout(_bleReconnectTimer);
     _bleReconnectTimer = null;
@@ -1677,8 +1735,35 @@ function bleDisconnect() {
   window.bleConnected = false;
   window.bleStatus = 'idle';
   _bleServer = null;
+  _bleDetachNotificationListeners();
   _bleChars = {};
   debug('BLE disconnected by sketch');
+}
+
+async function bleRead(name) {
+  const entry = _bleChars[name];
+  if (!entry) {
+    debugError('BLE no characteristic named "' + name + '"');
+    return undefined;
+  }
+  const profileEntry = _bleProfile && _bleProfile.characteristics.find((c) => c.name === name);
+  if (!profileEntry || !profileEntry.read) {
+    debugError('BLE characteristic "' + name + '" is not declared with read: true');
+    return undefined;
+  }
+  try {
+    const dataView = await entry.ch.readValue();
+    const value = _bleDecode(entry.type, dataView);
+    window.bleValues[name] = value;
+    debug('BLE read ' + name + ' = ' + value);
+    if (typeof bleReceive === 'function') {
+      bleReceive(name, value);
+    }
+    return value;
+  } catch (err) {
+    debugError('BLE read "' + name + '" failed: ' + (err && err.message ? err.message : err));
+    return undefined;
+  }
 }
 
 async function bleWrite(name, value, opts = {}) {
@@ -1686,6 +1771,12 @@ async function bleWrite(name, value, opts = {}) {
   if (!entry) {
     debugError('BLE no characteristic named "' + name + '"');
     return false;
+  }
+  if (entry.type === 'string') {
+    const byteLength = new TextEncoder().encode(String(value)).byteLength;
+    if (byteLength > 20) {
+      debugWarn('BLE write string exceeds 20 bytes; many peripherals truncate without MTU negotiation.');
+    }
   }
   const data = _bleEncode(entry.type, value);
   try {
@@ -2041,57 +2132,86 @@ function _removeExistingUI() {
  */
 function _createCanvasToEnable(message, onActivateHandler) {
   _removeExistingUI();
-  
+
   let activated = false;
   let hintInterval = null;
-  
+  let canvasWaitTimer = null;
+  let documentFallbackAttached = false;
+  const maxAttempts = 50;
+  let attempts = 0;
+
+  const cleanupListeners = () => {
+    if (canvasWaitTimer) {
+      clearTimeout(canvasWaitTimer);
+      canvasWaitTimer = null;
+    }
+    document.removeEventListener('touchstart', handleFirstInteraction, true);
+    document.removeEventListener('mousedown', handleFirstInteraction, true);
+  };
+
+  const stopHintInterval = () => {
+    if (hintInterval) {
+      clearInterval(hintInterval);
+      hintInterval = null;
+    }
+  };
+
   // Draw hint text on the canvas if message is provided
   if (message) {
+    let hintFrames = 0;
     hintInterval = setInterval(() => {
+      hintFrames++;
+      if (hintFrames > maxAttempts) {
+        stopHintInterval();
+        return;
+      }
       const canvas = document.querySelector('canvas');
       if (canvas && typeof push === 'function') {
-        // Use p5 drawing functions to show hint
         push();
         fill(255, 255, 255, 200);
         noStroke();
         textAlign(CENTER, CENTER);
         textSize(Math.min(canvas.width, canvas.height) * 0.04);
-        text(message, (typeof width !== 'undefined' ? width : canvas.width) / 2, 
+        text(message, (typeof width !== 'undefined' ? width : canvas.width) / 2,
              (typeof height !== 'undefined' ? height : canvas.height) * 0.9);
         pop();
       }
     }, 50);
   }
-  
+
   const handleFirstInteraction = async (e) => {
     if (activated) return;
     activated = true;
-    
-    // Clean up hint drawing
-    if (hintInterval) {
-      clearInterval(hintInterval);
-      hintInterval = null;
-    }
-    
-    // Clean up listeners
-    document.removeEventListener('touchstart', handleFirstInteraction, true);
-    document.removeEventListener('mousedown', handleFirstInteraction, true);
-    
+
+    stopHintInterval();
+    cleanupListeners();
+
     await onActivateHandler();
   };
-  
-  // Wait for canvas to appear, then attach listeners
+
+  const attachDocumentFallback = () => {
+    if (documentFallbackAttached) return;
+    documentFallbackAttached = true;
+    document.addEventListener('touchstart', handleFirstInteraction, { once: true, capture: true });
+    document.addEventListener('mousedown', handleFirstInteraction, { once: true, capture: true });
+  };
+
   const waitForCanvas = () => {
+    attempts++;
     const canvas = document.querySelector('canvas');
     if (canvas) {
       canvas.addEventListener('touchstart', handleFirstInteraction, { once: true, capture: true });
       canvas.addEventListener('mousedown', handleFirstInteraction, { once: true, capture: true });
+    } else if (attempts < maxAttempts) {
+      attachDocumentFallback();
+      canvasWaitTimer = setTimeout(waitForCanvas, 50);
     } else {
-      // Canvas not ready yet — also listen on document as a fallback
-      setTimeout(waitForCanvas, 50);
+      attachDocumentFallback();
+      stopHintInterval();
+      debugWarn('p5-phone: canvas not found after waiting; using document fallback for permission tap.');
     }
   };
-  
+
   waitForCanvas();
 }
 
@@ -2414,7 +2534,7 @@ function _overrideP5Touch() {
   // mousePressed/mouseDragged/mouseReleased fire for ALL pointer types (mouse + touch).
   // In p5.js 1.x, touchStarted/touchMoved/touchEnded are separate from mouse callbacks.
   // We wrap both sets for 1.x, and only mouse callbacks for 2.0.
-  if (!_isP5v2) {
+  if (!_isP5v2Runtime()) {
     saved.touchStarted = window.touchStarted || function() {};
     saved.touchMoved = window.touchMoved || function() {};
     saved.touchEnded = window.touchEnded || function() {};
@@ -2451,6 +2571,10 @@ function _overrideP5Touch() {
   };
 
   _gestureLockState.savedHandlers.p5Callbacks = saved;
+  if (!window._gestureHandlerAssignWarned) {
+    window._gestureHandlerAssignWarned = true;
+    debugWarn('Assign touch/mouse handlers before lockGestures(); reassigning them afterward may bypass gesture blocking.');
+  }
 }
 
 // =========================================
@@ -2675,6 +2799,7 @@ window.isBleSupported = isBleSupported;
 window.bleSetup = bleSetup;
 window.bleConnect = bleConnect;
 window.bleDisconnect = bleDisconnect;
+window.bleRead = bleRead;
 window.bleWrite = bleWrite;
 window.enableBleTap = enableBleTap;
 window.enableBleButton = enableBleButton;
@@ -2909,21 +3034,23 @@ function _createDebugPanel() {
  */
 function _updateDebugDisplay() {
   if (!_debugPanel) return;
-  
+
   const content = document.getElementById('mobile-debug-content');
   if (!content) return;
-  
-  content.innerHTML = _debugMessages
-    .map(msg => {
-      // Handle both old string format and new object format
-      if (typeof msg === 'string') {
-        return `<div class="debug-message">${msg}</div>`;
-      } else {
-        return `<div class="debug-message ${msg.type}">${msg.text}</div>`;
-      }
-    })
-    .join('');
-  
+
+  content.replaceChildren();
+  for (const msg of _debugMessages) {
+    const div = document.createElement('div');
+    div.className = 'debug-message';
+    if (typeof msg === 'object' && msg !== null && msg.type) {
+      div.classList.add(msg.type);
+      div.textContent = msg.text;
+    } else {
+      div.textContent = typeof msg === 'string' ? msg : String(msg);
+    }
+    content.appendChild(div);
+  }
+
   // Auto-scroll to bottom
   content.scrollTop = content.scrollHeight;
 }
@@ -3160,6 +3287,12 @@ class PhoneCamera {
       this._video = null;
     }
     this._ready = false;
+    if (window._phoneCameras && Array.isArray(window._phoneCameras)) {
+      const idx = window._phoneCameras.indexOf(this);
+      if (idx !== -1) {
+        window._phoneCameras.splice(idx, 1);
+      }
+    }
   }
   
   /**
@@ -3636,6 +3769,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.bleSetup = bleSetup;
   p5.prototype.bleConnect = bleConnect;
   p5.prototype.bleDisconnect = bleDisconnect;
+  p5.prototype.bleRead = bleRead;
   p5.prototype.bleWrite = bleWrite;
   p5.prototype.enableBleTap = enableBleTap;
   p5.prototype.enableBleButton = enableBleButton;
@@ -3769,6 +3903,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.bleSetup = bleSetup;
       this.bleConnect = bleConnect;
       this.bleDisconnect = bleDisconnect;
+      this.bleRead = bleRead;
       this.bleWrite = bleWrite;
       this.enableBleTap = enableBleTap;
       this.enableBleButton = enableBleButton;
