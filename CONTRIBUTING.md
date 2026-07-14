@@ -61,7 +61,7 @@ npx p5-webeditor-sync session
 4. Update CDN version pins (`p5-phone@VERSION`) in:
    - Example `index.html` files (~75 files)
    - [README.md](README.md)
-   - [.github/skills/p5-phone/SKILL.md](.github/skills/p5-phone/SKILL.md) and portable skill stubs
+   - The p5-phone skill — one comprehensive file kept byte-identical in each agent-platform directory: [.github/skills/p5-phone/SKILL.md](.github/skills/p5-phone/SKILL.md), `.opencode/`, `.claude/`, `.agents/skills/p5-phone/SKILL.md`, and the root `SKILL.md` (plus the Copilot instruction files under `.github/instructions/` and `siteDev/.github/`)
 5. Push a version tag to trigger the GitHub Release workflow (optional)
 
 ## Web Editor batch sync checklist

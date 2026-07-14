@@ -89,4 +89,4 @@ flowchart LR
 
 - `examples/homepage/scripts/examples-data.js` — catalog `webEditor` fields
 - `doNotTouchWorkshop/scripts/workshop-data.js` — workshop Web Editor links
-- `.github/skills/p5-phone/SKILL.md` — agent guidance for portable examples
+- `.github/skills/p5-phone/SKILL.md` — the p5-phone agent skill (identical copy in each agent-platform `skills/` directory)

@@ -1,139 +1,23 @@
 ---
-description: "Use when writing p5.js sketches that use mobile phone sensors, microphone, camera, speech recognition, vibration, torch/flashlight, NFC, or the p5-phone library. Use when: enableSensorTap, enableMicTap, enableAllTap, enablePermissionsTap, enableTorchTap, enableNfcTap, lockGestures, PhoneCamera, mobile permissions, device orientation, accelerometer, gyroscope, flashlight, NFC tag reading."
+description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, torch/flashlight, NFC, Bluetooth BLE, lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
 applyTo: "**/sketch.js"
 ---
 
-# p5-phone Library Reference
+# p5-phone: Mobile Hardware for p5.js
 
-p5-phone provides mobile hardware access for p5.js sketches. Include it via CDN:
+p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, and Bluetooth LE — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.12.1**.
 
-```html
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.min.js"></script>
-```
+It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public function is attached to `window` (global mode) and mirrored on `p5.prototype` (instance mode), so you call them as bare globals like `lockGestures()` and `enableSensorTap()`.
 
-## Essential Pattern
+## When to use this skill
 
-Every mobile sketch should follow this structure:
+Use it whenever the request involves a p5-phone sketch, mobile p5.js hardware interaction, or an explanation of how p5-phone works: device orientation / accelerometer / gyroscope, touch, microphone / p5.sound, speech recognition, `PhoneCamera` and ML5 mapping, vibration, torch/flashlight, NFC, Bluetooth BLE, `lockGestures`, `enablePermissionsTap` / `enableHardwareTap`, arbitrary hardware combinations, mobile browser permissions, or p5.js 2 compatibility.
 
-```javascript
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  lockGestures(); // REQUIRED: prevents scroll, zoom, pull-to-refresh
+## Quick Start
 
-  // Choose ONE permission style (Tap is simplest):
-  enableSensorTap('Tap to enable sensors');
-}
+For generated examples, produce a complete `index.html` **and** `sketch.js` unless the user asks for a single file or snippet.
 
-function draw() {
-  background(220);
-
-  if (window.sensorsEnabled) {
-    // rotationX, rotationY, rotationZ — device orientation
-    // accelerationX, accelerationY, accelerationZ — device acceleration
-    // rotationRateAlpha/Beta/Gamma — gyroscope angular velocity
-  }
-}
-```
-
-## Permission Functions
-
-Each permission type has 5 UI styles — pick the one that fits your design:
-
-| Style | Sensor | Microphone | Speech | Both | Camera | Torch | NFC |
-|-------|--------|------------|--------|------|--------|-------|-----|
-| **Tap** (overlay) | `enableSensorTap(msg)` | `enableMicTap(msg)` | `enableSpeechTap(msg)` | `enableAllTap(msg)` | `enableCameraTap(msg)` | `enableTorchTap(msg)` | `enableNfcTap(msg)` |
-| **Button** | `enableSensorButton(txt)` | `enableMicButton(txt)` | `enableSpeechButton(txt)` | `enableAllButton(txt)` | `enableCameraButton(txt)` | `enableTorchButton(txt)` | `enableNfcButton(txt)` |
-| **Canvas** | `enableSensorCanvas(msg)` | `enableMicCanvas(msg)` | `enableSpeechCanvas(msg)` | `enableAllCanvas(msg)` | `enableCameraCanvas(msg)` | `enableTorchCanvas(msg)` | `enableNfcCanvas(msg)` |
-| **Banner** | `enableSensorBanner(msg)` | `enableMicBanner(msg)` | `enableSpeechBanner(msg)` | `enableAllBanner(msg)` | `enableCameraBanner(msg)` | `enableTorchBanner(msg)` | `enableNfcBanner(msg)` |
-| **Custom** | `enableSensorOn(sel)` | `enableMicOn(sel)` | `enableSpeechOn(sel)` | `enableAllOn(sel)` | `enableCameraOn(sel)` | `enableTorchOn(sel)` | `enableNfcOn(sel)` |
-
-For arbitrary combinations, use `enablePermissionsTap(['sensors', 'torch'])`, `enablePermissionsButton([...])`, `enablePermissionsCanvas([...])`, `enablePermissionsBanner([...])`, or `enablePermissionsOn(selector, [...])`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, and `camera`. `enableHardware*` aliases also work.
-
-Legacy aliases: `enableGyroTap`, `enableGyroButton` also work (same as `enableSensor*`).
-
-## Status Variables
-
-Check these to know if permissions have been granted:
-- `window.sensorsEnabled` — motion sensors active
-- `window.micEnabled` — microphone active
-- `window.speechEnabled` — speech recognition active
-- `window.cameraEnabled` — camera startup succeeded
-- `window.torchEnabled` — torch control stream active (Android Chrome)
-- `window.torchActive` — flashlight currently on
-- `window.nfcEnabled` — NFC scanning active (Android only)
-- `window.lastNfcSerialNumber` — most recently read NFC tag ID
-- `window.lastNfcAlias` — alias for the most recently read NFC tag, if set
-
-Prefer wrapping hardware-dependent code in positive checks, such as `if (window.sensorsEnabled) { ... }` or `if (window.micEnabled) { ... }`.
-
-## Callback
-
-Define `userSetupComplete()` to run code immediately after permissions are granted:
-
-```javascript
-function userSetupComplete() {
-  // Safe to use sensor data, mic, etc.
-}
-```
-
-## Microphone
-
-```javascript
-let mic;
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  mic = new p5.AudioIn();
-  lockGestures();
-  enableMicTap('Tap to enable microphone');
-}
-function draw() {
-  background(220);
-
-  if (window.micEnabled) {
-    let level = mic.getLevel();
-    circle(width/2, height/2, level * 500);
-  }
-}
-```
-
-Requires p5.sound: `<script src="https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js"></script>`
-
-## Debug Console
-
-```javascript
-showDebug();           // Show on-screen console (call once in setup)
-debug('message');      // Log to on-screen console
-debugWarn('warning');  // Yellow warning
-debugError('error');   // Red error
-```
-
-## Key Constraints
-
-- iOS requires a **user tap** before granting sensor/mic access — cannot auto-trigger.
-- Always serve over **HTTPS** — sensors and mic are blocked on HTTP.
-- Call `lockGestures()` in `setup()` to prevent browser default touch behaviors. Use `lockGestures({ mode: 'embedded', element: canvas })` for canvases inside scrollable multi-page sites.
-- **Torch / flashlight** is Android Chrome-oriented, requires HTTPS and camera permission, and is controlled through a rear camera stream. Use `torchOn()`, `torchOff()`, `toggleTorch()`, or `setTorch(value)` after `enableTorch*()` or `enablePermissions*(['torch'])`.
-- **NFC** is Android-only (Chrome 89+). Define `nfcRead(message, serialNumber)` in your sketch to receive tag data. Use `setNfcTagAlias(id, alias)` and `isNfcTag(aliasOrId)` for named tag workflows. Use `stopNfc()` to stop scanning.
-- **PhoneCamera + ML5**: Use `cam.mapKeypoint()` / `cam.mapKeypoints()` for landmark models and `cam.mapBox()` / `cam.mapBoxes()` for object-detection boxes. Set ML5 `flipped: false` when available because PhoneCamera handles mirroring.
-- `enableSpeech*` only activates the audio context — create your own `p5.SpeechRec` object after.
-- `enableAll*` combines sensors + microphone (not speech or camera). Use `enablePermissions*` for custom hardware combinations.
-
-## p5.js 2.0 Compatibility
-
-p5-phone supports both p5.js 1.x and 2.0. Key difference:
-
-- **p5.js 2.0 removes `touchStarted`/`touchMoved`/`touchEnded`** — use `mousePressed`/`mouseDragged`/`mouseReleased` instead. These mouse callbacks work for ALL pointer types (mouse + touch) in **both** 1.x and 2.0.
-- p5-phone auto-detects the p5.js version and adjusts its internal behavior.
-- In p5.js 2.0, p5-phone also registers via `p5.registerAddon()` automatically.
-
-**Use `mousePressed`/`mouseReleased` for forward-compatible sketches:**
-```javascript
-function mousePressed() {
-  return false; // Works in both p5.js 1.x and 2.0
-}
-```
-
-## HTML Template
+HTML baseline (p5.js 2-compatible):
 
 ```html
 <!DOCTYPE html>
@@ -142,7 +26,9 @@ function mousePressed() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mobile p5.js App</title>
-  <style>body { margin: 0; padding: 0; overflow: hidden; }</style>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.min.js"></script>
@@ -152,3 +38,427 @@ function mousePressed() {
 </body>
 </html>
 ```
+
+Add p5.sound **only** when the sketch uses microphone levels, oscillators, audio input, sound output, or speech. Place it after p5 and before `p5-phone`/`sketch.js`:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js"></script>
+```
+
+Minimal sketch (`sketch.js`):
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableSensorTap('Tap to enable motion sensors');
+}
+
+function draw() {
+  background(20);
+  if (!window.sensorsEnabled) {
+    fill(255);
+    textAlign(CENTER, CENTER);
+    text('Waiting for sensors', width / 2, height / 2);
+    return;
+  }
+  // rotationX / rotationY / rotationZ are p5.js built-ins, live once sensorsEnabled is true.
+  fill(0, 180, 255);
+  circle(width / 2 + rotationY * 4, height / 2 + rotationX * 4, 80);
+}
+
+function mousePressed() {
+  return false; // let p5-phone's gesture handling manage the touch
+}
+```
+
+## Golden Rules
+
+1. **Call `lockGestures()` in every mobile sketch `setup()`.** It blocks pull-to-refresh, swipe-back, pinch-zoom, double-tap zoom, long-press menus, and overscroll so the canvas behaves like an app.
+2. **Request every permission from a user gesture.** iOS grants sensitive APIs only during *transient user activation* (a tap/click). Never auto-request on page load — use an `enable*` activation UI.
+3. **Gate all hardware reads behind the matching `window.*Enabled` flag** (`sensorsEnabled`, `micEnabled`, `bleConnected`, etc.). Reading before permission returns stale/undefined data.
+4. **Use `mousePressed` / `mouseDragged` / `mouseReleased`, not p5 1.x `touchStarted` / `touchMoved` / `touchEnded`.** The mouse callbacks fire for both mouse and touch in p5.js 1.x and 2.x; the touch callbacks are removed/no-ops in p5.js 2.
+5. **Serve over HTTPS** (or `localhost`). Sensors, mic, camera, NFC, BLE, and torch all require a secure context on mobile.
+6. **Need several hardware features from one tap? Use a single combined call** — `enablePermissionsTap(['sensors', 'torch'])` — not several single-permission binds on the same gesture. One call keeps iOS transient activation intact and fires `userSetupComplete()` once.
+7. **Use exactly one activation style per permission need** unless the user explicitly asks to compare styles.
+
+## Two correctness traps (read these)
+
+- **Motion values are p5.js built-ins, not p5-phone APIs.** p5-phone only requests the *permission* and sets `window.sensorsEnabled`. The actual data — `rotationX`, `rotationY`, `rotationZ`, `accelerationX/Y/Z`, `rotationRateAlpha/Beta/Gamma`, `deviceMoved()`, `deviceShaken()`, `setMoveThreshold()`, `setShakeThreshold()`, `deviceOrientation` — comes straight from p5.js. Do not invent p5-phone getters for them.
+- **There is no `bleValue()` getter.** Read incoming BLE data from `window.bleValues[name]` or from the `bleReceive(name, value)` callback. `bleValues` is an object keyed by characteristic name.
+
+## Permissions model
+
+Every hardware family exposes the same **five activation styles**. Pick one:
+
+- **Tap** — `enable<Feature>Tap(message)` — full-screen tap overlay.
+- **Button** — `enable<Feature>Button(buttonText, statusText?)` — auto-generated button.
+- **Canvas** — `enable<Feature>Canvas(message)` — prompt drawn on the p5 canvas.
+- **Banner** — `enable<Feature>Banner(message, position?)` — animated slide-in banner (`position` = `'top'`/`'bottom'`).
+- **On (custom element)** — `enable<Feature>On(selector)` — bind activation to any existing HTML element by CSS selector.
+
+Full matrix:
+
+| Feature | Tap | Button | Canvas | Banner | On (selector) |
+| --- | --- | --- | --- | --- | --- |
+| Motion sensors | `enableSensorTap(msg)` | `enableSensorButton(text)` | `enableSensorCanvas(msg)` | `enableSensorBanner(msg)` | `enableSensorOn(sel)` |
+| Microphone | `enableMicTap(msg)` | `enableMicButton(text)` | `enableMicCanvas(msg)` | `enableMicBanner(msg)` | `enableMicOn(sel)` |
+| Sound output | `enableSoundTap(msg)` | `enableSoundButton(text)` | `enableSoundCanvas(msg)` | `enableSoundBanner(msg)` | `enableSoundOn(sel)` |
+| Speech | `enableSpeechTap(msg)` | `enableSpeechButton(text)` | `enableSpeechCanvas(msg)` | `enableSpeechBanner(msg)` | `enableSpeechOn(sel)` |
+| Vibration | `enableVibrationTap(msg)` | `enableVibrationButton(text)` | `enableVibrationCanvas(msg)` | `enableVibrationBanner(msg)` | `enableVibrationOn(sel)` |
+| Torch / flashlight | `enableTorchTap(msg)` | `enableTorchButton(text)` | `enableTorchCanvas(msg)` | `enableTorchBanner(msg)` | `enableTorchOn(sel)` |
+| NFC | `enableNfcTap(msg)` | `enableNfcButton(text)` | `enableNfcCanvas(msg)` | `enableNfcBanner(msg)` | `enableNfcOn(sel)` |
+| Bluetooth (BLE) | `enableBleTap(opts?)` | `enableBleButton(opts?)` | `enableBleCanvas(opts?)` | `enableBleBanner(opts?)` | `enableBleOn(sel)` |
+| Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraOn(sel)` |
+| Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllOn(sel)` |
+| Any combination | `enablePermissionsTap(list, msg)` | `enablePermissionsButton(list, text)` | `enablePermissionsCanvas(list, msg)` | `enablePermissionsBanner(list, msg)` | `enablePermissionsOn(sel, list)` |
+
+Notes:
+
+- `enableBle*` take an **options object** (`{ label, message, statusText, position }`), unlike the other families which take positional `(message, position)` / `(buttonText, statusText)`.
+- `enableGyro*` is a **legacy alias** for `enableSensor*`. Prefer `enableSensor*` for new examples; use `enableGyro*` only to match older published sketches.
+- `enableAll*` is shorthand for sensors + mic. For any other mix, use `enablePermissions*`.
+- `enableHardware*` is an exact alias of `enablePermissions*`.
+
+### Combining features
+
+`enablePermissions*` (a.k.a. `enableHardware*`) takes a list plus a message. The list can be an array or a space/comma string.
+
+**Canonical tokens:** `sensors`, `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `camera`.
+
+**Aliases** (all normalized to the canonical tokens): `sensor`, `motion`, `orientation`, `gyro`, `gyroscope`, `accelerometer` → `sensors`; `microphone`, `audioin` → `mic`; `audio`, `audiooutput`, `output` → `sound`; `voice`, `recognition` → `speech`; `vibrate`, `haptic`, `haptics` → `vibration`; `flashlight`, `flash`, `light` → `torch`; `tag`, `tags` → `nfc`; `video`, `webcam` → `camera`; `all` → `sensors` + `mic`.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enablePermissionsTap(['sensors', 'mic'], 'Tap to enable motion + microphone');
+}
+
+function draw() {
+  if (!window.sensorsEnabled || !window.micEnabled) return;
+  // Use motion values and microphone input here.
+}
+```
+
+## Status variables and callbacks
+
+Read these `window.*` flags before using hardware data:
+
+- **Motion:** `sensorsEnabled`
+- **Microphone:** `micEnabled`
+- **Sound:** `soundEnabled`
+- **Speech:** `speechEnabled`
+- **Vibration:** `vibrationEnabled`
+- **Torch:** `torchEnabled`, `torchSupported`, `torchActive`, `torchError`, `torchCapability`
+- **NFC:** `nfcEnabled`, `nfcStatus`, `nfcError`, `nfcTagAliases`, `lastNfcSerialNumber`, `lastNfcAlias`, `lastNfcMessage`
+- **BLE:** `bleSupported`, `bleConnected`, `bleStatus`, `bleError`, `bleDeviceName`, `bleValues`
+- **Camera:** `cameraEnabled`
+- **Gestures:** `gesturesLocked`
+
+Callbacks your sketch can define (p5-phone calls them if present):
+
+- `userSetupComplete()` — fires once immediately after permissions succeed.
+- `deviceMoved()`, `deviceShaken()` — p5.js motion events (available after `sensorsEnabled`).
+- `nfcRead(message, serialNumber)` — a tag was read.
+- `bleReceive(name, value)` — a BLE characteristic notified or was read.
+
+```javascript
+function userSetupComplete() {
+  debug('Permissions ready');
+}
+```
+
+## Motion sensors
+
+After `window.sensorsEnabled` is true, read p5.js built-ins:
+
+- Orientation: `rotationX`, `rotationY`, `rotationZ`
+- Acceleration: `accelerationX`, `accelerationY`, `accelerationZ`
+- Rotational velocity: `rotationRateAlpha`, `rotationRateBeta`, `rotationRateGamma`
+- Events: `deviceMoved()`, `deviceShaken()`
+- Thresholds: `setMoveThreshold(value)`, `setShakeThreshold(value)`
+- Orientation state: `deviceOrientation`
+
+iOS requires the sensor permission to be requested from a tap/click. Never auto-request motion permission on page load.
+
+## Microphone and sound
+
+Include p5.sound and create `p5.AudioIn()` before enabling mic. For simple examples read levels with `mic.getLevel()` after `window.micEnabled` is true. Avoid wiring `p5.Amplitude.setInput(mic)` before permission — p5.sound 0.3.0 can throw in p5.js 2 previews.
+
+```javascript
+let mic;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  mic = new p5.AudioIn();
+  enableMicTap('Tap to enable microphone');
+}
+
+function draw() {
+  background(0);
+  if (!window.micEnabled) return;
+  const level = mic.getLevel();
+  circle(width / 2, height / 2, 40 + level * 600);
+}
+```
+
+For generated audio, use `enableSoundTap()` (or `enableSoundOn(selector)`) to resume the AudioContext, then `p5.Oscillator`. Prefer generated sound over `loadSound()` unless the user provides audio assets — it is more portable in the p5 Web Editor.
+
+## Speech recognition
+
+`enableSpeech*` satisfies the mobile audio/user-activation requirement and sets `window.speechEnabled`; it deliberately does **not** create a `p5.AudioIn` (which would conflict with the mic). After activation, create your own Web Speech API `SpeechRecognition` object.
+
+## Camera and ML5 (`PhoneCamera`)
+
+`createPhoneCamera(active = 'user', mirror = true, mode = 'fitHeight')` returns a `PhoneCamera`. The camera is not initialized until an `enableCamera*` gesture (this fixes an iOS rotation bug).
+
+- `active`: `'user'` (front) or `'environment'` (rear).
+- `mirror`: mirror the display (front cameras usually `true`).
+- `mode`: `'fitHeight'`, `'fitWidth'`, `'cover'`, `'contain'`, or `'fixed'`.
+
+```javascript
+let cam;
+let model;
+
+function setup() {
+  createCanvas(405, 720);
+  lockGestures();
+  cam = createPhoneCamera('user', true, 'fitHeight');
+  enableCameraTap('Tap screen to enable camera');
+
+  cam.onReady(async () => {
+    model = await ml5.handPose({ maxHands: 1, runtime: 'mediapipe', flipped: false });
+    model.detectStart(cam.videoElement, gotResults);
+  });
+}
+```
+
+`PhoneCamera` properties: `ready`, `video` (p5 element), `videoElement` (native `<video>` for ML5), `width`, `height`, `active`, `mirror`, `mode`, `fixedWidth`, `fixedHeight`.
+
+Coordinate-mapping methods (video space → display space, mirror-aware):
+
+- `cam.onReady(callback)` — safe point to start ML5.
+- `cam.getDimensions()` → `{ x, y, width, height, scaleX, scaleY }`.
+- `cam.mapPoint(x, y)` → `{ x, y }`.
+- `cam.mapKeypoint(keypoint)` / `cam.mapKeypoints(keypoints)`.
+- `cam.mapBox(box)` / `cam.mapBoxes(boxes)`.
+- `cam.remove()` — stop and clean up the camera.
+
+Set ML5 `flipped: false` when available — `PhoneCamera` already handles mirroring and coordinate mapping, so pass raw ML5 results through the `map*` helpers.
+
+For `ml5@1` with `p5@2.2.3`, add the preload-counter polyfill before loading ml5:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
+<script>
+  p5.prototype._incrementPreload ||= function() {};
+  p5.prototype._decrementPreload ||= function() {};
+</script>
+<script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+```
+
+For Three.js pages that use ML5 but are not p5 sketches, put p5, the compatibility shim, the preload-counter polyfill, and ml5 in the document `<head>` so p5 Web Editor preview injection does not run before p5 exists.
+
+## NFC
+
+Android Chrome only, requires HTTPS.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableNfcTap('Tap to enable NFC');
+}
+
+function nfcRead(message, serialNumber) {
+  setNfcTagAlias(serialNumber, 'example-tag');
+  debug('Read NFC tag: ' + serialNumber);
+}
+
+function draw() {
+  background(20);
+  if (isNfcTag('example-tag')) {
+    background(0, 120, 255);
+  }
+}
+```
+
+Helpers: `setNfcTagAlias(serialNumber, alias)`, `getNfcTagAlias(serialNumber?)` (defaults to `window.lastNfcSerialNumber`), `isNfcTag(aliasOrSerialNumber)`, `stopNfc()`. Track state via `window.nfcStatus` (`idle`/`starting`/`requesting-permission`/`scanning`/`tag-read`/`permission-denied`/`unsupported`/`secure-context-required`/`error`/`stopped`) and `window.nfcError`.
+
+## Bluetooth Low Energy (BLE)
+
+Web Bluetooth exchanges typed values with Arduino-class peripherals. Call `bleSetup()` in `setup()` before any connect helper; connect from a user gesture via `enableBle*`.
+
+Platform support:
+- Chrome/Edge on Android and desktop over HTTPS (or localhost).
+- iOS Safari/Chrome: not supported — use the **Bluefy** browser app.
+- Embedded iframes need `allow="bluetooth"`.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+
+  bleSetup({
+    namePrefix: 'p5phone',      // optional device-name filter
+    autoReconnect: true,        // optional
+    characteristics: [
+      { name: 'temp', type: 'float', notify: true },
+      { name: 'brightness', type: 'uint8', write: true }
+    ]
+  });
+
+  enableBleButton({ label: 'Connect device' });
+  showDebug();
+}
+
+function draw() {
+  background(20);
+  if (bleConnected) {
+    text('temp: ' + (bleValues.temp ?? '—'), 20, 40);
+  }
+}
+
+function mousePressed() {
+  if (bleConnected) {
+    bleWrite('brightness', floor(map(mouseX, 0, width, 0, 255)));
+  }
+  return false;
+}
+
+function bleReceive(name, value) {
+  debug('BLE ' + name + ' = ' + value);
+}
+```
+
+`bleSetup(config)` fields:
+- `serviceUUID` — hyphenated 128-bit UUID; defaults to the P5PhoneBLE service if omitted.
+- `namePrefix` — optional device-name filter.
+- `autoReconnect` — optional boolean.
+- `characteristics` — required array of `{ name, type, read?, write?, notify?, uuid? }`. Each needs at least one of `read`/`write`/`notify`. Omit `uuid` to auto-derive it from the service UUID and declaration order (must match the P5PhoneBLE Arduino side). Names must be unique.
+
+Valid `type` values: `bool`, `int8`, `uint8`, `int16`, `uint16`, `int32`, `uint32`, `float`, `double`, `string`, `bytes`. Numeric types use little-endian byte order.
+
+Lifecycle and I/O:
+- `enableBle*(options)` — connect from a user gesture.
+- `bleConnect()` / `bleDisconnect()` — programmatic connect/disconnect (connect still needs a gesture).
+- `bleRead(name)` — async; reads and decodes a characteristic, updates `window.bleValues[name]`, returns the value.
+- `bleWrite(name, value, opts?)` — async; `opts.ack === false` uses write-without-response (default is write-with-response). String writes over ~20 bytes may truncate on default-MTU peripherals.
+- `isBleSupported()` — boolean.
+- `bleReceive(name, value)` — your callback, fired on notify and on read.
+
+`window.bleStatus` progresses through `idle`/`connecting`/`connected`/`requesting`/`disconnected`/`error`/`unsupported`. `bleValues` is not cleared on disconnect (sketches keep rendering last-known values).
+
+## Vibration
+
+Use `enableVibration*` before `vibrate(pattern)`. iOS does not support the Vibration API — write examples that still show useful feedback when `window.vibrationEnabled` is false.
+
+```javascript
+function mousePressed() {
+  if (window.vibrationEnabled) {
+    vibrate([40, 30, 80]); // ms on / off / on, or a single number
+  }
+  return false;
+}
+```
+
+`stopVibration()` cancels an ongoing pattern.
+
+## Torch / flashlight
+
+Android-Chrome-oriented, requires HTTPS, works through a rear-camera stream. Enable with `enableTorch*()` (or `enablePermissions*(['torch'])`), then control the light:
+
+- `torchOn()`, `torchOff()`, `toggleTorch()`, `setTorch(enabled)` (async), `stopTorch()`, `isTorchSupported()`.
+- Flashlight aliases: `enableFlashlight*`, `flashlightOn()`, `flashlightOff()`, `toggleFlashlight()`, `setFlashlight()`, `stopFlashlight()`.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enablePermissionsTap(['sensors', 'torch'], 'Tap to enable shake flashlight');
+}
+
+async function deviceShaken() {
+  if (window.sensorsEnabled && window.torchEnabled) {
+    await toggleTorch();
+  }
+}
+```
+
+Keep flashing pulses slow and short, avoid rapid strobing, and call `torchOff()` or `stopTorch()` when the effect ends.
+
+## lockGestures reference
+
+```javascript
+lockGestures(options?)
+```
+
+`options`:
+- `mode` — `'fullscreen'` (default) or `'embedded'`.
+- `element` — target element for embedded mode (defaults to the first `<canvas>`).
+- `warnBeforeLeave` — show a leave-confirmation prompt (default `false`).
+- `trapHistory` — trap back/forward navigation (default `true` in fullscreen, `false` in embedded).
+
+Use bare `lockGestures()` for full-screen mobile sketches. Use `lockGestures({ mode: 'embedded', element: canvas })` for a canvas embedded in a scrollable, multi-section page — it scopes gesture blocking to that canvas so the rest of the page still scrolls. `unlockGestures()` restores the saved handlers, listeners, and styles. `window.gesturesLocked` reflects the current state.
+
+Caveat: p5 touch/mouse callbacks are snapshotted when gestures lock. If you assign `window.mousePressed = ...` *after* `lockGestures()`, you replace p5-phone's wrapper. Define your callbacks before locking, or reassign is fine as long as you `return false` from them.
+
+## Debug console
+
+For on-device troubleshooting, call `showDebug()` once in `setup()`, then log:
+
+- `debug(message)`, `debugWarn(message)`, `debugError(message)`
+- `hideDebug()`, `toggleDebug()`
+
+Most useful for camera, NFC, BLE, and permission troubleshooting. Use sparingly in finished examples.
+
+## Platform support matrix
+
+| Feature | iOS Safari | Android Chrome |
+| --- | --- | --- |
+| Motion sensors | ✓ (permission tap required) | ✓ (no prompt) |
+| Microphone | ✓ | ✓ |
+| Sound output | ✓ | ✓ |
+| Speech recognition | Web Speech API support varies | ✓ |
+| Camera | ✓ | ✓ |
+| Vibration | ✗ (API absent) | ✓ |
+| Torch / flashlight | ✗ | ✓ |
+| NFC | ✗ | ✓ (HTTPS) |
+| Bluetooth BLE | ✗ (use Bluefy app) | ✓ (HTTPS) |
+
+All hardware requires a secure context (HTTPS or localhost).
+
+## Troubleshooting
+
+- **Permission never fires / `*Enabled` stays false** — the request must run inside a user gesture. Confirm you used an `enable*` activation UI and did not call it on load. On iOS a single gesture only grants one activation window, so combine features with one `enablePermissions*` call.
+- **ML5 throws about `_incrementPreload` / preload with p5@2.2.3** — add the preload-counter polyfill shim before loading ml5 (see Camera section).
+- **Torch or NFC does nothing** — both are Android-Chrome + HTTPS only; check `window.torchSupported` / `window.nfcStatus`.
+- **BLE won't connect on iPhone** — Web Bluetooth is unavailable in iOS Safari/Chrome; use the Bluefy app.
+- **Touch callbacks never run** — `touchStarted/Moved/Ended` are no-ops in p5.js 2; switch to `mousePressed/mouseDragged/mouseReleased`.
+- **Mic example throws in preview** — don't call `p5.Amplitude.setInput(mic)` before `window.micEnabled`; read `mic.getLevel()` after permission.
+
+## Answering questions
+
+- Explain the browser-permission reason, especially iOS transient user activation.
+- Distinguish sensors, mic, sound-only, speech, camera, vibration, torch, and NFC permissions.
+- Mention HTTPS requirements for mobile hardware.
+- Mention p5.js 2 event changes when touch callbacks are involved.
+- Flag browser/device limits clearly: torch and NFC are Android-Chrome-oriented; vibration is unsupported on iOS; BLE needs Bluefy on iOS; speech recognition depends on Web Speech API support.
+- Point to the bundled examples under `examples/` when useful — feature folders include `movement/`, `microphone/`, `sound/`, `touch/`, `vibration/`, `camera/`, `torch/`, `nfc/`, `ble/`, and `combined/`, plus `ml5/`, `UIStyles/`, and `UXcompare/`.
+- When migrating examples to the p5 Web Editor, follow the web-editor batch-sync workflow in `docs/web-editor/` and record links in `webeditorLinks.md`.
+
+## Example quality checklist
+
+Before finishing generated code, confirm:
+
+- `lockGestures()` is called in `setup()`.
+- The permission request happens from a user-activation path (tap, button, banner, canvas, or custom element).
+- Hardware data is read only after the matching `window.*Enabled` flag is true.
+- The HTML includes the needed dependencies and no unused heavy libraries.
+- p5.js 2-compatible `mouse*` callbacks are used (not p5 1.x touch callbacks).
+- Text and canvas output fit mobile screens.
+- Asset-dependent examples either include the assets or clearly document that the user must upload them.
+- ML5 camera examples include the p5 2 compatibility shim and use `PhoneCamera` mapping helpers.
