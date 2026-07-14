@@ -10,6 +10,8 @@ p5-phone is a single-file helper library that gives p5.js sketches access to mob
 
 It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public function is attached to `window` (global mode) and mirrored on `p5.prototype` (instance mode), so you call them as bare globals like `lockGestures()` and `enableSensorTap()`.
 
+**Pair this with the `p5js-2x` skill.** p5-phone only unlocks the hardware and hands you *p5's own* globals and objects; the p5.js 2.x language patterns around them (async asset loading, the unified pointer/touch model, renamed APIs) live in the `p5js-2x` skill. Load both when writing phone sketches — and read the next section before writing any hardware code.
+
 ## When to use this skill
 
 Use it whenever the request involves a p5-phone sketch, mobile p5.js hardware interaction, or an explanation of how p5-phone works: device orientation / accelerometer / gyroscope, touch, microphone / p5.sound, speech recognition, `PhoneCamera` and ML5 mapping, vibration, torch/flashlight, NFC, Bluetooth BLE, `lockGestures`, `enablePermissionsTap` / `enableHardwareTap`, arbitrary hardware combinations, mobile browser permissions, or p5.js 2 compatibility.
@@ -83,9 +85,26 @@ function mousePressed() {
 6. **Need several hardware features from one tap? Use a single combined call** — `enablePermissionsTap(['sensors', 'torch'])` — not several single-permission binds on the same gesture. One call keeps iOS transient activation intact and fires `userSetupComplete()` once.
 7. **Use exactly one activation style per permission need** unless the user explicitly asks to compare styles.
 
-## Two correctness traps (read these)
+## Use p5.js built-ins — do not reimplement them
 
-- **Motion values are p5.js built-ins, not p5-phone APIs.** p5-phone only requests the *permission* and sets `window.sensorsEnabled`. The actual data — `rotationX`, `rotationY`, `rotationZ`, `accelerationX/Y/Z`, `rotationRateAlpha/Beta/Gamma`, `deviceMoved()`, `deviceShaken()`, `setMoveThreshold()`, `setShakeThreshold()`, `deviceOrientation` — comes straight from p5.js. Do not invent p5-phone getters for them.
+The most common failure mode is a model **hand-rolling hardware plumbing** (a raw `DeviceOrientationEvent` listener, a `touchstart` handler, a Web Audio graph, a manual asset loader) instead of reading the values p5-phone and p5.js already provide. p5-phone deliberately surfaces everything through *p5's own* globals and objects. For each concern below, use the p5 built-in — never a bespoke equivalent:
+
+| p5-phone concern | Use these p5.js built-ins (not custom code) | Notes |
+| --- | --- | --- |
+| Device orientation | `rotationX`, `rotationY`, `rotationZ` (+ `pRotationX/Y/Z`) | p5 globals; p5-phone only gates them via `sensorsEnabled` |
+| Acceleration | `accelerationX/Y/Z`, `pAccelerationX/Y/Z` | p5 globals |
+| Rotation rate | `rotationRateAlpha`, `rotationRateBeta`, `rotationRateGamma` | p5 globals |
+| Motion events / thresholds | `deviceMoved()`, `deviceShaken()`, `setMoveThreshold()`, `setShakeThreshold()`, `deviceOrientation` | define the callbacks as globals |
+| Touch / pointer input | `mousePressed()`, `mouseDragged()`, `mouseReleased()`, `mouseX`, `mouseY`, `touches[]` | p5.js 2 unifies mouse+touch under the pointer model; use `touches[]` for multitouch. Do **not** add your own `addEventListener('touchstart', …)` |
+| Drawing the camera feed | `image(cam, x, y, w, h)` + `cam.mapKeypoint()/mapBox()` | `PhoneCamera` integrates with p5's `image()`; map ML5 results with its helpers, not manual video compositing |
+| Microphone level / analysis | `p5.AudioIn`, `p5.Amplitude`, `p5.FFT` (p5.sound) | not a raw Web Audio graph |
+| Generated sound | `p5.Oscillator`, `p5.Envelope` (p5.sound) | prefer over `loadSound()` for portability |
+| Loading images/audio/JSON/font | `await loadImage()/loadSound()/loadJSON()/loadFont()` in `async setup()` | p5.js 2: `load*` return Promises — no `preload()`. See the `p5js-2x` skill |
+| Mapping / ranges | `map()`, `constrain()`, `lerp()` | p5 math helpers |
+
+Two specific traps worth calling out:
+
+- **Motion values are p5.js built-ins, not p5-phone APIs.** p5-phone only requests the *permission* and sets `window.sensorsEnabled`. The data (`rotationX`, `accelerationX`, `deviceShaken()`, …) comes straight from p5.js. Do not invent p5-phone getters for them.
 - **There is no `bleValue()` getter.** Read incoming BLE data from `window.bleValues[name]` or from the `bleReceive(name, value)` callback. `bleValues` is an object keyed by characteristic name.
 
 ## Permissions model
