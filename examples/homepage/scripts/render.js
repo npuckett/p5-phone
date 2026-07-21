@@ -44,6 +44,8 @@
     { tags: ['speech'], group: 'External', label: 'Web Speech API', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API' },
     { tags: ['nfc'], group: 'p5-phone', label: 'enableNfcTap()', href: '#api-nfc' },
     { tags: ['aliases'], group: 'p5-phone', label: 'isNfcTag()', href: '#api-nfc' },
+    { tags: ['geo'], group: 'p5-phone', label: 'enableGeoTap()', href: '#api-geo' },
+    { tags: ['geoDistance'], group: 'p5-phone', label: 'geoDistance()', href: '#api-geo' },
     { tags: ['ble'], group: 'p5-phone', label: 'bleSetup() / enableBleTap()', href: '#api-ble' },
     { tags: ['sound'], group: 'p5-phone', label: 'enableSoundTap()', href: '#api-audio' },
     { tags: ['vibration'], group: 'p5-phone', label: 'enableVibrationTap()', href: '#api-vibration' },
@@ -214,6 +216,16 @@
     const platforms = renderTagLinks(normalizePlatforms(example), 'platform');
     const githubBase = window.P5PHONE_GITHUB_BASE_URL || '';
 
+    // Optional muted companion-library link (e.g. Arduino example). Rendered as
+    // a quiet .example-meta line, matching the house style — no new CSS.
+    let companionLine = '';
+    if (example.companion && example.companion.href) {
+      const fullHref = example.companion.external
+        ? githubBase + example.companion.href
+        : pageHref(example.companion.href);
+      companionLine = `<div class="example-meta">↳ <a href="${escapeHtml(fullHref)}" target="_blank" rel="noreferrer">${escapeHtml(example.companion.label)}</a></div>`;
+    }
+
     return `
       <article class="example-card">
         <button class="qr-expand-button" type="button" aria-label="Expand QR code for ${escapeHtml(example.title)}" aria-expanded="false">+</button>
@@ -224,6 +236,7 @@
         <h4>${escapeHtml(example.title)}</h4>
         <div class="example-meta">${escapeHtml(example.subcategory)} / ${escapeHtml(example.level)} / ${escapeHtml(example.p5)}</div>
         <p>${escapeHtml(example.description)}</p>
+        ${companionLine}
         <div class="tag-list">${capabilities}${platforms}</div>
         ${renderReferenceDrawer(example)}
         <div class="card-actions">
@@ -294,7 +307,7 @@
   function orderedSubcategories(category, groupedCategory) {
     const preferredOrder = {
       Start: ['Starter'],
-      Input: ['Touch', 'Movement', 'Microphone', 'Speech', 'BLE', 'NFC', 'Camera'],
+      Input: ['Touch', 'Movement', 'Microphone', 'Speech', 'BLE', 'NFC', 'GPS', 'Camera'],
       Output: ['Sound', 'Vibration', 'Torch', 'BLE'],
       Reference: ['UI Styles', 'Phone and GIF', 'UX Compare']
     };

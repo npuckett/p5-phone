@@ -6,10 +6,11 @@ window.P5PHONE_PERMISSION_MATRIX = [
   { capability: 'Vibration', status: 'window.vibrationEnabled', tap: 'enableVibrationTap(message)', button: 'enableVibrationButton(text)', canvas: 'enableVibrationCanvas(message)', banner: 'enableVibrationBanner(message, position)', custom: 'enableVibrationOn(selector)', notes: 'Android-oriented. Use vibrate(pattern) for haptics.' },
   { capability: 'Torch / flashlight', status: 'window.torchEnabled, window.torchActive', tap: 'enableTorchTap(message)', button: 'enableTorchButton(text)', canvas: 'enableTorchCanvas(message)', banner: 'enableTorchBanner(message, position)', custom: 'enableTorchOn(selector)', notes: 'Android Chrome-oriented. Starts a rear camera stream and controls the flashlight with torchOn(), torchOff(), and toggleTorch().' },
   { capability: 'NFC', status: 'window.nfcEnabled', tap: 'enableNfcTap(message)', button: 'enableNfcButton(text)', canvas: 'enableNfcCanvas(message)', banner: 'enableNfcBanner(message, position)', custom: 'enableNfcOn(selector)', notes: 'Android Chrome with HTTPS only. Use nfcRead(message, serialNumber).' },
+  { capability: 'GPS / geolocation', status: 'window.geoEnabled', tap: 'enableGeoTap(message)', button: 'enableGeoButton(text)', canvas: 'enableGeoCanvas(message)', banner: 'enableGeoBanner(message, position)', custom: 'enableGeoOn(selector)', notes: 'iOS Safari + Android Chrome over HTTPS. Coarse by default; setGeoOptions({ enableHighAccuracy: true }) for real GPS. Use geoRead(position).' },
   { capability: 'Bluetooth (BLE)', status: 'window.bleConnected', tap: 'enableBleTap(options?)', button: 'enableBleButton(options?)', canvas: 'enableBleCanvas(options?)', banner: 'enableBleBanner(options?)', custom: 'enableBleOn(selector)', notes: 'Call bleSetup() first. Chrome/Edge over HTTPS. iOS: Bluefy browser. iframe needs allow="bluetooth".' },
   { capability: 'Camera', status: 'window.cameraEnabled || cam.ready', tap: 'enableCameraTap(message)', button: 'enableCameraButton(text)', canvas: 'enableCameraCanvas(message)', banner: 'enableCameraBanner(message, position)', custom: 'enableCameraOn(selector)', notes: 'Pair with createPhoneCamera() for ML5-friendly mapping.' },
   { capability: 'Motion + microphone', status: 'window.sensorsEnabled && window.micEnabled', tap: 'enableAllTap(message)', button: 'enableAllButton(text)', canvas: 'enableAllCanvas(message)', banner: 'enableAllBanner(message, position)', custom: 'enableAllOn(selector)', notes: 'Convenience flow for sketches that need both sensors and mic.' },
-  { capability: 'Any combination', status: 'depends on selected permissions', tap: "enablePermissionsTap(['sensors', 'torch'])", button: "enablePermissionsButton(['torch', 'vibration'], text)", canvas: "enablePermissionsCanvas(['camera', 'mic'])", banner: "enablePermissionsBanner(['sensors', 'nfc'], msg)", custom: "enablePermissionsOn(selector, ['camera', 'mic'])", notes: 'Use sensors, mic, sound, speech, vibration, torch, nfc, and camera in any combination. enableHardware* aliases are also available.' }
+  { capability: 'Any combination', status: 'depends on selected permissions', tap: "enablePermissionsTap(['sensors', 'torch'])", button: "enablePermissionsButton(['torch', 'vibration'], text)", canvas: "enablePermissionsCanvas(['camera', 'mic'])", banner: "enablePermissionsBanner(['sensors', 'nfc'], msg)", custom: "enablePermissionsOn(selector, ['camera', 'mic'])", notes: 'Use sensors, mic, sound, speech, vibration, torch, nfc, geo, and camera in any combination. enableHardware* aliases are also available.' }
 ];
 
 window.P5PHONE_API_SECTIONS = [
@@ -114,6 +115,21 @@ window.P5PHONE_API_SECTIONS = [
     ]
   },
   {
+    id: 'geo',
+    title: 'GPS / Geolocation',
+    description: 'Cross-platform geolocation (iOS Safari + Android Chrome over HTTPS) built on navigator.geolocation. Coarse by default; opt into real GPS with setGeoOptions().',
+    items: [
+      { name: 'enableGeoTap', signature: 'enableGeoTap(message)', summary: 'Starts the GPS watch from a user tap. Requires HTTPS. The first fix can take 5-30s (cold start).', tags: ['geo', 'tap'] },
+      { name: 'geoRead', signature: 'function geoRead(position) { ... }', summary: 'Optional sketch callback called on every position update. position has latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed, timestamp.', tags: ['callback'] },
+      { name: 'onGeoError', signature: 'function onGeoError(error) { ... }', summary: 'Optional sketch callback for stream errors after the watch starts. error.code: 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT.', tags: ['callback'] },
+      { name: 'setGeoOptions', signature: "setGeoOptions({ enableHighAccuracy: true, timeout: 30000, maximumAge: 0 })", summary: 'Tunes accuracy and caching. Call BEFORE enableGeo*. Default is coarse (battery-friendly); enableHighAccuracy: true engages real GPS (~5-10m outdoors).', tags: ['geo'] },
+      { name: 'getGeoPosition', signature: 'getGeoPosition()', summary: 'Returns the most recent normalized position synchronously, or null. Same value as window.lastGeoPosition.', tags: ['geo'] },
+      { name: 'geoDistance', signature: "geoDistance(lat1, lon1, lat2, lon2, 'm')", summary: 'Great-circle distance between two lat/lon points (Haversine). units: \'m\' (default), \'km\', or \'mi\'.', tags: ['geoDistance'] },
+      { name: 'geoInPolygon', signature: 'geoInPolygon([{lat, lon}, ...], {lat, lon})', summary: 'Point-in-geofence test via ray casting. polygon is an array of vertices; point is { lat, lon }. Returns true when the point is inside.', tags: ['geoInPolygon', 'conditionals'] },
+      { name: 'stopGeo', signature: 'stopGeo()', summary: 'Stops the GPS watch and releases the position subscription. Also called automatically when the sketch is removed in p5.js 2.x.', tags: ['geo'] }
+    ]
+  },
+  {
     id: 'vibration',
     title: 'Vibration',
     description: 'Android-oriented haptic helpers built on the browser Vibration API.',
@@ -154,8 +170,9 @@ window.P5PHONE_API_SECTIONS = [
     title: 'Status Variables',
     description: 'Global flags and last-read values that sketches can check in draw().',
     items: [
-      { name: 'permission flags', signature: 'window.sensorsEnabled, micEnabled, soundEnabled, speechEnabled, vibrationEnabled, nfcEnabled', summary: 'Boolean flags for the currently enabled hardware paths.', tags: ['status'] },
+      { name: 'permission flags', signature: 'window.sensorsEnabled, micEnabled, soundEnabled, speechEnabled, vibrationEnabled, nfcEnabled, geoEnabled', summary: 'Boolean flags for the currently enabled hardware paths.', tags: ['status'] },
       { name: 'NFC state', signature: 'window.nfcStatus, nfcError, lastNfcMessage, lastNfcSerialNumber, lastNfcAlias, nfcTagAliases', summary: 'NFC diagnostic and tag alias state for sketches and debug screens.', tags: ['nfc', 'status'] },
+      { name: 'GPS state', signature: 'window.geoStatus, geoError, lastGeoPosition', summary: 'GPS status string, latest error message, and most recent normalized position for sketches and debug screens.', tags: ['geo', 'status'] },
       { name: 'BLE state', signature: 'window.bleSupported, bleConnected, bleStatus, bleError, bleDeviceName, bleValues', summary: 'Web Bluetooth connection state and latest decoded characteristic values.', tags: ['ble', 'status'] },
       { name: 'gesture state', signature: 'window.gesturesLocked', summary: 'True after lockGestures() has installed the mobile gesture prevention handlers.', tags: ['status'] }
     ]

@@ -221,7 +221,8 @@ window.P5PHONE_EXAMPLES = [
     sourcePath: 'examples/Phone%20Sensor%20Examples/ble/01_ble_input',
     webEditor: 'https://editor.p5js.org/npuckett/sketches/R_B8pEHK5',
     platforms: ['Android Chrome', 'Desktop Chrome', 'Bluefy iOS'],
-    capabilities: ['ble', 'input']
+    capabilities: ['ble', 'input'],
+    companion: { label: 'Arduino example', href: 'companion/P5PhoneBLE/examples/03_P5Phone_Input', external: true }
   },
   {
     id: 'ble-send',
@@ -235,7 +236,8 @@ window.P5PHONE_EXAMPLES = [
     sourcePath: 'examples/Phone%20Sensor%20Examples/ble/02_ble_send',
     webEditor: 'https://editor.p5js.org/npuckett/sketches/IefGlj-5t',
     platforms: ['Android Chrome', 'Desktop Chrome', 'Bluefy iOS'],
-    capabilities: ['ble', 'output']
+    capabilities: ['ble', 'output'],
+    companion: { label: 'Arduino example', href: 'companion/P5PhoneBLE/examples/04_P5Phone_Send', external: true }
   },
   {
     id: 'ble-both',
@@ -249,7 +251,8 @@ window.P5PHONE_EXAMPLES = [
     sourcePath: 'examples/Phone%20Sensor%20Examples/ble/03_ble_both',
     webEditor: 'https://editor.p5js.org/npuckett/sketches/J3-X0BAKb',
     platforms: ['Android Chrome', 'Desktop Chrome', 'Bluefy iOS'],
-    capabilities: ['ble', 'input', 'output']
+    capabilities: ['ble', 'input', 'output'],
+    companion: { label: 'Arduino example', href: 'companion/P5PhoneBLE/examples/05_P5Phone_Both', external: true }
   },
   {
     id: 'nfc-tag-identifier',
@@ -274,6 +277,18 @@ window.P5PHONE_EXAMPLES = [
     path: 'Phone%20Sensor%20Examples/nfc/02_two_tag_effects/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/nfc/02_two_tag_effects',
     capabilities: ['nfc', 'aliases']
+  },
+  {
+    id: 'geo-watch-distance',
+    title: 'GPS Watch + Distance',
+    category: 'Input',
+    subcategory: 'GPS',
+    level: 'Starter',
+    p5: '1.x and 2.0',
+    description: 'Show your live GPS position and how far you have moved from the first fix.',
+    path: 'Phone%20Sensor%20Examples/geo/01_geo_watch/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/geo/01_geo_watch',
+    capabilities: ['geo', 'geoDistance']
   },
   {
     id: 'sound-basic',

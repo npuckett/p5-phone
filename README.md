@@ -65,6 +65,7 @@ p5-phone supports both **p5.js 1.x** and **p5.js 2.0+**.
 | Camera (PhoneCamera) | ✅ | ✅ |
 | Vibration | ✅ | ✅ |
 | NFC Tag Reading (Android only) | ✅ | ✅ |
+| GPS / Geolocation (iOS + Android) | ✅ | ✅ |
 | Bluetooth Low Energy (Web Bluetooth) | ✅ | ✅ |
 | Debug console | ✅ | ✅ |
 | lockGestures() | ✅ | ✅ |
@@ -97,6 +98,7 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   - [Vibration Motor (Android Only)](#vibration-motor-android-only)
   - [Torch / Flashlight (Android Chrome)](#torch--flashlight-android-chrome)
   - [NFC Tag Reading (Android Only)](#nfc-tag-reading-android-only)
+  - [GPS / Geolocation (iOS + Android)](#gps--geolocation-ios--android)
   - [PhoneCamera (ML5 Integration)](#phonecamera-ml5-integration)
   - [Debug System](#debug-system)
 - [Permission UI Styles](#permission-ui-styles)
@@ -111,10 +113,10 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
 
 ```html
 <!-- Minified version (recommended) -->
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.13.0/dist/p5-phone.min.js"></script>
 
 <!-- Development version (larger, with comments) -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.13.0/dist/p5-phone.js"></script> -->
 ```
 
 ### Basic Setup
@@ -143,7 +145,7 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
   
   <!-- Load p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.13.0/dist/p5-phone.min.js"></script>
   
 </head>
 <body>
@@ -275,23 +277,35 @@ createPhoneCamera(active, mirror, mode)  // Create camera instance
 enableCameraTap(message)                 // Tap to enable camera
 enableCameraButton(text)                 // Button-based camera activation
 
+// GPS / geolocation (iOS Safari + Android Chrome, HTTPS required)
+enableGeoTap(message)                    // Tap anywhere to enable GPS
+enableGeoButton(text)                    // Button-based GPS activation
+setGeoOptions({ enableHighAccuracy, timeout, maximumAge }) // Tune before enableGeo* (default: coarse)
+getGeoPosition()                         // Return last position synchronously (or null)
+geoDistance(lat1, lon1, lat2, lon2, units) // Haversine distance: 'm' (default), 'km', or 'mi'
+geoInPolygon(polygon, point)             // Point-in-geofence test (ray casting)
+stopGeo()                                // Stop the GPS watch and release the subscription
+
 // --- Alternative Permission UI Styles (v1.7.0) ---
 
 // Canvas-first-touch — permissions fire on first canvas interaction
 enableGyroCanvas(message)    // Also: enableMicCanvas, enableSoundCanvas,
                              //        enableSpeechCanvas, enableVibrationCanvas,
-                             //        enableAllCanvas, enableCameraCanvas
+                             //        enableAllCanvas, enableNfcCanvas, enableGeoCanvas,
+                             //        enableCameraCanvas
 
 // Banner — slim notification bar at top or bottom of screen
 enableGyroBanner(message, position)   // position: 'top' or 'bottom'
                                       // Also: enableMicBanner, enableSoundBanner,
                                       //        enableSpeechBanner, enableVibrationBanner,
-                                      //        enableAllBanner, enableCameraBanner
+                                      //        enableAllBanner, enableNfcBanner, enableGeoBanner,
+                                      //        enableCameraBanner
 
 // Custom element binding — attach to your own DOM element
 enableGyroOn(selector)    // e.g., enableGyroOn('#my-button')
                           // Also: enableMicOn, enableSoundOn, enableSpeechOn,
-                          //        enableVibrationOn, enableAllOn, enableCameraOn
+                          //        enableVibrationOn, enableAllOn, enableNfcOn, enableGeoOn,
+                          //        enableCameraOn
 
 // Status variables (check these in your code)
 window.sensorsEnabled     // Boolean: true when motion sensors are active
@@ -303,6 +317,7 @@ window.torchEnabled       // Boolean: true when torch camera stream is active
 window.torchSupported     // Boolean: true when torch support is reported
 window.torchActive        // Boolean: true when flashlight is currently on
 window.nfcEnabled         // Boolean: true when NFC scanning is active (Android only)
+window.geoEnabled         // Boolean: true when GPS watch is active (iOS + Android)
 window.cameraEnabled      // Boolean: true after camera startup succeeds
 
 // Debug system
@@ -341,6 +356,10 @@ this.enableGyroTap('Tap to start');
 - `window.torchActive` - Boolean indicating if the flashlight is currently on
 - `window.torchError` - Last torch error message, if any
 - `window.nfcEnabled` - Boolean indicating if NFC scanning is active (Android only)
+- `window.geoEnabled` - Boolean indicating if the GPS watch is active (iOS + Android)
+- `window.geoStatus` - String describing GPS status (`idle`/`requesting-permission`/`active`/`permission-denied`/`unsupported`/`secure-context-required`/`error`/`stopped`)
+- `window.geoError` - String containing the latest GPS error message
+- `window.lastGeoPosition` - Most recent normalized position `{ latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed, timestamp }`
 - `window.cameraEnabled` - Boolean indicating if camera startup has succeeded
 - `window.lastNfcSerialNumber` - Serial number string for the most recently read NFC tag
 - `window.lastNfcAlias` - Alias string for the most recently read NFC tag, if one has been set
@@ -902,9 +921,134 @@ NFC tags contain NDEF records. The most common types are:
 - Test on Android devices with Chrome — NFC is not available on iOS or desktop browsers
 - Tags must be NDEF-formatted to be read by the Web NFC API
 
+### GPS / Geolocation (iOS + Android)
+
+**Purpose:** Read the device's geographic position using the browser Geolocation API (`navigator.geolocation`). Ideal for location-aware sketches, distance/wayfinding visualizations, geofencing, and any work that responds to where the phone is. Unlike NFC/torch/vibration, GPS works on **both iOS Safari and Android Chrome**.
+
+**✅ Platform Support:**
+- ✅ **iOS** - Safari (iOS 13+), requires HTTPS and a user gesture to prompt
+- ✅ **Android** - Chrome, requires HTTPS
+- Requires **HTTPS** — geolocation is blocked on insecure origins (`http://`), except `localhost`
+
+**Important:** GPS permission must be requested from a user gesture (tap/click) — the same pattern used by all other p5-phone permission functions. The first position fix can take 5-30 seconds (cold start) as the GPS warms up; `window.geoStatus` will read `'requesting-permission'` during this time. By default the library uses a **coarse, battery-friendly** fix (Wi-Fi/cell, ~50-100m). Call `setGeoOptions({ enableHighAccuracy: true })` before enabling to opt into real GPS (~5-10m outdoors, slower, more battery).
+
+**Commands:**
+- `enableGeoTap(message)` - Tap anywhere on screen to enable GPS
+- `enableGeoButton(text)` - Creates a button with custom text to enable GPS
+- `stopGeo()` - Stop the GPS watch and release the position subscription
+- `setGeoOptions(opts)` - Tune accuracy/timeout/maximumAge (call *before* `enableGeo*`)
+- `getGeoPosition()` - Return the last known position synchronously, or `null`
+- `geoDistance(lat1, lon1, lat2, lon2, units)` - Great-circle distance (Haversine); `units` is `'m'` (default), `'km'`, or `'mi'`
+- `geoInPolygon(polygon, point)` - Point-in-geofence test (ray casting); `polygon` is `[{lat, lon}, ...]`, `point` is `{lat, lon}`
+
+**Status Variables:**
+- `window.geoEnabled` - Boolean indicating if the GPS watch is active
+- `window.geoStatus` - String describing GPS status (`idle` / `requesting-permission` / `active` / `permission-denied` / `unsupported` / `secure-context-required` / `error` / `stopped`)
+- `window.geoError` - String containing the latest GPS error message
+- `window.lastGeoPosition` - Most recent normalized position object
+
+**User Callbacks:**
+
+Define a `geoRead(position)` function in your sketch to receive position updates. Define `onGeoError(error)` to receive stream errors after the watch has started.
+
+```javascript
+function geoRead(position) {
+  // position.latitude, position.longitude  — WGS84 decimal degrees
+  // position.accuracy                      — 95% confidence radius in meters
+  // position.altitude                      — meters above ellipsoid (may be null)
+  // position.altitudeAccuracy              — meters (may be null)
+  // position.heading                       — degrees from true north (null when stationary)
+  // position.speed                         — meters per second (may be null)
+  // position.timestamp                     — Epoch ms
+}
+
+function onGeoError(error) {
+  // error.code: 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT
+}
+```
+
+**Usage:**
+```javascript
+let startPos = null;
+let traveled = 0;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+
+  // Optional: opt into real GPS (~5-10m outdoors). Comment out for coarse default.
+  setGeoOptions({ enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
+
+  enableGeoTap('Tap to enable GPS');
+}
+
+function draw() {
+  background(20);
+  textAlign(CENTER, CENTER);
+  textSize(20);
+
+  const pos = window.lastGeoPosition;
+
+  if (window.geoStatus === 'requesting-permission') {
+    fill(255);
+    text('Acquiring GPS…', width / 2, height / 2);
+    text('(cold start can take 5-30s)', width / 2, height / 2 + 30);
+  } else if (pos) {
+    fill(120, 220, 160);
+    text(pos.latitude.toFixed(5) + ', ' + pos.longitude.toFixed(5), width / 2, height / 2 - 30);
+    text('±' + Math.round(pos.accuracy) + ' m', width / 2, height / 2);
+    text(traveled.toFixed(1) + ' m traveled', width / 2, height / 2 + 30);
+  } else if (window.geoError) {
+    fill(220, 120, 120);
+    text(window.geoError, width / 2, height / 2, width * 0.8);
+  } else {
+    fill(200);
+    text('GPS not active', width / 2, height / 2);
+  }
+}
+
+function geoRead(position) {
+  if (!startPos) {
+    startPos = position;          // first fix becomes the origin
+  } else {
+    traveled = geoDistance(
+      startPos.latitude, startPos.longitude,
+      position.latitude, position.longitude, 'm'
+    );
+  }
+}
+```
+
+**Geofencing example** — respond when the phone enters a defined area:
+```javascript
+const home = [
+  { lat: 40.012, lon: -105.260 },
+  { lat: 40.012, lon: -105.250 },
+  { lat: 40.005, lon: -105.250 },
+  { lat: 40.005, lon: -105.260 }
+];
+
+function geoRead(position) {
+  if (geoInPolygon(home, position)) {
+    background(120, 220, 160);    // inside the geofence
+  } else {
+    background(60);
+  }
+}
+```
+
+**Best Practices:**
+- Always check `window.lastGeoPosition` (or `window.geoStatus`) before relying on position data
+- Use the `geoRead()` callback for real-time position processing; read `window.lastGeoPosition` in `draw()` for display
+- Start with the coarse default — only opt into `enableHighAccuracy: true` when you genuinely need GPS-grade accuracy, since it drains more battery and has a slower cold start
+- Call `stopGeo()` when your sketch no longer needs position updates to save battery (it is also called automatically when the sketch is removed in p5.js 2.x)
+- Serve over HTTPS — geolocation is blocked on insecure origins
+- On iOS, GPS does **not** run when the screen is locked or the tab is backgrounded; expect updates to resume when the page is visible again
+- On iOS in-app browsers (Instagram/Facebook), geolocation often fails — instruct users to open the sketch in Safari
+
 ### Bluetooth Low Energy (Web Bluetooth)
 
-**Purpose:** Send and receive typed values between a p5.js sketch and an Arduino-class BLE peripheral (companion **P5PhoneBLE** Arduino library). Ideal for sensor dashboards, physical controllers, and bidirectional installations.
+**Purpose:** Send and receive typed values between a p5.js sketch and an Arduino-class BLE peripheral (companion [**P5PhoneBLE**](companion/P5PhoneBLE/) Arduino library). Ideal for sensor dashboards, physical controllers, and bidirectional installations.
 
 **Platform Support:**
 - ✅ **Android** — Chrome
@@ -912,6 +1056,7 @@ NFC tags contain NDEF records. The most common types are:
 - ❌ **iOS Safari / Chrome** — Web Bluetooth not available; use the free **Bluefy** browser app on iPhone/iPad
 - Requires **HTTPS** (or `localhost`)
 - **Embedded iframes** (Canvas LMS, editor previews) need `allow="bluetooth"` on the iframe
+- **Peripheral side:** pair with the [P5PhoneBLE](companion/P5PhoneBLE/) Arduino library — supports UNO R4 WiFi, Nano 33 IoT, Nano 33 BLE, and ESP32 / S3 / C3
 
 **Two-step workflow:**
 
@@ -976,13 +1121,13 @@ function mousePressed() {
 }
 ```
 
-Omit characteristic `uuid` fields to auto-derive them from the service UUID and declaration order — the same contract used by the P5PhoneBLE Arduino library. All numeric types use **little-endian** byte order.
+Omit characteristic `uuid` fields to auto-derive them from the service UUID and declaration order — the same contract used by the [P5PhoneBLE](companion/P5PhoneBLE/) Arduino library. All numeric types use **little-endian** byte order.
 
 **Best practices:**
 - Call `bleSetup()` before any connect helper
 - Read `bleValues` in `draw()`; do not assume a fresh value every frame
 - Use `showDebug()` when testing on phones without devtools
-- Pair with a matching P5PhoneBLE Arduino sketch (same names, types, and order)
+- Pair with a matching [P5PhoneBLE](companion/P5PhoneBLE/) Arduino sketch (same names, types, and order)
 
 ### Speech Recognition Activation
 

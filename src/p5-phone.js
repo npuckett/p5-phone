@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.12.1
+ * p5-phone v1.13.0
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -106,11 +106,19 @@ window.bleStatus = 'idle';
 window.bleError = '';
 window.bleDeviceName = '';
 window.bleValues = {};
+window.geoEnabled = false;
+window.geoStatus = 'idle'; // idle | requesting-permission | active | permission-denied | unsupported | secure-context-required | error | stopped
+window.geoError = '';
+window.lastGeoPosition = null;
 
 // Internal state
 let _micInstance = null;
 let _nfcReader = null;
 let _nfcAbortController = null;
+let _geoWatchId = null;
+// Coarse-by-default (battery-friendly, fast fix). Sketches opt into real GPS via
+// setGeoOptions({ enableHighAccuracy: true }) BEFORE calling enableGeo*.
+let _geoOpts = { enableHighAccuracy: false, timeout: 30000, maximumAge: 0 };
 let _torchStream = null;
 let _torchTrack = null;
 let _torchVideo = null;
@@ -437,6 +445,30 @@ function enableNfcTap(message = 'Tap screen to enable NFC') {
 }
 
 /**
+ * Enable GPS/geolocation with a button interface
+ * Creates a start button that user must click
+ * Works on iOS Safari and Android Chrome (HTTPS required)
+ */
+function enableGeoButton(buttonText = 'ENABLE LOCATION', statusText = 'Enabling GPS...') {
+  _createPermissionButton(buttonText, statusText, async () => {
+    await _requestGeoPermission();
+    console.log('✅ GPS enabled via button');
+  });
+}
+
+/**
+ * Enable GPS/geolocation with tap-to-start
+ * User taps anywhere on screen to enable
+ * Works on iOS Safari and Android Chrome (HTTPS required)
+ */
+function enableGeoTap(message = 'Tap screen to enable GPS') {
+  _createTapToEnable(message, async () => {
+    await _requestGeoPermission();
+    console.log('✅ GPS enabled via tap');
+  });
+}
+
+/**
  * Enable both motion sensors and microphone with a button interface
  * Creates a start button that user must click to enable both
  */
@@ -569,6 +601,16 @@ function enableNfcCanvas(message = 'Touch to start') {
 }
 
 /**
+ * Enable GPS/geolocation on first canvas touch
+ */
+function enableGeoCanvas(message = 'Touch to start') {
+  _createCanvasToEnable(message, async () => {
+    await _requestGeoPermission();
+    console.log('✅ GPS enabled via canvas touch');
+  });
+}
+
+/**
  * Enable both motion sensors and microphone on first canvas touch
  */
 function enableAllCanvas(message = 'Touch to start') {
@@ -662,6 +704,13 @@ function enableNfcBanner(message = 'Tap to enable NFC', position = 'top') {
   });
 }
 
+function enableGeoBanner(message = 'Tap to enable GPS', position = 'top') {
+  _createBannerToEnable(message, position, async () => {
+    await _requestGeoPermission();
+    console.log('✅ GPS enabled via banner');
+  });
+}
+
 function enableAllBanner(message = 'Tap to enable sensors & microphone', position = 'top') {
   _createBannerToEnable(message, position, async () => {
     await _requestMotionPermissionsCore();
@@ -743,6 +792,13 @@ function enableNfcOn(selector) {
   _bindPermissionTo(selector, async () => {
     await _requestNfcPermission();
     console.log('✅ NFC enabled via custom element');
+  });
+}
+
+function enableGeoOn(selector) {
+  _bindPermissionTo(selector, async () => {
+    await _requestGeoPermission();
+    console.log('✅ GPS enabled via custom element');
   });
 }
 
@@ -951,6 +1007,193 @@ function stopNfc() {
   window.nfcEnabled = false;
   window.nfcStatus = 'stopped';
   console.log('NFC scanning stopped');
+}
+
+// =========================================
+// GPS / GEOLOCATION (navigator.geolocation)
+// Cross-platform (iOS Safari + Android Chrome). HTTPS required.
+// Coarse-by-default; opt into real GPS via setGeoOptions({ enableHighAccuracy: true }).
+// =========================================
+
+/**
+ * Stop GPS watch and release the position subscription.
+ */
+function stopGeo() {
+  if (_geoWatchId !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+    try { navigator.geolocation.clearWatch(_geoWatchId); } catch (e) { /* ignore */ }
+  }
+  _geoWatchId = null;
+  window.geoEnabled = false;
+  window.geoStatus = 'stopped';
+  console.log('GPS watch stopped');
+}
+
+/**
+ * Update GPS options. Call BEFORE enableGeo* for the options to apply.
+ * Defaults: { enableHighAccuracy: false, timeout: 30000, maximumAge: 0 }
+ * Set enableHighAccuracy: true for real GPS (~5-10m outdoors, slower cold start, more battery).
+ */
+function setGeoOptions(opts) {
+  if (opts && typeof opts === 'object') {
+    if (typeof opts.enableHighAccuracy === 'boolean') _geoOpts.enableHighAccuracy = opts.enableHighAccuracy;
+    if (typeof opts.timeout === 'number') _geoOpts.timeout = opts.timeout;
+    if (typeof opts.maximumAge === 'number') _geoOpts.maximumAge = opts.maximumAge;
+  }
+  return _geoOpts;
+}
+
+/**
+ * Return the most recent normalized position synchronously, or null.
+ * Read this in draw() — position updates arrive via the geoRead() callback.
+ */
+function getGeoPosition() {
+  return window.lastGeoPosition;
+}
+
+/**
+ * Great-circle distance between two lat/lon points (Haversine).
+ * units: 'm' (meters, default), 'km', or 'mi'.
+ * Assumes a spherical earth (error < 0.3% vs WGS84 — fine for creative use).
+ */
+function geoDistance(lat1, lon1, lat2, lon2, units) {
+  const R = units === 'km' ? 6371 : (units === 'mi' ? 3959 : 6371000);
+  const toRad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * toRad;
+  const dLon = (lon2 - lon1) * toRad;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Point-in-geofence test via ray casting (pnpoly).
+ * polygon: array of { lat, lon } vertices (first vertex need not repeat).
+ * point: { lat, lon }.
+ * Planar approximation — accurate for typical geo-fence sizes.
+ */
+function geoInPolygon(polygon, point) {
+  if (!Array.isArray(polygon) || polygon.length < 3 || !point) return false;
+  const px = point.lon;
+  const py = point.lat;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].lon, yi = polygon[i].lat;
+    const xj = polygon[j].lon, yj = polygon[j].lat;
+    const intersect = ((yi > py) !== (yj > py)) &&
+      (px < (xj - xi) * (py - yi) / ((yj - yi) || 1e-15) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Normalize a GeolocationPosition DOM object into a plain object that sketches
+ * can read synchronously and serialize safely.
+ */
+function _normalizeGeoPosition(position) {
+  const c = position.coords;
+  return {
+    latitude: c.latitude,
+    longitude: c.longitude,
+    accuracy: c.accuracy,
+    altitude: c.altitude,
+    altitudeAccuracy: c.altitudeAccuracy,
+    heading: c.heading,
+    speed: c.speed,
+    timestamp: position.timestamp
+  };
+}
+
+function _handleGeoPosition(position) {
+  const normalized = _normalizeGeoPosition(position);
+  window.lastGeoPosition = normalized;
+  window.geoStatus = 'active';
+  window.geoError = '';
+  window.geoEnabled = true;
+  if (typeof geoRead === 'function') {
+    try { geoRead(normalized); } catch (e) { console.error('geoRead callback error:', e); }
+  }
+  if (_debugVisible) {
+    debug('GPS: ' + normalized.latitude.toFixed(5) + ', ' + normalized.longitude.toFixed(5) + ' ±' + Math.round(normalized.accuracy) + 'm');
+  }
+}
+
+function _handleGeoError(error, isStream) {
+  // PositionError.code: 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT
+  if (error && error.code === 1) {
+    window.geoStatus = 'permission-denied';
+    window.geoError = 'Location permission denied. Check browser site settings and OS-level Location Services (iOS: Settings → Privacy & Security → Location Services → Safari; Android: Settings → Location).';
+    if (_debugVisible) debugWarn('GPS permission denied');
+  } else if (error && error.code === 3) {
+    // Timeouts are often transient (cold start, indoor use). Don't flip to a hard
+    // error status if the watch is already active and we have a last position.
+    if (!window.lastGeoPosition) {
+      window.geoStatus = 'error';
+      window.geoError = 'GPS timeout. Cold start can take 5-30s — try again, preferably outdoors.';
+    }
+    if (_debugVisible) debugWarn('GPS timeout (cold start can take 5-30s)');
+  } else {
+    window.geoStatus = 'error';
+    window.geoError = (error && error.message)
+      ? 'Location unavailable: ' + error.message + '. Move outdoors or retry.'
+      : 'Location unavailable. Move outdoors or retry.';
+    if (_debugVisible) debugWarn('GPS error: ' + (error && error.message ? error.message : 'unavailable'));
+  }
+  if (error && error.code !== 3) {
+    window.geoEnabled = false;
+  }
+  if (typeof onGeoError === 'function') {
+    try { onGeoError(error); } catch (e) { console.error('onGeoError callback error:', e); }
+  }
+}
+
+async function _requestGeoPermissionCore() {
+  try {
+    if (window.geoEnabled && _geoWatchId !== null) {
+      return true;
+    }
+    window.geoError = '';
+
+    // Secure context (HTTPS or localhost) is mandatory.
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
+      console.warn('⚠️ GPS requires HTTPS (or localhost). Blocked on insecure origins.');
+      window.geoEnabled = false;
+      window.geoStatus = 'secure-context-required';
+      window.geoError = 'GPS requires HTTPS. Serve this sketch from an HTTPS URL, not plain HTTP.';
+      if (_debugVisible) debugWarn('GPS requires HTTPS');
+      return false;
+    }
+
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+      console.warn('⚠️ Geolocation API not supported on this device/browser');
+      window.geoEnabled = false;
+      window.geoStatus = 'unsupported';
+      window.geoError = 'Geolocation is not supported in this browser.';
+      if (_debugVisible) debugWarn('Geolocation not supported');
+      return false;
+    }
+
+    window.geoStatus = 'requesting-permission';
+
+    // Trigger the permission prompt from this user gesture with a one-shot call.
+    // More predictable across iOS/Android than relying on watchPosition to prompt.
+    await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, _geoOpts);
+    }).then(_handleGeoPosition, (err) => { throw err; });
+
+    // Permission granted — start the continuous watch.
+    _geoWatchId = navigator.geolocation.watchPosition(_handleGeoPosition, (err) => {
+      _handleGeoError(err, true);
+    }, _geoOpts);
+
+    console.log('✅ GPS watch active');
+    return true;
+
+  } catch (error) {
+    _handleGeoError(error, false);
+    return false;
+  }
 }
 
 function _normalizeNfcText(value) {
@@ -1822,6 +2065,10 @@ function _normalizePermissionList(permissions) {
     nfc: 'nfc',
     tag: 'nfc',
     tags: 'nfc',
+    geo: 'geo',
+    gps: 'geo',
+    location: 'geo',
+    geolocation: 'geo',
     camera: 'camera',
     video: 'camera',
     webcam: 'camera'
@@ -1857,7 +2104,7 @@ function _normalizePermissionList(permissions) {
   }
 
   if (normalized.length === 0) {
-    console.warn('p5-phone: No valid permission types provided. Use sensors, mic, sound, speech, vibration, torch, nfc, or camera.');
+    console.warn('p5-phone: No valid permission types provided. Use sensors, mic, sound, speech, vibration, torch, nfc, geo, or camera.');
   }
 
   return normalized;
@@ -1881,6 +2128,8 @@ async function _requestPermissionsCore(permissions) {
       await _requestTorchPermissionCore();
     } else if (permission === 'nfc') {
       await _requestNfcPermissionCore();
+    } else if (permission === 'geo') {
+      await _requestGeoPermissionCore();
     } else if (permission === 'camera') {
       await _requestCameraPermissionCore();
     }
@@ -1927,6 +2176,12 @@ async function _requestNfcPermission() {
   return enabled;
 }
 
+async function _requestGeoPermission() {
+  const enabled = await _requestGeoPermissionCore();
+  _notifySketchReady();
+  return enabled;
+}
+
 function _notifySketchReady() {
   // Call userSetupComplete if it exists
   if (typeof userSetupComplete === 'function') {
@@ -1943,6 +2198,7 @@ function _notifySketchReady() {
       vibration: window.vibrationEnabled,
       torch: window.torchEnabled,
       nfc: window.nfcEnabled,
+      geo: window.geoEnabled,
       camera: window.cameraEnabled,
       gestures: window.gesturesLocked
     }
@@ -2795,6 +3051,13 @@ window.stopNfc = stopNfc;
 window.setNfcTagAlias = setNfcTagAlias;
 window.getNfcTagAlias = getNfcTagAlias;
 window.isNfcTag = isNfcTag;
+window.enableGeoTap = enableGeoTap;
+window.enableGeoButton = enableGeoButton;
+window.stopGeo = stopGeo;
+window.setGeoOptions = setGeoOptions;
+window.getGeoPosition = getGeoPosition;
+window.geoDistance = geoDistance;
+window.geoInPolygon = geoInPolygon;
 window.isBleSupported = isBleSupported;
 window.bleSetup = bleSetup;
 window.bleConnect = bleConnect;
@@ -2818,6 +3081,7 @@ window.enableSoundCanvas = enableSoundCanvas;
 window.enableSpeechCanvas = enableSpeechCanvas;
 window.enableVibrationCanvas = enableVibrationCanvas;
 window.enableNfcCanvas = enableNfcCanvas;
+window.enableGeoCanvas = enableGeoCanvas;
 window.enableBleCanvas = enableBleCanvas;
 window.enableAllCanvas = enableAllCanvas;
 window.enableCameraCanvas = enableCameraCanvas;
@@ -2832,6 +3096,7 @@ window.enableSoundBanner = enableSoundBanner;
 window.enableSpeechBanner = enableSpeechBanner;
 window.enableVibrationBanner = enableVibrationBanner;
 window.enableNfcBanner = enableNfcBanner;
+window.enableGeoBanner = enableGeoBanner;
 window.enableBleBanner = enableBleBanner;
 window.enableAllBanner = enableAllBanner;
 window.enableCameraBanner = enableCameraBanner;
@@ -2846,6 +3111,7 @@ window.enableSoundOn = enableSoundOn;
 window.enableSpeechOn = enableSpeechOn;
 window.enableVibrationOn = enableVibrationOn;
 window.enableNfcOn = enableNfcOn;
+window.enableGeoOn = enableGeoOn;
 window.enableBleOn = enableBleOn;
 window.enableAllOn = enableAllOn;
 window.enableCameraOn = enableCameraOn;
@@ -3765,6 +4031,13 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.setNfcTagAlias = setNfcTagAlias;
   p5.prototype.getNfcTagAlias = getNfcTagAlias;
   p5.prototype.isNfcTag = isNfcTag;
+  p5.prototype.enableGeoTap = enableGeoTap;
+  p5.prototype.enableGeoButton = enableGeoButton;
+  p5.prototype.stopGeo = stopGeo;
+  p5.prototype.setGeoOptions = setGeoOptions;
+  p5.prototype.getGeoPosition = getGeoPosition;
+  p5.prototype.geoDistance = geoDistance;
+  p5.prototype.geoInPolygon = geoInPolygon;
   p5.prototype.isBleSupported = isBleSupported;
   p5.prototype.bleSetup = bleSetup;
   p5.prototype.bleConnect = bleConnect;
@@ -3790,6 +4063,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableTorchCanvas = enableTorchCanvas;
   p5.prototype.enableFlashlightCanvas = enableFlashlightCanvas;
   p5.prototype.enableNfcCanvas = enableNfcCanvas;
+  p5.prototype.enableGeoCanvas = enableGeoCanvas;
   p5.prototype.enableBleCanvas = enableBleCanvas;
   p5.prototype.enableAllCanvas = enableAllCanvas;
   p5.prototype.enableCameraCanvas = enableCameraCanvas;
@@ -3806,6 +4080,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableTorchBanner = enableTorchBanner;
   p5.prototype.enableFlashlightBanner = enableFlashlightBanner;
   p5.prototype.enableNfcBanner = enableNfcBanner;
+  p5.prototype.enableGeoBanner = enableGeoBanner;
   p5.prototype.enableBleBanner = enableBleBanner;
   p5.prototype.enableAllBanner = enableAllBanner;
   p5.prototype.enableCameraBanner = enableCameraBanner;
@@ -3822,6 +4097,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableTorchOn = enableTorchOn;
   p5.prototype.enableFlashlightOn = enableFlashlightOn;
   p5.prototype.enableNfcOn = enableNfcOn;
+  p5.prototype.enableGeoOn = enableGeoOn;
   p5.prototype.enableBleOn = enableBleOn;
   p5.prototype.enableAllOn = enableAllOn;
   p5.prototype.enableCameraOn = enableCameraOn;
@@ -3899,6 +4175,13 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.setNfcTagAlias = setNfcTagAlias;
       this.getNfcTagAlias = getNfcTagAlias;
       this.isNfcTag = isNfcTag;
+      this.enableGeoTap = enableGeoTap;
+      this.enableGeoButton = enableGeoButton;
+      this.stopGeo = stopGeo;
+      this.setGeoOptions = setGeoOptions;
+      this.getGeoPosition = getGeoPosition;
+      this.geoDistance = geoDistance;
+      this.geoInPolygon = geoInPolygon;
       this.isBleSupported = isBleSupported;
       this.bleSetup = bleSetup;
       this.bleConnect = bleConnect;
@@ -3924,6 +4207,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableTorchCanvas = enableTorchCanvas;
       this.enableFlashlightCanvas = enableFlashlightCanvas;
       this.enableNfcCanvas = enableNfcCanvas;
+      this.enableGeoCanvas = enableGeoCanvas;
       this.enableBleCanvas = enableBleCanvas;
       this.enableAllCanvas = enableAllCanvas;
       this.enableCameraCanvas = enableCameraCanvas;
@@ -3940,6 +4224,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableTorchBanner = enableTorchBanner;
       this.enableFlashlightBanner = enableFlashlightBanner;
       this.enableNfcBanner = enableNfcBanner;
+      this.enableGeoBanner = enableGeoBanner;
       this.enableBleBanner = enableBleBanner;
       this.enableAllBanner = enableAllBanner;
       this.enableCameraBanner = enableCameraBanner;
@@ -3956,6 +4241,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableTorchOn = enableTorchOn;
       this.enableFlashlightOn = enableFlashlightOn;
       this.enableNfcOn = enableNfcOn;
+      this.enableGeoOn = enableGeoOn;
       this.enableBleOn = enableBleOn;
       this.enableAllOn = enableAllOn;
       this.enableCameraOn = enableCameraOn;
@@ -3978,6 +4264,9 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
 
     lifecycles.preremove = function() {
       unlockGestures();
+      // Release the GPS watch so removing/reloading a sketch never leaks the
+      // position subscription (fixes the old p5.geolocation shared-watch bug).
+      try { stopGeo(); } catch (e) { /* ignore */ }
     };
 
     console.log('✅ Mobile p5.js Permissions: registered as p5.js 2.0 addon');

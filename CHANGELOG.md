@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+- Added GPS / geolocation support via `navigator.geolocation` — works on both iOS Safari and Android Chrome (HTTPS required). Coarse by default for battery friendliness; opt into real GPS with `setGeoOptions({ enableHighAccuracy: true })`.
+- Added `enableGeoTap()`, `enableGeoButton()`, `enableGeoCanvas()`, `enableGeoBanner()`, and `enableGeoOn()` gesture-gated activation helpers.
+- Added `stopGeo()`, `setGeoOptions()`, `getGeoPosition()`, `geoDistance()` (Haversine), and `geoInPolygon()` (ray-casting geofence test).
+- Added GPS status globals: `window.geoEnabled`, `geoStatus`, `geoError`, and `lastGeoPosition`.
+- Added optional sketch callbacks: `geoRead(position)` for position updates and `onGeoError(error)` for stream errors.
+- Added `geo` / `gps` / `location` / `geolocation` tokens to the permission router (`enablePermissionsTap(['geo'], …)`).
+- Added `test-geo-contract.js` for the `geoDistance` / `geoInPolygon` pure helpers; wired into `npm test`.
+
+### Notes
+- The GPS watch is released automatically on sketch removal in p5.js 2.x (`lifecycles.preremove`), preventing the shared-watch leak that affected the legacy `p5.geolocation` library.
+- iOS does not deliver GPS updates while the screen is locked or the tab is backgrounded.
+- `navigator.permissions.query({name:'geolocation'})` always returns `'prompt'` on Safari (WebKit bug); p5-phone does not gate UI on it.
+
 ## [1.12.1] - 2026-06-11
 
 ### Added

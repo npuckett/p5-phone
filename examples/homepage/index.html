@@ -40,6 +40,7 @@
             <a href="#api-audio">Audio</a>
             <a href="#api-camera">Camera</a>
             <a href="#api-nfc">NFC</a>
+            <a href="#api-geo">GPS</a>
             <a href="#api-ble">Bluetooth (BLE)</a>
             <a href="#api-vibration">Vibration</a>
             <a href="#api-torch">Torch / Flashlight</a>
@@ -58,6 +59,7 @@
             <a class="nav-subitem" href="#examples-input-speech">Speech</a>
             <a class="nav-subitem" href="#examples-input-ble">BLE</a>
             <a class="nav-subitem" href="#examples-input-nfc">NFC</a>
+            <a class="nav-subitem" href="#examples-input-gps">GPS</a>
             <a class="nav-subitem" href="#examples-input-camera">Camera</a>
             <a class="nav-subitem" href="#examples-input-camera-camera-basics">Camera Basics</a>
             <a class="nav-subitem" href="#examples-input-camera-phonecamera-ml5-examples">PhoneCamera + ML5</a>
@@ -117,7 +119,7 @@
         <article>
           <h3>Designed for p5.js 2.x</h3>
           <pre><code>&lt;script
-  src="https://cdn.jsdelivr.net/npm/p5-phone@1.12.1/dist/p5-phone.min.js"&gt;
+  src="https://cdn.jsdelivr.net/npm/p5-phone@1.13.0/dist/p5-phone.min.js"&gt;
 &lt;/script&gt;</code></pre>
         </article>
       </div>
@@ -297,6 +299,7 @@ if (window.sensorsEnabled && window.micEnabled) {
             <tr><td>Microphone and sound</td><td>Supported after user gesture and permission.</td><td>Supported after user gesture and permission.</td><td>Supported after browser permission.</td></tr>
             <tr><td>Speech recognition</td><td>Browser support varies; test on the target device.</td><td>Supported in Chrome where Web Speech is available.</td><td>Browser support varies.</td></tr>
             <tr><td>NFC</td><td>Not supported.</td><td>Supported in Chrome on HTTPS.</td><td>Not supported.</td></tr>
+            <tr><td>GPS / geolocation</td><td>Supported on HTTPS after a tap permission.</td><td>Supported on HTTPS after a tap permission.</td><td>Supported after browser permission.</td></tr>
             <tr><td>Camera and ML5</td><td>Supported after camera permission.</td><td>Supported after camera permission.</td><td>Supported after camera permission.</td></tr>
             <tr><td>Vibration</td><td>Not supported.</td><td>Supported on many phones.</td><td>Limited or unavailable.</td></tr>
           </tbody>
