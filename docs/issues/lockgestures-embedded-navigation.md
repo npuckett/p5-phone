@@ -1,6 +1,6 @@
 # Bug report: `lockGestures()` causes unwanted reload / leave-page behavior on mobile (embedded multi-page sites)
 
-**Status:** Open · **Reported from:** [preposition-programming](https://github.com/npuckett/preposition-programming) · **p5-phone version:** 1.11.0
+**Status:** Resolved · **Reported from:** [preposition-programming](https://github.com/npuckett/preposition-programming) · **p5-phone version:** 1.11.0 (fixed in 1.12.0)
 
 ---
 
@@ -161,25 +161,25 @@ History manipulation may be appropriate for standalone apps; it should not run i
 
 ---
 
-## Workarounds (consumer sites today)
+## Resolution (p5-phone 1.12.0+)
 
-Until the library changes:
+Use embedded mode for canvases inside scrollable multi-page sites:
 
-1. **Don't call `lockGestures()`** on embedded pages; rely on CSS `touch-action: none` on `.sketch-canvas` (partial fix — doesn't stop pull-to-refresh as reliably).
-2. Call `lockGestures()` only in Web Editor full-preview exports, not on the main tutorial site.
-3. Patch locally: fork or wrap p5-phone to skip `_initializeGestureBlocking()`'s `beforeunload` and history hooks.
+```javascript
+p.lockGestures({ mode: 'embedded', element: p.canvas });
+```
 
-preposition-programming currently uses both CSS `touch-action: none` and conditional `lockGestures()` on touch devices — the reload/navigation issue tracks with enabling `lockGestures()`.
+Bare `lockGestures()` keeps fullscreen behavior for full-viewport sketches. `beforeunload` is now opt-in via `{ warnBeforeLeave: true }`. Call `unlockGestures()` (or `p.remove()`) to clean up listeners.
 
 ---
 
 ## Acceptance criteria for a fix
 
-- [ ] Embedded canvas: drag works, page scroll/nav works, no leave-site dialog
-- [ ] Full-screen sketch: optional strict mode still blocks pull-to-refresh / back-swipe
-- [ ] `unlockGestures()` cleans up all listeners
-- [ ] Documented API for `{ mode: 'embedded' | 'fullscreen' }` or equivalent options
-- [ ] batch-sync docs updated — “accept beforeunload dialogs” should not be required for normal browsing
+- [x] Embedded canvas: drag works, page scroll/nav works, no leave-site dialog
+- [x] Full-screen sketch: optional strict mode still blocks pull-to-refresh / back-swipe
+- [x] `unlockGestures()` cleans up all listeners
+- [x] Documented API for `{ mode: 'embedded' | 'fullscreen' }` or equivalent options
+- [x] batch-sync docs updated — “accept beforeunload dialogs” should not be required for normal browsing
 
 ---
 
