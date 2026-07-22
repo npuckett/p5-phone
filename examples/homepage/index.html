@@ -32,6 +32,7 @@
       <nav class="sidebar-nav" aria-label="Docs sections">
         <a href="#start">Start</a>
         <a href="#quick-start">Quick Start</a>
+        <a href="#agent-skills">Agent Skills</a>
         <div class="nav-group">
           <a href="#api">API</a>
           <div class="nav-subheads" aria-label="API subsections">
@@ -228,6 +229,24 @@ if (window.sensorsEnabled && window.micEnabled) {
 
       <div class="note-band">
         <strong>p5.js 2.0 note:</strong> use <code>mousePressed()</code>, <code>mouseDragged()</code>, and <code>mouseReleased()</code> for touch or pointer input. The older <code>touchStarted()</code>, <code>touchMoved()</code>, and <code>touchEnded()</code> callbacks are p5.js 1.x only.
+      </div>
+    </section>
+
+    <section id="agent-skills" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Tooling</span>
+        <h2>Agent Skills</h2>
+        <p>Optional skills that teach AI coding assistants how p5-phone and p5.js 2.x work, so generated sketches use the right APIs and contemporary patterns. <a href="https://github.com/npuckett/p5-phone/blob/main/docs/agent-skills.md">See the full guide for installing them for your particular workflow</a>.</p>
+      </div>
+      <div class="compat-grid">
+        <article class="compat-panel">
+          <h3>p5-phone</h3>
+          <p>This agent skill contains the knowledge of how the library works, implementation patterns, and commands to simplify the creation of applications built with this library.</p>
+        </article>
+        <article class="compat-panel">
+          <h3>p5js-2x</h3>
+          <p>While the main library has been optimized for p5 2.x, many models are trained on p5 1.x methods. This skill helps bridge the transition by pointing development to contemporary methods.</p>
+        </article>
       </div>
     </section>
 

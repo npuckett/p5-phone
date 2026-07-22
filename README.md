@@ -19,6 +19,15 @@ That's where this library comes in:
 - Simplifies enabling audio output
 - Simplifies using an on-screen console to display errors and debug info
 
+## Agent Skills
+
+p5-phone ships two optional **agent skills** that teach AI coding assistants (Claude Code, Cursor, ZCode, OpenCode, GitHub Copilot, etc.) how the library and p5.js 2.x work, so generated sketches use the right APIs and contemporary patterns.
+
+- **p5-phone** — knowledge of how the library works, implementation patterns, and commands to simplify creating applications built with this library.
+- **p5js-2x** — while the main library is optimized for p5 2.x, many models are trained on p5 1.x methods. This skill bridges the transition by pointing development to contemporary methods.
+
+The skill files live in `.agents/skills/`, `.claude/skills/`, `.opencode/skills/`, and `.github/skills/` (kept byte-identical across all four). **See the [full guide for installing them for your particular workflow](docs/agent-skills.md).**
+
 ## p5 commands
 
 This library simplifies access to the following p5.js mobile sensor and audio commands:
