@@ -33,6 +33,7 @@
         <a href="#start">Start</a>
         <a href="#quick-start">Quick Start</a>
         <a href="#agent-skills">Agent Skills</a>
+        <a href="#activation-styles">Activation Styles</a>
         <div class="nav-group">
           <a href="#api">API</a>
           <div class="nav-subheads" aria-label="API subsections">
@@ -79,6 +80,7 @@
         <a href="#compatibility">Compatibility</a>
       </nav>
       <div class="sidebar-actions">
+        <a href="https://npuckett.github.io/three-phone/examples/homepage/" target="_blank" rel="noreferrer">three-phone (three.js) ↗</a>
         <a href="../homepage-v1/">Previous Docs</a>
         <a href="../../README.md">README</a>
         <a href="https://github.com/npuckett/p5-phone" target="_blank" rel="noreferrer">GitHub</a>
@@ -250,11 +252,93 @@ if (window.sensorsEnabled && window.micEnabled) {
       </div>
     </section>
 
+    <section id="activation-styles" class="content-section">
+      <div class="section-heading">
+        <span class="eyebrow">Permissions</span>
+        <h2>Activation Styles</h2>
+        <p>Every capability (<code>enableSensor*</code>, <code>enableMic*</code>, <code>enablePermissions*</code>, …) offers the same six unlock screens. Only the <code>enable*</code> line changes — the rest of the sketch is identical. Pick the look you want for the same simple tilt-a-ball sketch below.</p>
+      </div>
+      <pre><code>function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableSensorCanvas('Tap the canvas to begin'); // &lt;-- the only line that changes
+}
+
+function draw() {
+  background(20);
+  if (!window.sensorsEnabled) return;             // gate all hardware reads
+
+  fill(80, 200, 255);
+  noStroke();
+  circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
+
+  fill(255);
+  textAlign(CENTER, TOP);
+  textSize(16);
+  text('Tilt your phone to move the ball', width / 2, 30);
+}</code></pre>
+      <div class="starter-grid" aria-label="Activation style options">
+        <article class="starter-card has-desc">
+          <h3>1. Tap</h3>
+          <p class="starter-desc">Full-screen dark overlay with a centered frosted-glass message box.</p>
+          <pre><code>enableSensorTap(
+  'Tap to enable motion sensors'
+);</code></pre>
+        </article>
+
+        <article class="starter-card has-desc">
+          <h3>2. Button</h3>
+          <p class="starter-desc">A centered gradient button (plus optional status text) over the idle canvas.</p>
+          <pre><code>enableSensorButton(
+  'ENABLE MOTION SENSORS'
+);</code></pre>
+        </article>
+
+        <article class="starter-card has-desc">
+          <h3>3. Canvas</h3>
+          <p class="starter-desc">No overlay — a text hint is drawn on the canvas until the first touch.</p>
+          <pre><code>enableSensorCanvas(
+  'Tap the canvas to begin'
+);</code></pre>
+        </article>
+
+        <article class="starter-card has-desc">
+          <h3>4. Banner</h3>
+          <p class="starter-desc">A slim slide-in bar pinned to the top or bottom of the screen.</p>
+          <pre><code>enableSensorBanner(
+  'Tap to enable motion sensors',
+  'bottom'
+);</code></pre>
+        </article>
+
+        <article class="starter-card has-desc">
+          <h3>5. Minimal</h3>
+          <p class="starter-desc">Bare semi-transparent full-screen tint with a small radiating icon. Color, opacity, and icon are adjustable.</p>
+          <pre><code>enableSensorMinimal({
+  color: '#0a0',
+  opacity: 0.4,
+  iconColor: '#fff'
+});</code></pre>
+        </article>
+
+        <article class="starter-card has-desc">
+          <h3>6. On (custom element)</h3>
+          <p class="starter-desc">No built-in UI — bind activation to an HTML element you add yourself.</p>
+          <pre><code>// add to index.html:
+// &lt;button id="start-btn"&gt;Start&lt;/button&gt;
+enableSensorOn('#start-btn');</code></pre>
+        </article>
+      </div>
+      <div class="note-band">
+        <strong>Same suffix, every capability:</strong> each style has a matching <code>enableMic*</code>, <code>enableSound*</code>, <code>enablePermissions*</code>, etc. variant. For styles 1–5 nothing else is required; style 6 needs a target element in your <code>index.html</code>. Add <code>showDesktopQr()</code> in <code>setup()</code> to get a floating scan-to-test QR on desktop only (no-op on mobile).
+      </div>
+    </section>
+
     <section id="api" class="content-section">
       <div class="section-heading">
         <span class="eyebrow">Reference</span>
         <h2>API</h2>
-        <p>Grouped by the job you are trying to do. The permission table keeps the five UI styles visible, and each category lists the p5 APIs that become practical after p5-phone handles the mobile browser setup.</p>
+        <p>Grouped by the job you are trying to do. The permission table keeps the six UI styles visible, and each category lists the p5 APIs that become practical after p5-phone handles the mobile browser setup.</p>
       </div>
       <div id="permission-matrix" class="matrix-wrap" aria-live="polite"></div>
       <div id="api-sections" class="api-sections" aria-live="polite"></div>
