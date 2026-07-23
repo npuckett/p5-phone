@@ -527,6 +527,18 @@ window.P5PHONE_EXAMPLES = [
     capabilities: ['permission UI']
   },
   {
+    id: 'ui-minimal',
+    title: 'Minimal Permission Style + Desktop QR',
+    category: 'Reference',
+    subcategory: 'UI Styles',
+    level: 'Intermediate',
+    p5: '1.x and 2.0',
+    description: 'Bare semi-transparent overlay with a radiating icon, plus a desktop-only QR for scan-to-test dev.',
+    path: 'UIStyles/minimal-style/',
+    sourcePath: 'examples/UIStyles/minimal-style',
+    capabilities: ['permission UI', 'desktop QR']
+  },
+  {
     id: 'ui-custom-element',
     title: 'Custom Element Permission Style',
     category: 'Reference',

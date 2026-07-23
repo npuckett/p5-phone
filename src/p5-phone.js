@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.13.0
+ * p5-phone v1.14.0
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -164,14 +164,19 @@ function _addTrackedListener(node, type, handler, options) {
 
 function _isPermissionUIElement(target) {
   if (!target) return false;
-  return (
-    target.id === 'tapOverlay' ||
-    target.closest('#tapOverlay') ||
-    target.id === 'permissionButton' ||
-    target.id === 'permissionStatus' ||
-    target.closest('#permissionButton') ||
-    target.closest('#permissionStatus')
-  );
+  if (target.id === 'tapOverlay' ||
+      target.closest('#tapOverlay') ||
+      target.id === 'minimalOverlay' ||
+      target.closest('#minimalOverlay') ||
+      target.id === 'permissionButton' ||
+      target.id === 'permissionStatus' ||
+      target.closest('#permissionButton') ||
+      target.closest('#permissionStatus')) {
+    return true;
+  }
+  // Desktop QR panel close control.
+  if (target.closest && target.closest('#p5phoneDesktopQr')) return true;
+  return false;
 }
 
 // p5.js version detection (1.x vs 2.x) — evaluated at call time, not script load
@@ -185,6 +190,237 @@ function _isP5v2Runtime() {
 }
 if (typeof p5 === 'undefined') {
   console.warn('p5-phone: load p5.js before p5-phone.js for correct version detection and prototype hooks.');
+}
+
+// =========================================
+// DEVICE DETECTION (mobile vs desktop)
+// =========================================
+
+/**
+ * Best-effort mobile-device detection. Used to gate desktop-only dev helpers
+ * like showDesktopQr() so they never appear on a phone. Combines pointer type,
+ * touch capability, and user-agent signals. Evaluated lazily and cached.
+ * @returns {boolean}
+ */
+function _isMobileDevice() {
+  if (window._p5phoneIsMobileCached !== undefined) return window._p5phoneIsMobileCached;
+  let mobile = false;
+  try {
+    const ua = (navigator.userAgent || '').toLowerCase();
+    // Classic mobile UA tokens.
+    if (/android|iphone|ipod|blackberry|iemobile|opera mini|mobile|windows phone/i.test(ua)) {
+      mobile = true;
+    }
+    // iPadOS 13+ reports as Mac desktop UA but has touch.
+    if (!mobile && /mac/i.test(ua) && navigator.maxTouchPoints > 1) {
+      mobile = true;
+    }
+    // Coarse primary pointer (finger, not mouse).
+    if (!mobile && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+      mobile = true;
+    }
+    // Touch-only device with no fine pointer.
+    if (!mobile && navigator.maxTouchPoints > 0 && window.matchMedia &&
+        !window.matchMedia('(any-pointer: fine)').matches) {
+      mobile = true;
+    }
+  } catch (e) {
+    mobile = false;
+  }
+  window._p5phoneIsMobileCached = mobile;
+  return mobile;
+}
+
+function _isDesktopDevice() {
+  return !_isMobileDevice();
+}
+
+// =========================================
+// DESKTOP QR — dev helper, desktop only
+// =========================================
+
+/**
+ * Lazy-load qrcodejs (dqeefe/qrcodejs) from CDN, then render a QR pointing at
+ * the current page into the given container element. Only ever called on
+ * desktop, so mobile users never download the dependency.
+ * @param {HTMLElement} container - element to render the QR into
+ * @param {string} text - URL to encode
+ * @param {number} size - pixel size of the QR
+ * @param {function} [onFail] - called if the script cannot be loaded (CSP/offline)
+ */
+function _qrLazyLoadAndRender(container, text, size, onFail) {
+  const QRCODE_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+
+  const doRender = () => {
+    if (typeof window.QRCode !== 'function') {
+      if (onFail) onFail();
+      return;
+    }
+    container.innerHTML = '';
+    new window.QRCode(container, {
+      text: text,
+      width: size,
+      height: size,
+      colorDark: '#171717',
+      colorLight: '#ffffff',
+      correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.M : 0
+    });
+  };
+
+  if (typeof window.QRCode !== 'function') {
+    const script = document.createElement('script');
+    script.src = QRCODE_SRC;
+    script.async = true;
+    script.onload = doRender;
+    script.onerror = () => { if (onFail) onFail(); };
+    document.head.appendChild(script);
+  } else {
+    doRender();
+  }
+}
+
+let _qrState = null; // { panel, options } for the active desktop QR panel
+
+/**
+ * Show a floating QR code of the current page on DESKTOP ONLY.
+ * On mobile this is a no-op (the QR would be useless — you're already on the
+ * phone). Designed for the dev workflow of opening a sketch on desktop, then
+ * scanning the QR to load it on a phone for testing.
+ *
+ * @param {Object} [options]
+ * @param {string} [options.url] - URL to encode (defaults to location.href)
+ * @param {'top-right'|'top-left'|'bottom-right'|'bottom-left'} [options.position='top-right']
+ * @param {number} [options.size=180] - QR pixel size
+ * @param {string} [options.label='Scan to open on your phone'] - caption under the QR
+ * @param {boolean} [options.closable=true] - show a dismiss × (remembers for the session)
+ * @param {boolean} [options.rememberDismiss=true] - keep it hidden after closing this browser session
+ */
+function showDesktopQr(options = {}) {
+  // Core rule: never appear on a phone.
+  if (_isMobileDevice()) {
+    console.log('p5-phone: showDesktopQr() is hidden on mobile.');
+    return;
+  }
+
+  const url = options.url || (window.location ? window.location.href : '');
+  const position = options.position || 'top-right';
+  const size = typeof options.size === 'number' ? options.size : 180;
+  const label = options.label != null ? options.label : 'Scan to open on your phone';
+  const closable = options.closable !== false;
+  const rememberDismiss = options.rememberDismiss !== false;
+
+  if (rememberDismiss && window.sessionStorage &&
+      sessionStorage.getItem('p5phone_qr_dismissed') === '1') {
+    return;
+  }
+
+  // Replace any existing panel.
+  hideDesktopQr();
+
+  const panel = document.createElement('div');
+  panel.id = 'p5phoneDesktopQr';
+  panel.setAttribute('data-p5phone-role', 'permission-ui');
+
+  const pos = { 'top-right': ['16px', '16px', 'auto', 'auto'],
+                'top-left':  ['16px', 'auto', 'auto', '16px'],
+                'bottom-right': ['auto', '16px', '16px', 'auto'],
+                'bottom-left':  ['auto', 'auto', '16px', '16px'] };
+  const sides = pos[position] || pos['top-right'];
+  panel.style.cssText = `
+    position: fixed;
+    top: ${sides[0]};
+    right: ${sides[1]};
+    bottom: ${sides[2]};
+    left: ${sides[3]};
+    z-index: 1000000;
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    pointer-events: none;
+    max-width: ${size + 32}px;
+  `;
+
+  if (closable) {
+    const close = document.createElement('div');
+    close.textContent = '×';
+    close.style.cssText = `
+      position: absolute;
+      top: 2px;
+      right: 8px;
+      font-size: 20px;
+      line-height: 1;
+      color: #666;
+      cursor: pointer;
+      pointer-events: auto;
+    `;
+    close.title = 'Hide QR for this session';
+    close.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideDesktopQr();
+      if (rememberDismiss && window.sessionStorage) {
+        sessionStorage.setItem('p5phone_qr_dismissed', '1');
+      }
+    });
+    panel.appendChild(close);
+  }
+
+  const qrBox = document.createElement('div');
+  qrBox.style.cssText = `width: ${size}px; height: ${size}px;`;
+  panel.appendChild(qrBox);
+
+  if (label) {
+    const caption = document.createElement('div');
+    caption.textContent = label;
+    caption.style.cssText = `
+      margin-top: 8px;
+      font-size: 11px;
+      color: #444;
+      text-align: center;
+      max-width: ${size}px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    `;
+    panel.appendChild(caption);
+  }
+
+  document.body.appendChild(panel);
+  _qrState = { panel, options };
+
+  _qrLazyLoadAndRender(qrBox, url, size, () => {
+    // CDN blocked (CSP/offline) — remove the empty panel and warn.
+    console.warn('p5-phone: could not load qrcodejs (CSP or offline). showDesktopQr() needs network access on desktop.');
+    hideDesktopQr();
+  });
+}
+
+/**
+ * Update the URL of an already-visible desktop QR panel. No-op on mobile or
+ * when no panel is showing (in which case it creates one).
+ * @param {string} url
+ */
+function setQrUrl(url) {
+  if (_isMobileDevice()) return;
+  const size = (_qrState && _qrState.options && _qrState.options.size) || 180;
+  if (!_qrState || !_qrState.panel || !document.getElementById('p5phoneDesktopQr')) {
+    showDesktopQr({ url: url });
+    return;
+  }
+  const qrBox = _qrState.panel.querySelector('div');
+  if (!qrBox) return;
+  _qrLazyLoadAndRender(qrBox, url, size, () => {
+    console.warn('p5-phone: could not refresh QR (qrcodejs unavailable).');
+  });
+}
+
+/**
+ * Remove the desktop QR panel if present.
+ */
+function hideDesktopQr() {
+  const panel = document.getElementById('p5phoneDesktopQr');
+  if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+  _qrState = null;
 }
 
 // =========================================
@@ -732,6 +968,116 @@ function enablePermissionsBanner(permissions, message = 'Tap to enable hardware'
     const enabledPermissions = await _requestPermissionsCore(permissions);
     _notifySketchReady();
     console.log('Hardware permissions enabled via banner:', enabledPermissions);
+  });
+}
+
+// =========================================
+// MINIMAL UI — enableXxxMinimal()
+// A bare semi-transparent full-screen overlay with an optional radiating
+// circular icon. Less chrome than the Tap frosted message box.
+// Call forms:
+//   enableXxxMinimal(message)
+//   enableXxxMinimal({ color, opacity, icon, iconColor, iconSize, message })
+//   enableXxxMinimal(message, { opacity, icon, ... })
+// =========================================
+
+/**
+ * Enable gyroscope with the minimal overlay
+ * @param {string|Object} [messageOrOpts] - Message string or options object
+ * @param {Object} [options] - { color, opacity, icon, iconColor, iconSize }
+ */
+function enableGyroMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestMotionPermissions();
+    console.log('✅ Gyroscope enabled via minimal overlay');
+  });
+}
+
+function enableMicMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestMicrophonePermissions();
+    console.log('✅ Microphone enabled via minimal overlay');
+  });
+}
+
+function enableSoundMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestSoundOutput();
+    console.log('✅ Sound output enabled via minimal overlay');
+  });
+}
+
+function enableSpeechMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestSpeechPermission();
+    console.log('✅ Speech recognition enabled via minimal overlay');
+  });
+}
+
+function enableVibrationMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestVibrationPermission();
+    console.log('✅ Vibration enabled via minimal overlay');
+  });
+}
+
+function enableTorchMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestTorchPermission();
+    console.log('✅ Torch enabled via minimal overlay');
+  });
+}
+
+const enableFlashlightMinimal = enableTorchMinimal;
+
+function enableNfcMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestNfcPermission();
+    console.log('✅ NFC enabled via minimal overlay');
+  });
+}
+
+function enableGeoMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestGeoPermission();
+    console.log('✅ GPS enabled via minimal overlay');
+  });
+}
+
+function enableAllMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestMotionPermissionsCore();
+    await _requestMicrophonePermissionsCore();
+    _notifySketchReady();
+    console.log('✅ Motion sensors and microphone enabled via minimal overlay');
+  });
+}
+
+function enableCameraMinimal(messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    await _requestCameraPermission();
+    console.log('✅ Camera enabled via minimal overlay');
+  });
+}
+
+function enableBleMinimal(options = {}) {
+  const message = options.label || options.message;
+  _createMinimalToEnable(message, options, () => {
+    _bleConnectFromUI('minimal');
+  });
+}
+
+/**
+ * Enable any combination of hardware permissions with the minimal overlay.
+ * @param {string|string[]} permissions - e.g. ['sensors', 'mic', 'camera']
+ * @param {string|Object} [messageOrOpts] - Message string or options object
+ * @param {Object} [options] - { color, opacity, icon, iconColor, iconSize }
+ */
+function enablePermissionsMinimal(permissions, messageOrOpts, options) {
+  _createMinimalToEnable(messageOrOpts, options, async () => {
+    const enabledPermissions = await _requestPermissionsCore(permissions);
+    _notifySketchReady();
+    console.log('Hardware permissions enabled via minimal overlay:', enabledPermissions);
   });
 }
 
@@ -2369,11 +2715,17 @@ function _removeExistingUI() {
   const status = document.getElementById('permissionStatus');
   const overlay = document.getElementById('tapOverlay');
   const banner = document.getElementById('permissionBanner');
-  
+  const minimal = document.getElementById('minimalOverlay');
+
   if (button) button.remove();
   if (status) status.remove();
   if (overlay) overlay.remove();
   if (banner) banner.remove();
+  if (minimal) {
+    minimal.remove();
+    const kf = document.getElementById('p5phoneMinimalKeyframes');
+    if (kf) kf.remove();
+  }
 }
 
 // =========================================
@@ -2544,6 +2896,209 @@ function _createBannerToEnable(message, position, onActivateHandler) {
     e.stopPropagation();
     handleActivation();
   });
+}
+
+/**
+ * Minimal UI: A bare semi-transparent full-screen overlay with an optional
+ * radiating circular icon in the center. Less visual chrome than the Tap
+ * frosted message box — designed to sit cleanly over the sketch.
+ *
+ * Signature flexibility (mirrors how Tap is called):
+ *   _createMinimalToEnable(message, options, onActivateHandler)
+ *   _createMinimalToEnable(options, onActivateHandler)        // options may carry message
+ *   _createMinimalToEnable(message, onActivateHandler)        // default options
+ *
+ * @param {string|Object|null} messageOrOpts - Overlay text (string|null) or an options object
+ * @param {Object} [options] - { color, opacity, icon, iconColor, iconSize, message }
+ * @param {function} onActivateHandler - Async permission handler to run on tap
+ */
+function _createMinimalToEnable(messageOrOpts, options, onActivateHandler) {
+  _removeExistingUI();
+
+  // Normalize the flexible signature into (message, options, handler).
+  let message = messageOrOpts;
+  if (messageOrOpts && typeof messageOrOpts === 'object') {
+    options = options || {};
+    message = messageOrOpts.message != null ? messageOrOpts.message : null;
+    options = Object.assign({}, messageOrOpts, options);
+    delete options.message;
+  }
+  options = options || {};
+  const color = options.color || '#000000';
+  const opacity = typeof options.opacity === 'number' ? options.opacity : 0.5;
+  const showIcon = options.icon !== false; // default true
+  const iconColor = options.iconColor || '#ffffff';
+  const iconSize = typeof options.iconSize === 'number' ? options.iconSize : 14;
+
+  // Parse the overlay color into r,g,b so we can apply opacity independently.
+  const rgb = _parseColorToRgb(color);
+  const bg = rgb
+    ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`
+    : `rgba(0, 0, 0, ${opacity})`;
+
+  let activating = false;
+
+  // Inject the keyframes once.
+  if (!document.getElementById('p5phoneMinimalKeyframes')) {
+    const style = document.createElement('style');
+    style.id = 'p5phoneMinimalKeyframes';
+    style.textContent = `
+      @keyframes p5phoneMinimalPulse {
+        0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.55; }
+        70%  { opacity: 0; }
+        100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+      }
+      @keyframes p5phoneMinimalCorePulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 0.9; }
+        50%      { transform: translate(-50%, -50%) scale(1.25); opacity: 1; }
+      }`;
+    document.head.appendChild(style);
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'minimalOverlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: ${bg};
+    z-index: 999999;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  `;
+
+  // Center stack for the icon and optional message.
+  const center = document.createElement('div');
+  center.style.cssText = `
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    pointer-events: none;
+  `;
+
+  if (showIcon) {
+    const iconWrap = document.createElement('div');
+    iconWrap.style.cssText = `
+      position: relative;
+      width: ${iconSize}px;
+      height: ${iconSize}px;
+    `;
+    // Radiating rings.
+    for (let i = 0; i < 3; i++) {
+      const ring = document.createElement('span');
+      ring.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: ${iconSize}px;
+        height: ${iconSize}px;
+        border-radius: 50%;
+        border: 2px solid ${iconColor};
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+        animation: p5phoneMinimalPulse 2.4s ease-out infinite;
+        animation-delay: ${i * 0.8}s;
+      `;
+      iconWrap.appendChild(ring);
+    }
+    // Solid core dot.
+    const dot = document.createElement('span');
+    dot.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: ${iconSize}px;
+      height: ${iconSize}px;
+      border-radius: 50%;
+      background: ${iconColor};
+      transform: translate(-50%, -50%) scale(1);
+      animation: p5phoneMinimalCorePulse 2.4s ease-in-out infinite;
+    `;
+    iconWrap.appendChild(dot);
+    center.appendChild(iconWrap);
+  }
+
+  if (message) {
+    const msg = document.createElement('div');
+    msg.textContent = message;
+    msg.style.cssText = `
+      color: ${iconColor};
+      font-size: 15px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      text-align: center;
+      letter-spacing: 0.02em;
+      opacity: 0.9;
+      max-width: 80vw;
+    `;
+    center.appendChild(msg);
+  }
+
+  overlay.appendChild(center);
+
+  const removeOverlay = () => {
+    if (overlay.parentNode) overlay.remove();
+    const kf = document.getElementById('p5phoneMinimalKeyframes');
+    // Only drop the keyframes if no other minimal overlay is using them.
+    if (kf && !document.getElementById('minimalOverlay')) kf.remove();
+  };
+
+  const handleActivation = async () => {
+    if (!activating && overlay.parentNode) {
+      activating = true;
+      overlay.style.cursor = 'wait';
+      await onActivateHandler();
+      removeOverlay();
+    }
+  };
+
+  overlay.addEventListener('click', handleActivation);
+  overlay.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    handleActivation();
+  });
+  overlay.addEventListener('pointerup', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    handleActivation();
+  });
+
+  document.body.appendChild(overlay);
+}
+
+/**
+ * Parse a CSS color string (#hex, rgb(), rgba(), or color name) into {r,g,b}.
+ * Returns null if the value cannot be resolved in the current document.
+ * @param {string} color
+ * @returns {{r:number,g:number,b:number}|null}
+ */
+function _parseColorToRgb(color) {
+  if (!color || typeof color !== 'string') return null;
+  const trimmed = color.trim();
+  try {
+    const probe = document.createElement('span');
+    probe.style.color = trimmed;
+    // Setting an invalid value leaves color empty.
+    if (!probe.style.color) return null;
+    document.head.appendChild(probe);
+    const computed = window.getComputedStyle(probe).color;
+    probe.remove();
+    const m = computed.match(/rgba?\(([^)]+)\)/i);
+    if (!m) return null;
+    const parts = m[1].split(',').map((s) => parseFloat(s.trim()));
+    if (parts.length < 3 || parts.some((n) => Number.isNaN(n))) return null;
+    return { r: parts[0], g: parts[1], b: parts[2] };
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -3031,6 +3586,15 @@ window.toggleDebug = toggleDebug;
 // Make permission functions globally accessible
 window.lockGestures = lockGestures;
 window.unlockGestures = unlockGestures;
+
+// Device detection
+window.isMobile = _isMobileDevice();
+window.isDesktop = !_isMobileDevice();
+
+// Desktop QR dev helper
+window.showDesktopQr = showDesktopQr;
+window.hideDesktopQr = hideDesktopQr;
+window.setQrUrl = setQrUrl;
 window.enableGyroTap = enableGyroTap;
 window.enableGyroButton = enableGyroButton;
 window.enableSensorTap = enableGyroTap;
@@ -3102,6 +3666,23 @@ window.enableAllBanner = enableAllBanner;
 window.enableCameraBanner = enableCameraBanner;
 window.enablePermissionsBanner = enablePermissionsBanner;
 window.enableHardwareBanner = enablePermissionsBanner;
+
+// Minimal style
+window.enableGyroMinimal = enableGyroMinimal;
+window.enableSensorMinimal = enableGyroMinimal;
+window.enableMicMinimal = enableMicMinimal;
+window.enableSoundMinimal = enableSoundMinimal;
+window.enableSpeechMinimal = enableSpeechMinimal;
+window.enableVibrationMinimal = enableVibrationMinimal;
+window.enableNfcMinimal = enableNfcMinimal;
+window.enableGeoMinimal = enableGeoMinimal;
+window.enableBleMinimal = enableBleMinimal;
+window.enableAllMinimal = enableAllMinimal;
+window.enableCameraMinimal = enableCameraMinimal;
+window.enablePermissionsMinimal = enablePermissionsMinimal;
+window.enableHardwareMinimal = enablePermissionsMinimal;
+window.enableTorchMinimal = enableTorchMinimal;
+window.enableFlashlightMinimal = enableFlashlightMinimal;
 
 // Custom element binding
 window.enableGyroOn = enableGyroOn;
@@ -3996,6 +4577,9 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   // Core permission functions
   p5.prototype.lockGestures = lockGestures;
   p5.prototype.unlockGestures = unlockGestures;
+  p5.prototype.showDesktopQr = showDesktopQr;
+  p5.prototype.hideDesktopQr = hideDesktopQr;
+  p5.prototype.setQrUrl = setQrUrl;
   p5.prototype.enableGyroTap = enableGyroTap;
   p5.prototype.enableGyroButton = enableGyroButton;
   p5.prototype.enableSensorTap = enableGyroTap;
@@ -4086,7 +4670,24 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableCameraBanner = enableCameraBanner;
   p5.prototype.enablePermissionsBanner = enablePermissionsBanner;
   p5.prototype.enableHardwareBanner = enablePermissionsBanner;
-  
+
+  // Minimal style
+  p5.prototype.enableGyroMinimal = enableGyroMinimal;
+  p5.prototype.enableSensorMinimal = enableGyroMinimal;
+  p5.prototype.enableMicMinimal = enableMicMinimal;
+  p5.prototype.enableSoundMinimal = enableSoundMinimal;
+  p5.prototype.enableSpeechMinimal = enableSpeechMinimal;
+  p5.prototype.enableVibrationMinimal = enableVibrationMinimal;
+  p5.prototype.enableTorchMinimal = enableTorchMinimal;
+  p5.prototype.enableFlashlightMinimal = enableFlashlightMinimal;
+  p5.prototype.enableNfcMinimal = enableNfcMinimal;
+  p5.prototype.enableGeoMinimal = enableGeoMinimal;
+  p5.prototype.enableBleMinimal = enableBleMinimal;
+  p5.prototype.enableAllMinimal = enableAllMinimal;
+  p5.prototype.enableCameraMinimal = enableCameraMinimal;
+  p5.prototype.enablePermissionsMinimal = enablePermissionsMinimal;
+  p5.prototype.enableHardwareMinimal = enablePermissionsMinimal;
+
   // Custom element binding
   p5.prototype.enableGyroOn = enableGyroOn;
   p5.prototype.enableSensorOn = enableGyroOn;
@@ -4140,6 +4741,9 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       // Core permission functions
       this.lockGestures = lockGestures;
       this.unlockGestures = unlockGestures;
+      this.showDesktopQr = showDesktopQr;
+      this.hideDesktopQr = hideDesktopQr;
+      this.setQrUrl = setQrUrl;
       this.enableGyroTap = enableGyroTap;
       this.enableGyroButton = enableGyroButton;
       this.enableSensorTap = enableGyroTap;
@@ -4230,6 +4834,23 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableCameraBanner = enableCameraBanner;
       this.enablePermissionsBanner = enablePermissionsBanner;
       this.enableHardwareBanner = enablePermissionsBanner;
+
+      // Minimal style
+      this.enableGyroMinimal = enableGyroMinimal;
+      this.enableSensorMinimal = enableGyroMinimal;
+      this.enableMicMinimal = enableMicMinimal;
+      this.enableSoundMinimal = enableSoundMinimal;
+      this.enableSpeechMinimal = enableSpeechMinimal;
+      this.enableVibrationMinimal = enableVibrationMinimal;
+      this.enableTorchMinimal = enableTorchMinimal;
+      this.enableFlashlightMinimal = enableFlashlightMinimal;
+      this.enableNfcMinimal = enableNfcMinimal;
+      this.enableGeoMinimal = enableGeoMinimal;
+      this.enableBleMinimal = enableBleMinimal;
+      this.enableAllMinimal = enableAllMinimal;
+      this.enableCameraMinimal = enableCameraMinimal;
+      this.enablePermissionsMinimal = enablePermissionsMinimal;
+      this.enableHardwareMinimal = enablePermissionsMinimal;
 
       // Custom element binding
       this.enableGyroOn = enableGyroOn;

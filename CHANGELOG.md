@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 
 ### Added
+- Added a sixth permission-activation style, **Minimal**: a bare semi-transparent full-screen overlay with an optional radiating circular icon in the center, as a cleaner alternative to the frosted message box used by `Tap`. Color, opacity, icon, icon color, and icon size are all adjustable.
+- Added `enableSensorMinimal()`, `enableMicMinimal()`, `enableSoundMinimal()`, `enableSpeechMinimal()`, `enableVibrationMinimal()`, `enableTorchMinimal()` (+ `enableFlashlightMinimal` alias), `enableNfcMinimal()`, `enableGeoMinimal()`, `enableBleMinimal()`, `enableAllMinimal()`, `enableCameraMinimal()`, and `enablePermissionsMinimal()` (+ `enableHardwareMinimal` alias). Call forms: `enableXxxMinimal('Tap')`, `enableXxxMinimal({ color, opacity, icon, iconColor, iconSize, message })`, or `enableXxxMinimal('Tap', { opacity: 0.6 })`.
+- Added `showDesktopQr()`, `hideDesktopQr()`, and `setQrUrl()` — a dev helper that renders a floating QR code of the current page on **desktop only** and is a no-op on mobile, so you never have to generate or dismiss a QR on the phone. Options: `{ url, position, size, label, closable, rememberDismiss }`. Closing the panel hides it for the session.
+- Added device-detection globals `window.isMobile` and `window.isDesktop` (best-effort: UA + coarse-pointer + touch signals, including the iPadOS-13+ Mac-UA case).
+
+### Notes
+- The desktop QR lazily loads `qrcodejs` from a CDN only when shown on desktop, so mobile sketches download no extra bytes. It gracefully warns and removes the panel if the CDN is blocked (strict CSP / offline).
 - Added GPS / geolocation support via `navigator.geolocation` — works on both iOS Safari and Android Chrome (HTTPS required). Coarse by default for battery friendliness; opt into real GPS with `setGeoOptions({ enableHighAccuracy: true })`.
 - Added `enableGeoTap()`, `enableGeoButton()`, `enableGeoCanvas()`, `enableGeoBanner()`, and `enableGeoOn()` gesture-gated activation helpers.
 - Added `stopGeo()`, `setGeoOptions()`, `getGeoPosition()`, `geoDistance()` (Haversine), and `geoInPolygon()` (ray-casting geofence test).

@@ -6,7 +6,7 @@ argument-hint: "Describe the p5-phone example or API question"
 
 # p5-phone: Mobile Hardware for p5.js
 
-p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, and Bluetooth LE — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.13.0**.
+p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, and Bluetooth LE — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.14.0**.
 
 It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public function is attached to `window` (global mode) and mirrored on `p5.prototype` (instance mode), so you call them as bare globals like `lockGestures()` and `enableSensorTap()`.
 
@@ -109,30 +109,31 @@ Two specific traps worth calling out:
 
 ## Permissions model
 
-Every hardware family exposes the same **five activation styles**. Pick one:
+Every hardware family exposes the same **six activation styles**. Pick one:
 
-- **Tap** — `enable<Feature>Tap(message)` — full-screen tap overlay.
+- **Tap** — `enable<Feature>Tap(message)` — full-screen tap overlay with a frosted message box.
 - **Button** — `enable<Feature>Button(buttonText, statusText?)` — auto-generated button.
 - **Canvas** — `enable<Feature>Canvas(message)` — prompt drawn on the p5 canvas.
 - **Banner** — `enable<Feature>Banner(message, position?)` — animated slide-in banner (`position` = `'top'`/`'bottom'`).
+- **Minimal** — `enable<Feature>Minimal(messageOrOpts?, opts?)` — bare semi-transparent full-screen overlay with an optional radiating circular icon. Cleaner than Tap; adjustable `{ color, opacity, icon, iconColor, iconSize }`.
 - **On (custom element)** — `enable<Feature>On(selector)` — bind activation to any existing HTML element by CSS selector.
 
 Full matrix:
 
-| Feature | Tap | Button | Canvas | Banner | On (selector) |
-| --- | --- | --- | --- | --- | --- |
-| Motion sensors | `enableSensorTap(msg)` | `enableSensorButton(text)` | `enableSensorCanvas(msg)` | `enableSensorBanner(msg)` | `enableSensorOn(sel)` |
-| Microphone | `enableMicTap(msg)` | `enableMicButton(text)` | `enableMicCanvas(msg)` | `enableMicBanner(msg)` | `enableMicOn(sel)` |
-| Sound output | `enableSoundTap(msg)` | `enableSoundButton(text)` | `enableSoundCanvas(msg)` | `enableSoundBanner(msg)` | `enableSoundOn(sel)` |
-| Speech | `enableSpeechTap(msg)` | `enableSpeechButton(text)` | `enableSpeechCanvas(msg)` | `enableSpeechBanner(msg)` | `enableSpeechOn(sel)` |
-| Vibration | `enableVibrationTap(msg)` | `enableVibrationButton(text)` | `enableVibrationCanvas(msg)` | `enableVibrationBanner(msg)` | `enableVibrationOn(sel)` |
-| Torch / flashlight | `enableTorchTap(msg)` | `enableTorchButton(text)` | `enableTorchCanvas(msg)` | `enableTorchBanner(msg)` | `enableTorchOn(sel)` |
-| NFC | `enableNfcTap(msg)` | `enableNfcButton(text)` | `enableNfcCanvas(msg)` | `enableNfcBanner(msg)` | `enableNfcOn(sel)` |
-| GPS / geolocation | `enableGeoTap(msg)` | `enableGeoButton(text)` | `enableGeoCanvas(msg)` | `enableGeoBanner(msg)` | `enableGeoOn(sel)` |
-| Bluetooth (BLE) | `enableBleTap(opts?)` | `enableBleButton(opts?)` | `enableBleCanvas(opts?)` | `enableBleBanner(opts?)` | `enableBleOn(sel)` |
-| Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraOn(sel)` |
-| Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllOn(sel)` |
-| Any combination | `enablePermissionsTap(list, msg)` | `enablePermissionsButton(list, text)` | `enablePermissionsCanvas(list, msg)` | `enablePermissionsBanner(list, msg)` | `enablePermissionsOn(sel, list)` |
+| Feature | Tap | Button | Canvas | Banner | Minimal | On (selector) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Motion sensors | `enableSensorTap(msg)` | `enableSensorButton(text)` | `enableSensorCanvas(msg)` | `enableSensorBanner(msg)` | `enableSensorMinimal(msg\|opts)` | `enableSensorOn(sel)` |
+| Microphone | `enableMicTap(msg)` | `enableMicButton(text)` | `enableMicCanvas(msg)` | `enableMicBanner(msg)` | `enableMicMinimal(msg\|opts)` | `enableMicOn(sel)` |
+| Sound output | `enableSoundTap(msg)` | `enableSoundButton(text)` | `enableSoundCanvas(msg)` | `enableSoundBanner(msg)` | `enableSoundMinimal(msg\|opts)` | `enableSoundOn(sel)` |
+| Speech | `enableSpeechTap(msg)` | `enableSpeechButton(text)` | `enableSpeechCanvas(msg)` | `enableSpeechBanner(msg)` | `enableSpeechMinimal(msg\|opts)` | `enableSpeechOn(sel)` |
+| Vibration | `enableVibrationTap(msg)` | `enableVibrationButton(text)` | `enableVibrationCanvas(msg)` | `enableVibrationBanner(msg)` | `enableVibrationMinimal(msg\|opts)` | `enableVibrationOn(sel)` |
+| Torch / flashlight | `enableTorchTap(msg)` | `enableTorchButton(text)` | `enableTorchCanvas(msg)` | `enableTorchBanner(msg)` | `enableTorchMinimal(msg\|opts)` | `enableTorchOn(sel)` |
+| NFC | `enableNfcTap(msg)` | `enableNfcButton(text)` | `enableNfcCanvas(msg)` | `enableNfcBanner(msg)` | `enableNfcMinimal(msg\|opts)` | `enableNfcOn(sel)` |
+| GPS / geolocation | `enableGeoTap(msg)` | `enableGeoButton(text)` | `enableGeoCanvas(msg)` | `enableGeoBanner(msg)` | `enableGeoMinimal(msg\|opts)` | `enableGeoOn(sel)` |
+| Bluetooth (BLE) | `enableBleTap(opts?)` | `enableBleButton(opts?)` | `enableBleCanvas(opts?)` | `enableBleBanner(opts?)` | `enableBleMinimal(opts?)` | `enableBleOn(sel)` |
+| Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraMinimal(msg\|opts)` | `enableCameraOn(sel)` |
+| Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllMinimal(msg\|opts)` | `enableAllOn(sel)` |
+| Any combination | `enablePermissionsTap(list, msg)` | `enablePermissionsButton(list, text)` | `enablePermissionsCanvas(list, msg)` | `enablePermissionsBanner(list, msg)` | `enablePermissionsMinimal(list, msg\|opts)` | `enablePermissionsOn(sel, list)` |
 
 Notes:
 
@@ -140,6 +141,44 @@ Notes:
 - `enableGyro*` is a **legacy alias** for `enableSensor*`. Prefer `enableSensor*` for new examples; use `enableGyro*` only to match older published sketches.
 - `enableAll*` is shorthand for sensors + mic. For any other mix, use `enablePermissions*`.
 - `enableHardware*` is an exact alias of `enablePermissions*`.
+- **Minimal** accepts the message as a string, as an options object, or both: `enableSensorMinimal('Tap')`, `enableSensorMinimal({ opacity: 0.6, iconColor: '#fff' })`, `enableSensorMinimal('Tap', { color: '#000', icon: false })`.
+
+### Activation style examples
+
+The six styles differ only in how the **unlock screen** looks — the rest of the sketch is identical. Here is one simple tilt-a-ball sketch; swap the single `enable*` line to change the activation UI.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableSensorCanvas('Tap the canvas to begin'); // <-- the only line that changes
+}
+
+function draw() {
+  background(20);
+  if (!window.sensorsEnabled) return;            // gate all hardware reads
+
+  fill(80, 200, 255);
+  noStroke();
+  circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
+
+  fill(255);
+  textAlign(CENTER, TOP);
+  textSize(16);
+  text('Tilt your phone to move the ball', width / 2, 30);
+}
+```
+
+What each unlock screen looks like (replace the marked line above):
+
+1. **Tap** — `enableSensorTap('Tap to enable motion sensors')` — full-screen dark overlay with a centered frosted-glass message box.
+2. **Button** — `enableSensorButton('ENABLE MOTION SENSORS')` — a centered gradient button (plus optional status text) over the idle canvas.
+3. **Canvas** — `enableSensorCanvas('Tap the canvas to begin')` — no overlay; a text hint is drawn on the canvas until the first touch.
+4. **Banner** — `enableSensorBanner('Tap to enable motion sensors', 'bottom')` — a slim slide-in bar pinned to the top or bottom.
+5. **Minimal** — `enableSensorMinimal('Tap to begin')` — a bare semi-transparent full-screen tint with a small radiating white icon. Adjustable: `enableSensorMinimal({ color: '#0a0', opacity: 0.4, iconColor: '#fff' })`.
+6. **On (custom element)** — `enableSensorOn('#start-btn')` — no built-in UI; activation is bound to an HTML element you add yourself (e.g. `<button id="start-btn">Start</button>`).
+
+For styles 1–5 nothing else is required. For style 6, add the target element to your `index.html`; p5-phone waits for it and attaches the permission trigger. Each style has a matching `enableMic*`, `enableSound*`, `enablePermissions*`, etc. variant — the style suffix is interchangeable across all hardware families.
 
 ### Combining features
 
@@ -161,6 +200,23 @@ function draw() {
   // Use motion values and microphone input here.
 }
 ```
+
+## Desktop QR and device detection (dev helpers)
+
+For the common dev workflow — open the sketch on desktop, then scan a QR to load it on the phone — call `showDesktopQr()` once in `setup()`. It renders a floating QR of the current page **on desktop only** and is a no-op on mobile, so you never have to generate or close a QR on the phone. It is decoupled from the enable functions and works with any activation style.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  showDesktopQr();                     // floating QR, desktop only; nothing on phone
+  enableSensorMinimal('Tap to begin'); // minimal overlay on both
+}
+```
+
+`showDesktopQr(options?)` options: `url` (defaults to `location.href`), `position` (`'top-right'` default; also `'top-left'`/`'bottom-right'`/`'bottom-left'`), `size` (px, default 180), `label` (caption, default "Scan to open on your phone"), `closable` (default `true`), `rememberDismiss` (default `true` — closing hides it for the session). `hideDesktopQr()` removes the panel; `setQrUrl(url)` updates the URL (or creates the panel). The QR lazily loads `qrcodejs` from a CDN only on desktop, so mobile sketches download nothing extra; if the CDN is blocked (strict CSP / offline) it warns and removes the panel.
+
+Device detection is also exposed directly: `window.isMobile` and `window.isDesktop` (set once at load, best-effort from UA + coarse-pointer + touch signals, including the iPadOS-13+ Mac-UA case). Use them to branch dev-only UI.
 
 ## Status variables and callbacks
 

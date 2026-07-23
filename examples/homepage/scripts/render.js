@@ -116,6 +116,7 @@
         <td><code>${escapeHtml(item.button)}</code></td>
         <td><code>${escapeHtml(item.canvas)}</code></td>
         <td><code>${escapeHtml(item.banner)}</code></td>
+        <td><code>${escapeHtml(item.minimal)}</code></td>
         <td><code>${escapeHtml(item.custom)}</code></td>
         <td>${escapeHtml(item.notes)}</td>
       </tr>
@@ -125,7 +126,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Capability</th><th>Tap</th><th>Button</th><th>Canvas</th><th>Banner</th><th>Custom</th><th>Notes</th></tr>
+            <tr><th>Capability</th><th>Tap</th><th>Button</th><th>Canvas</th><th>Banner</th><th>Minimal</th><th>Custom</th><th>Notes</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
