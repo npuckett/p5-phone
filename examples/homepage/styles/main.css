@@ -45,7 +45,7 @@ th { background: #eceee8; font-size: 0.82rem; text-transform: uppercase; }
 .backdrop { display: none; }
 .main-content { margin-left: var(--sidebar-width); min-height: 100vh; }
 .content-section { padding: 64px var(--section-padding-x); border-bottom: 1px solid var(--line); }
-.hero-section { min-height: 88vh; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 0; background: #f1f4ef; }
+.hero-section { min-height: auto; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 0; background: #f1f4ef; }
 .eyebrow { display: inline-block; color: var(--accent-green); text-transform: uppercase; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 10px; }
 h1, h2, h3 { line-height: 1.08; margin: 0; }
 h1 { max-width: 880px; font-size: clamp(3.2rem, 8vw, 7.2rem); letter-spacing: 0; }
@@ -53,7 +53,7 @@ h2 { font-size: clamp(2rem, 4vw, 3.8rem); margin-bottom: 12px; }
 h3 { font-size: 1.2rem; margin-bottom: 12px; }
 .hero-copy, .section-heading p { max-width: 780px; color: var(--muted); font-size: 1.08rem; }
 .hero-media { margin: 0 calc(var(--section-padding-x) * -1) 30px; width: calc(100% + (var(--section-padding-x) * 2)); }
-.hero-image { display: block; width: 100%; height: auto; border: 2px solid var(--ink); background: #e8c7d2; }
+.hero-image { display: block; width: 100%; height: auto; border: none; background: #e8c7d2; }
 .image-credit { margin-top: 8px; padding: 0 var(--section-padding-x); color: var(--muted); font-size: 0.9rem; }
 .image-credit a { color: var(--ink); font-weight: 750; }
 .primary-link, .secondary-link, .card-actions a, .card-actions span { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; border-radius: 8px; padding: 9px 14px; text-decoration: none; font-weight: 750; border: 1px solid var(--line-strong); }
@@ -156,7 +156,7 @@ body.qr-card-open { overflow: hidden; }
   body.menu-open .backdrop { display: block; }
   .main-content { margin-left: 0; }
   .content-section { padding: 44px var(--section-padding-x); }
-  .hero-section { min-height: calc(100vh - 64px); padding-top: 0; }
+  .hero-section { min-height: auto; padding-top: 0; }
   .signal-grid, .split-layout, .faq-grid, .compat-grid, .filter-panel { grid-template-columns: 1fr; }
   .starter-card { grid-template-columns: 1fr; gap: 6px; }
 }
