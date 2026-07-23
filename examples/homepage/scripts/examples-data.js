@@ -261,7 +261,7 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'NFC',
     level: 'Starter',
     p5: '1.x and 2.0',
-    description: 'Scan physical NFC tags, name them, and copy IDs into sketches.',
+    description: 'Scan physical NFC tags (NTAG213/215/216 or any NDEF tag), name them, and copy IDs into sketches.',
     path: 'Phone%20Sensor%20Examples/nfc/01_nfc_read/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/nfc/01_nfc_read',
     capabilities: ['nfc', 'aliases']
@@ -273,7 +273,7 @@ window.P5PHONE_EXAMPLES = [
     subcategory: 'NFC',
     level: 'Starter',
     p5: '1.x and 2.0',
-    description: 'Use shirt and table aliases in simple if statements.',
+    description: 'Use shirt and table aliases in simple if statements. Works with NTAG213/215/216 and any NDEF tag.',
     path: 'Phone%20Sensor%20Examples/nfc/02_two_tag_effects/',
     sourcePath: 'examples/Phone%20Sensor%20Examples/nfc/02_two_tag_effects',
     capabilities: ['nfc', 'aliases']

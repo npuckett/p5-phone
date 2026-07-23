@@ -819,7 +819,7 @@ enablePermissionsTap(['sensors', 'torch'], 'Tap to enable shake flashlight');
 - ❌ **iOS** - Not supported (Web NFC API not available on iOS)
 - Requires **HTTPS** — NFC is blocked on insecure origins
 
-**Important:** The Web NFC API requires user activation (a tap or click) before scanning can begin — the same pattern used by all other p5-phone permission functions. On unsupported devices/browsers, `window.nfcEnabled` will be `false` and calls will be safely ignored with console warnings.
+**Important:** The Web NFC API requires user activation (a tap or click) before scanning can begin — the same pattern used by all other p5-phone permission functions. On unsupported devices/browsers, `window.nfcEnabled` will be `false` and calls will be safely ignored with console warnings. Compatible with widely available NFC Type 2 tags — including **NTAG213**, **NTAG215**, and **NTAG216** — as well as any NDEF-formatted tag.
 
 **Commands:**
 - `enableNfcTap(message)` - Tap anywhere on screen to enable NFC scanning
@@ -928,7 +928,7 @@ NFC tags contain NDEF records. The most common types are:
 - Use `setNfcTagAlias()` and `isNfcTag()` when a sketch should respond to named physical objects
 - Use `window.lastNfcMessage` in `draw()` for displaying the most recent tag
 - Test on Android devices with Chrome — NFC is not available on iOS or desktop browsers
-- Tags must be NDEF-formatted to be read by the Web NFC API
+- Tags must be NDEF-formatted to be read by the Web NFC API. Widely available NFC Type 2 tags work out of the box: **NTAG213** (144 bytes), **NTAG215** (504 bytes, also used for Amiibo), and **NTAG216** (888 bytes)
 
 ### GPS / Geolocation (iOS + Android)
 

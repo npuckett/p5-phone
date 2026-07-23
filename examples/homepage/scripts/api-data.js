@@ -105,7 +105,7 @@ window.P5PHONE_API_SECTIONS = [
   {
     id: 'nfc',
     title: 'NFC',
-    description: 'Web NFC helpers for Android Chrome sketches that read physical tags and assign aliases.',
+    description: 'Web NFC helpers for Android Chrome sketches that read physical tags and assign aliases. Compatible with widely available NFC Type 2 tags (NTAG213/215/216) and any NDEF-formatted tag.',
     items: [
       { name: 'enableNfcTap', signature: 'enableNfcTap(message)', summary: 'Starts NFC scanning from a user tap. Requires Android Chrome and HTTPS.', tags: ['nfc', 'tap'] },
       { name: 'nfcRead', signature: 'function nfcRead(message, serialNumber) { ... }', summary: 'Optional sketch callback called whenever a tag is read. message.records contains decoded NDEF records and message.alias when available.', tags: ['callback'] },

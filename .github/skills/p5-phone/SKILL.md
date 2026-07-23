@@ -288,7 +288,7 @@ For Three.js pages that use ML5 but are not p5 sketches, put p5, the compatibili
 
 ## NFC
 
-Android Chrome only, requires HTTPS.
+Android Chrome only, requires HTTPS. Compatible with widely available NFC Type 2 tags — NTAG213, NTAG215, NTAG216 — and any NDEF-formatted tag.
 
 ```javascript
 function setup() {
