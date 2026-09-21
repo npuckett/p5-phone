@@ -1,0 +1,37 @@
+# Lint the library against the official Arduino Library Manager spec.
+# Runs arduino-lint in strict + library-manager mode — any ERROR blocks the run.
+# This is the same gate the arduino-librarian bot applies when you submit to
+# the Library Registry, so a green run here means submission will be accepted.
+
+name: Lint
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'examples/**'
+      - 'library.properties'
+      - 'keywords.txt'
+      - '.github/workflows/lint.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'examples/**'
+      - 'library.properties'
+      - 'keywords.txt'
+      - '.github/workflows/lint.yml'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Arduino Lint
+        uses: arduino/arduino-lint-action@v1
+        with:
+          # library-manager: update  → rules for a library already in (or being
+          #   submitted to) Library Manager.
+          # compliance: strict        → also enforces best-practice (README, LICENSE…).
+          library-manager: update
+          compliance: strict
