@@ -113,6 +113,25 @@ window.lastGeoPosition = null;
 
 // Internal state
 let _micInstance = null;
+
+// window.micOpen: true only while the microphone stream is really live.
+// window.micEnabled just means the request ran: p5.sound 0.3.x swallows a denied or
+// missing microphone inside mic.start() (it only logs 'mic not open'), so a sketch
+// cannot tell a refused microphone from silence with micEnabled alone. A getter
+// rather than a polled flag, so it also drops to false when the stream ends.
+function _isMicOpen(m) {
+  if (!m) return false;
+  // p5.sound 0.3.x: Tone.UserMedia reports 'started' only while its stream is active
+  if (m.node && typeof m.node.state === 'string') return m.node.state === 'started';
+  // Legacy p5.sound (p5.js 1.x): the MediaStream is only set once getUserMedia resolves
+  return !!(m.stream && m.stream.active);
+}
+Object.defineProperty(window, 'micOpen', {
+  configurable: true,
+  get: function() {
+    return _isMicOpen(_micInstance || (typeof mic !== 'undefined' ? mic : null));
+  }
+});
 let _nfcReader = null;
 let _nfcAbortController = null;
 let _geoWatchId = null;
@@ -1654,8 +1673,16 @@ async function _requestMicrophonePermissionsCore() {
     
     // If there's a global mic object, start it
     if (typeof mic !== 'undefined' && mic && mic.start) {
-      mic.start();
+      // Legacy p5.sound reports failure through this callback; p5.sound 0.3.x ignores
+      // the arguments and swallows the rejection, so check window.micOpen there.
+      mic.start(undefined, function(err) {
+        console.warn('p5-phone: microphone could not be opened (denied or no input device).', err);
+        if (_debugVisible) {
+          debugWarn('Microphone could not be opened:', err && err.message ? err.message : err);
+        }
+      });
       _micInstance = mic;
+      // micEnabled means the request ran, not that access was granted. See window.micOpen.
       window.micEnabled = true;
     } else {
       console.warn('No microphone object found. Create one with: mic = new p5.AudioIn();');
@@ -2555,6 +2582,31 @@ function _notifySketchReady() {
 // UI CREATION HELPERS
 // =========================================
 
+// Bind click, touch and pointer activation to a permission UI element.
+// Never stopPropagation here: p5 tracks press state on window (touchstart/touchend
+// in 1.x, pointerdown/pointerup in 2.x). The press has already reached p5 by the
+// time the release arrives, so swallowing the release leaves mouseIsPressed (and
+// touches[]) stuck until the next complete tap and mouseReleased()/touchEnded()
+// never fire. preventDefault on touchend still suppresses the synthesized click so
+// it cannot land on the sketch once the UI is removed; the handler's own guard
+// absorbs the click/touchend/pointerup repeat.
+function _addActivationListeners(element, handler) {
+  element.addEventListener('click', handler);
+  element.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    handler();
+  });
+  element.addEventListener('pointerup', function(e) {
+    e.preventDefault();
+    // A touch pointerup is followed by touchend on the same element. A fast handler
+    // would remove the element in between, and a touchend dispatched to a detached
+    // element never reaches window, so p5 1.x would miss the release. Let touchend
+    // activate instead; click still covers browsers without touch events.
+    if (e.pointerType === 'touch' && 'ontouchend' in window) return;
+    handler();
+  });
+}
+
 function _createPermissionButton(buttonText, statusText, onClickHandler) {
   // Remove existing button if present
   _removeExistingUI();
@@ -2624,17 +2676,7 @@ function _createPermissionButton(buttonText, statusText, onClickHandler) {
   };
   
   // Add click, touch, and pointer handlers
-  button.addEventListener('click', handleButtonClick);
-  button.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    handleButtonClick();
-  });
-  button.addEventListener('pointerup', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    handleButtonClick();
-  });
+  _addActivationListeners(button, handleButtonClick);
   
   document.body.appendChild(button);
   document.body.appendChild(status);
@@ -2692,20 +2734,8 @@ function _createTapToEnable(message, onTapHandler) {
     }
   };
   
-  // Add both click and touch handlers
-  overlay.addEventListener('click', handleActivation);
-  overlay.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    handleActivation();
-  });
-  
-  // Also add pointer events for wider compatibility
-  overlay.addEventListener('pointerup', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    handleActivation();
-  });
+  // Add click, touch, and pointer handlers
+  _addActivationListeners(overlay, handleActivation);
   
   document.body.appendChild(overlay);
 }
@@ -2885,17 +2915,7 @@ function _createBannerToEnable(message, position, onActivateHandler) {
     }, 300);
   };
   
-  banner.addEventListener('click', handleActivation);
-  banner.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    handleActivation();
-  });
-  banner.addEventListener('pointerup', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    handleActivation();
-  });
+  _addActivationListeners(banner, handleActivation);
 }
 
 /**
@@ -3059,17 +3079,7 @@ function _createMinimalToEnable(messageOrOpts, options, onActivateHandler) {
     }
   };
 
-  overlay.addEventListener('click', handleActivation);
-  overlay.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    handleActivation();
-  });
-  overlay.addEventListener('pointerup', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    handleActivation();
-  });
+  _addActivationListeners(overlay, handleActivation);
 
   document.body.appendChild(overlay);
 }
@@ -3125,10 +3135,10 @@ function _bindPermissionTo(selector, onActivateHandler) {
       await onActivateHandler();
     };
     
+    // No stopPropagation: p5 1.x must see this touchend (see _addActivationListeners)
     element.addEventListener('click', handleActivation);
     element.addEventListener('touchend', function(e) {
       e.preventDefault();
-      e.stopPropagation();
       handleActivation();
     });
   };

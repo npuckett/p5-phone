@@ -80,17 +80,21 @@ function userSetupComplete() {
 
 ```javascript
 let mic;
+let amplitude;
 function setup() {
   createCanvas(windowWidth, windowHeight);
   mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect();        // p5.sound 0.3.x wires every node to the speakers by default
+  mic.connect(amplitude);  // p5.sound 0.3.x has no mic.getLevel()
   lockGestures();
   enableMicTap('Tap to enable microphone');
 }
 function draw() {
   background(220);
 
-  if (window.micEnabled) {
-    let level = mic.getLevel();
+  if (window.micOpen) { // micEnabled is true even if the mic was denied; micOpen is not
+    let level = amplitude.getLevel();
     circle(width/2, height/2, level * 500);
   }
 }

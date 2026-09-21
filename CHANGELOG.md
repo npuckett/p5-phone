@@ -4,7 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+- **Enabling tap left p5 half-pressed.** The Tap, Button, Banner, and Minimal activation UIs (and `enable…On()` custom elements) called `stopPropagation()` on the release (`touchend` / `pointerup`) but not on the press. p5 listens on `window`, so it saw the press and never the release: `mouseIsPressed` stayed `true`, `touches[]` kept a phantom entry, and `mouseReleased()` / `touchEnded()` never fired until the next complete tap. Affected p5.js 2.x with mouse and touch, and p5.js 1.x with touch. The release now propagates; `preventDefault()` on `touchend` is kept so the synthesized click cannot land on the sketch once the UI is removed.
+- Touch activation now runs from `touchend` rather than the `pointerup` that precedes it. A fast handler (vibration, sound, Android motion) used to remove the overlay between the two events, and a `touchend` dispatched to a detached element never reaches `window`, so p5.js 1.x missed the release.
+
 ### Added
+- Added `window.micOpen`: `true` only while the microphone stream is really live (works with p5.sound 0.3.x and the legacy p5.sound for p5.js 1.x). `window.micEnabled` is unchanged and still only means the request ran — it is `true` even when the person denies the microphone or no input exists, because p5.sound 0.3.x swallows that failure inside `mic.start()`.
+- With the legacy p5.sound, a failed `mic.start()` now logs a clear p5-phone warning (and shows in the debug panel).
+- Added `npm run test:press`, a Playwright check that taps every activation style under p5.js 1.x and 2.x with mouse and touch and asserts p5 is left fully released.
+
+### Documentation
+- README, SKILL.md, and agent instructions no longer document `mic.getLevel()`, which does not exist on `p5.AudioIn` in p5.sound 0.3.x. The documented pattern is `mic.disconnect(); mic.connect(amplitude); amplitude.getLevel()`. The `disconnect()` matters: every p5.sound 0.3.x node is wired to the speakers by default.
 - Added a sixth permission-activation style, **Minimal**: a bare semi-transparent full-screen overlay with an optional radiating circular icon in the center, as a cleaner alternative to the frosted message box used by `Tap`. Color, opacity, icon, icon color, and icon size are all adjustable.
 - Added `enableSensorMinimal()`, `enableMicMinimal()`, `enableSoundMinimal()`, `enableSpeechMinimal()`, `enableVibrationMinimal()`, `enableTorchMinimal()` (+ `enableFlashlightMinimal` alias), `enableNfcMinimal()`, `enableGeoMinimal()`, `enableBleMinimal()`, `enableAllMinimal()`, `enableCameraMinimal()`, and `enablePermissionsMinimal()` (+ `enableHardwareMinimal` alias). Call forms: `enableXxxMinimal('Tap')`, `enableXxxMinimal({ color, opacity, icon, iconColor, iconSize, message })`, or `enableXxxMinimal('Tap', { opacity: 0.6 })`.
 - Added `showDesktopQr()`, `hideDesktopQr()`, and `setQrUrl()` — a dev helper that renders a floating QR code of the current page on **desktop only** and is a no-op on mobile, so you never have to generate or dismiss a QR on the phone. Options: `{ url, position, size, label, closable, rememberDismiss }`. Closing the panel hides it for the session.

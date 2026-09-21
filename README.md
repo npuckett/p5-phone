@@ -52,7 +52,7 @@ This library simplifies access to the following p5.js mobile sensor and audio co
 
 **Audio Input (requires p5.sound):**
 - [`p5.AudioIn()`](https://p5js.org/reference/p5.sound/p5.AudioIn/) - Audio input object
-- [`getLevel()`](https://p5js.org/reference/p5.sound/p5.AudioIn/getLevel/) - Current audio input level
+- [`p5.Amplitude()`](https://p5js.org/reference/p5.sound/p5.Amplitude/) + `amplitude.getLevel()` - Current audio input level (p5.sound 0.3.x has no `mic.getLevel()`; see [Microphone Activation](#microphone-activation))
 
 ## Browser Compatibility
 
@@ -168,6 +168,7 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
 
 ```javascript
 let mic;
+let amplitude;
 let mySound;
 
 function preload() {
@@ -189,6 +190,9 @@ function setup() {
   
   // Enable microphone with tap-to-start (also enables sound output)
   mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect();        // keep the live mic out of the speakers
+  mic.connect(amplitude);  // read the level with amplitude.getLevel()
   enableMicTap('Tap to enable microphone');
   
   // OR enable sound output only (no microphone input)
@@ -205,9 +209,9 @@ function draw() {
     circle(width/2 + rotationY * 5, height/2 + rotationX * 5, 50);
   }
   
-  if (window.micEnabled) {
-    // Use microphone input
-    let level = mic.getLevel();
+  if (window.micOpen) {
+    // Use microphone input (micOpen is true only while the mic is really live)
+    let level = amplitude.getLevel();
     fill(0, 255, 0);
     rect(10, 10, level * 200, 20);
   }
@@ -318,7 +322,8 @@ enableGyroOn(selector)    // e.g., enableGyroOn('#my-button')
 
 // Status variables (check these in your code)
 window.sensorsEnabled     // Boolean: true when motion sensors are active
-window.micEnabled         // Boolean: true when microphone is active
+window.micEnabled         // Boolean: true once the microphone request has run (NOT proof of access)
+window.micOpen            // Boolean: true only while the microphone stream is really live
 window.soundEnabled       // Boolean: true when sound output is active
 window.speechEnabled      // Boolean: true when speech recognition is active
 window.vibrationEnabled   // Boolean: true when vibration is available (Android only)
@@ -356,7 +361,8 @@ this.enableGyroTap('Tap to start');
 
 **Variables:**
 - `window.sensorsEnabled` - Boolean indicating if motion sensors are active
-- `window.micEnabled` - Boolean indicating if microphone is active
+- `window.micEnabled` - Boolean indicating the microphone request has run. It is `true` even if the person denies access or no input device exists
+- `window.micOpen` - Boolean, `true` only while the microphone stream is really live. Use this to tell a refused microphone from silence
 - `window.soundEnabled` - Boolean indicating if sound output is active
 - `window.speechEnabled` - Boolean indicating if speech recognition is active
 - `window.vibrationEnabled` - Boolean indicating if vibration is available (Android only)
@@ -382,9 +388,9 @@ function draw() {
     let tilt = rotationX;
   }
   
-  if (window.micEnabled) {
-    // Safe to use microphone
-    let audioLevel = mic.getLevel();
+  if (window.micOpen) {
+    // Microphone is really delivering audio
+    let audioLevel = amplitude.getLevel();
   }
   
   if (window.soundEnabled) {
@@ -544,16 +550,24 @@ enableMicTap('Tap to enable microphone');
 enableMicButton('Enable Audio');
 ```
 
-**Available p5.js Variables (when `window.micEnabled` is true):**
+**Available p5.js Variables:**
 
 | Variable | Description | Range |
 |----------|-------------|-------|
 | [`p5.AudioIn()`](https://p5js.org/reference/p5.sound/p5.AudioIn/) | Audio input object (stored in `mic`) | Object |
-| [`mic.getLevel()`](https://p5js.org/reference/p5.sound/p5.AudioIn/getLevel/) | Current audio input level | 0.0 to 1.0 |
+| [`p5.Amplitude()`](https://p5js.org/reference/p5.sound/p5.Amplitude/) | Level analyzer the mic is routed into | Object |
+| `amplitude.getLevel()` | Current audio input level | 0.0 to 1.0 |
+| `window.micEnabled` | The microphone request has run | Boolean |
+| `window.micOpen` | The microphone stream is really live | Boolean |
+
+**Reading the level (p5.sound 0.3.x / p5.js 2.x):** `p5.AudioIn` has no `getLevel()` in p5.sound 0.3.x. Route the mic into a `p5.Amplitude` and read that instead. Call `mic.disconnect()` first: every p5.sound 0.3.x node is wired to the speakers by default, so without it the live microphone plays straight out of the phone (feedback).
+
+**`micEnabled` vs `micOpen`:** `window.micEnabled` becomes `true` as soon as p5-phone has asked for the microphone, even if the person then taps "Don't Allow" or the device has no input. p5.sound 0.3.x swallows that failure (it only logs `mic not open`), so a refused microphone looks exactly like silence. `window.micOpen` is `true` only while the stream is actually live, and drops back to `false` if it ends. It stays `false` while the browser prompt is still showing.
 
 **Example:**
 ```javascript
 let mic;
+let amplitude;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -561,22 +575,33 @@ function setup() {
   // Create a new p5.AudioIn() instance
   mic = new p5.AudioIn();
   
+  // Route the mic into an analyzer instead of the speakers
+  amplitude = new p5.Amplitude();
+  mic.disconnect();
+  mic.connect(amplitude);
+  
   // Enable microphone with tap
   enableMicTap();
 }
 
 function draw() {
-  if (window.micEnabled) {
-    // The mic object is a p5.AudioIn() instance
+  if (window.micOpen) {
     // Audio-reactive visualization
-    let level = mic.getLevel();
+    let level = amplitude.getLevel();
     let size = map(level, 0, 1, 10, 200);
     
     background(level * 255);
     circle(width/2, height/2, size);
+  } else if (window.micEnabled) {
+    // Asked, but no audio: still prompting, denied, or no input device
+    background(40);
+    fill(255);
+    text('Microphone not available', 20, 40);
   }
 }
 ```
+
+> Using the legacy p5.sound that ships with p5.js 1.x? `mic.getLevel()` still works there, and `window.micOpen` works the same way.
 
 ### Sound Output Activation
 
@@ -1188,10 +1213,14 @@ function gotSpeech() {
 **Usage:**
 ```javascript
 let mic;
+let amplitude;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect();
+  mic.connect(amplitude);
   lockGestures();
   
   // One tap enables both sensors and microphone
@@ -1205,8 +1234,8 @@ function draw() {
     circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
   }
   
-  if (window.micEnabled) {
-    let level = mic.getLevel();
+  if (window.micOpen) {
+    let level = amplitude.getLevel();
     rect(10, 10, level * 200, 20);
   }
 }
@@ -1561,7 +1590,7 @@ function userSetupComplete() {
 
 You can also check the status variables at any time:
 - `window.sensorsEnabled`
-- `window.micEnabled`
+- `window.micEnabled` (request ran) and `window.micOpen` (stream really live)
 - `window.speechEnabled`
 
 ### Camera feed is blank or not loading

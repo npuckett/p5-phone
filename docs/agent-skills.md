@@ -8,7 +8,7 @@ p5-phone ships two **agent skills** — markdown files that teach AI coding assi
 | **p5js-2x** | The p5.js 1.x → 2.x transition. Models default to 1.x patterns (`preload()`, `curveVertex`, `keyCode`, `TypedDict`); this skill points them at the contemporary 2.x idioms (`async setup()` + `await loadImage()`, `splineVertex`, the unified pointer model, etc.). |
 
 **Pair them.** They cover different layers and are designed to be used together:
-- `p5-phone` unlocks phone hardware and hands you p5 values (`rotationX`, `mic.getLevel()`, `window.sensorsEnabled`, …).
+- `p5-phone` unlocks phone hardware and hands you p5 values (`rotationX`, `amplitude.getLevel()`, `window.sensorsEnabled`, …).
 - `p5js-2x` governs the surrounding p5.js 2.x language (async asset loading, renamed curve/data APIs, unified touch).
 
 The failure this pairing prevents: a model hand-rolling a `DeviceOrientationEvent` listener instead of reading `rotationX`, or wrapping code in `preload()` when the sketch targets p5.js 2.x.

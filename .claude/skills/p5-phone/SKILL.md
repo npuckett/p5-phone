@@ -167,7 +167,7 @@ function draw() {
 Read these `window.*` flags before using hardware data:
 
 - **Motion:** `sensorsEnabled`
-- **Microphone:** `micEnabled`
+- **Microphone:** `micEnabled` (request ran), `micOpen` (stream really live — gate reads on this)
 - **Sound:** `soundEnabled`
 - **Speech:** `speechEnabled`
 - **Vibration:** `vibrationEnabled`
@@ -208,22 +208,26 @@ iOS requires the sensor permission to be requested from a tap/click. Never auto-
 
 ## Microphone and sound
 
-Include p5.sound and create `p5.AudioIn()` before enabling mic. For simple examples read levels with `mic.getLevel()` after `window.micEnabled` is true. Avoid wiring `p5.Amplitude.setInput(mic)` before permission — p5.sound 0.3.0 can throw in p5.js 2 previews.
+Include p5.sound and create `p5.AudioIn()` before enabling mic. **`mic.getLevel()` does not exist in p5.sound 0.3.x** — route the mic into a `p5.Amplitude` and read `amplitude.getLevel()`. Always `mic.disconnect()` first: every p5.sound 0.3.x node is wired to the speakers by default, so otherwise the live mic plays out loud (feedback). Gate reads on `window.micOpen` (stream really live), not `window.micEnabled` — `micEnabled` only means the request ran and is `true` even when the person denies the microphone, because p5.sound 0.3.x swallows that failure. Avoid `p5.Amplitude.setInput(mic)` before permission — p5.sound 0.3.0 can throw in p5.js 2 previews.
 
 ```javascript
 let mic;
+let amplitude;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
   mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect();          // keep the live mic out of the speakers
+  mic.connect(amplitude);
   enableMicTap('Tap to enable microphone');
 }
 
 function draw() {
   background(0);
-  if (!window.micEnabled) return;
-  const level = mic.getLevel();
+  if (!window.micOpen) return; // false while prompting, if denied, or with no input device
+  const level = amplitude.getLevel();
   circle(width / 2, height / 2, 40 + level * 600);
 }
 ```
@@ -497,7 +501,8 @@ All hardware requires a secure context (HTTPS or localhost).
 - **GPS denied even after tapping Allow** — the OS-level Location Services toggle (iOS Settings → Privacy & Security → Location Services; Android Settings → Location) must also be on; in-app browsers (Instagram/Facebook) usually fail — open in Safari/Chrome.
 - **BLE won't connect on iPhone** — Web Bluetooth is unavailable in iOS Safari/Chrome; use the Bluefy app.
 - **Touch callbacks never run** — `touchStarted/Moved/Ended` are no-ops in p5.js 2; switch to `mousePressed/mouseDragged/mouseReleased`.
-- **Mic example throws in preview** — don't call `p5.Amplitude.setInput(mic)` before `window.micEnabled`; read `mic.getLevel()` after permission.
+- **Mic example throws in preview** — don't call `p5.Amplitude.setInput(mic)` before `window.micEnabled`. `mic.getLevel is not a function` means p5.sound 0.3.x: use `mic.disconnect(); mic.connect(amplitude);` then `amplitude.getLevel()`.
+- **Mic level stays at 0** — check `window.micOpen`. `micEnabled` is `true` even when the microphone was denied or no input exists.
 
 ## Answering questions
 
