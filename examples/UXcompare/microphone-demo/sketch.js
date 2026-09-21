@@ -2,6 +2,7 @@
 // Demonstrates microphone input for audio-reactive visuals
 
 let mic;
+let amplitude;
 let particles = [];
 let levelHistory = [];
 let maxHistoryLength = 100;
@@ -9,8 +10,11 @@ let maxHistoryLength = 100;
 function setup() {
   createCanvas(windowWidth, windowHeight);
   
-  // Create microphone input
+  // Create microphone input and route it to an amplitude analyzer
   mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect(); // Keep the live mic out of the speakers (prevents feedback)
+  mic.connect(amplitude);
   
   // Initialize particles
   for (let i = 0; i < 50; i++) {
@@ -31,7 +35,7 @@ function draw() {
 }
 
 function drawVisualizer() {
-  let level = mic.getLevel();
+  let level = amplitude.getLevel();
   
   // Store level history for waveform
   levelHistory.push(level);

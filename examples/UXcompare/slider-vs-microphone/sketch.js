@@ -13,6 +13,7 @@ let isDraggingSlider = false;
 
 // Microphone properties
 let mic;
+let amplitude;
 let micLevel = 0.0;
 
 // Layout properties
@@ -33,6 +34,9 @@ function setup() {
   
   // Create microphone input (this is the key - create it here first!)
   mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect(); // Keep the live mic out of the speakers (prevents feedback)
+  mic.connect(amplitude);
   
   // Enable gesture locking and microphone using the new system
   lockGestures();
@@ -214,7 +218,7 @@ function drawMicrophoneDisplay() {
 
 function updateMicLevel() {
   if (window.micEnabled && mic) {
-    let rawLevel = mic.getLevel();
+    let rawLevel = amplitude.getLevel();
     micLevel = constrain(rawLevel * 5, 0, 1); // Amplify and constrain
   }
 }

@@ -1,5 +1,6 @@
-// Global variable for microphone
+// Global variables for microphone
 let mic;
+let amplitude;
 let orientationX = 0;
 let orientationY = 0;
 let motionCircleX = 0;
@@ -17,8 +18,11 @@ function setup()
   // Lock mobile gestures to prevent browser interference
   lockGestures();
   
-  // Create microphone input
+  // Create microphone input and route it to an amplitude analyzer
   mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect(); // Keep the live mic out of the speakers (prevents feedback)
+  mic.connect(amplitude);
   
   // Enable motion sensors with tap-to-start
   enableGyroTap('Tap to enable motion sensors');
@@ -59,7 +63,7 @@ function updateMotionValues()
 
 function updateMicValues()
 {
-  micLevel = mic.getLevel();
+  micLevel = amplitude.getLevel();
   micCircleSize = map(micLevel, 0, 1, 10, 200);
 }
 

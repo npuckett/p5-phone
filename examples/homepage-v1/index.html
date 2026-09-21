@@ -588,7 +588,8 @@
                 <h3>Audio Input (requires p5.sound)</h3>
                 <ul>
                     <li><a href="https://p5js.org/reference/p5.sound/p5.AudioIn/" target="_blank"><code>p5.AudioIn()</code></a> - Audio input object</li>
-                    <li><a href="https://p5js.org/reference/p5.sound/p5.AudioIn/getLevel/" target="_blank"><code>getLevel()</code></a> - Current audio input level</li>
+                    <li><a href="https://p5js.org/reference/p5.sound/p5.Amplitude/" target="_blank"><code>p5.Amplitude()</code></a> - Level analyzer (route the mic into it with <code>mic.connect(amplitude)</code>)</li>
+                    <li><a href="https://p5js.org/reference/p5.sound/p5.Amplitude/" target="_blank"><code>amplitude.getLevel()</code></a> - Current audio input level</li>
                 </ul>
             </div>
 
@@ -613,6 +614,7 @@
   
     &lt;script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"&gt;&lt;/script&gt;
     &lt;script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"&gt;&lt;/script&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js"&gt;&lt;/script&gt;
   &lt;script src="https://cdn.jsdelivr.net/npm/p5-phone@1.13.0/dist/p5-phone.min.js"&gt;&lt;/script&gt;
 &lt;/head&gt;
 &lt;body&gt;
@@ -622,6 +624,7 @@
 
                 <h3>sketch.js</h3>
                 <pre><code>let mic;
+let amplitude;
 
 function setup() {
   // Show debug panel FIRST to catch setup errors
@@ -637,6 +640,9 @@ function setup() {
   
   // Enable microphone with tap-to-start
   mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect(); // Keep the live mic out of the speakers (prevents feedback)
+  mic.connect(amplitude);
   enableMicTap('Tap to enable microphone');
 }
 
@@ -652,7 +658,7 @@ function draw() {
   
   if (window.micEnabled) {
     // Use microphone input
-    let level = mic.getLevel();
+    let level = amplitude.getLevel();
     fill(0, 255, 0);
     rect(10, 10, level * 200, 20);
   }
@@ -716,11 +722,11 @@ function mousePressed() {
                     <tbody>
                         <tr>
                             <td><code>enableMicTap(message)</code></td>
-                            <td>Tap anywhere to enable microphone (requires p5.sound library). Once enabled (when window.micEnabled is true), use with <code>mic.getLevel()</code> and other p5.AudioIn methods</td>
+                            <td>Tap anywhere to enable microphone (requires p5.sound library). Route the mic into a <code>p5.Amplitude</code> in setup() (<code>mic.disconnect(); mic.connect(amplitude);</code>), then once enabled (when window.micEnabled is true), read <code>amplitude.getLevel()</code></td>
                         </tr>
                         <tr>
                             <td><code>enableMicButton(text)</code></td>
-                            <td>Button-based microphone activation (requires p5.sound library). Once enabled (when window.micEnabled is true), use with <code>mic.getLevel()</code> and other p5.AudioIn methods</td>
+                            <td>Button-based microphone activation (requires p5.sound library). Route the mic into a <code>p5.Amplitude</code> in setup() (<code>mic.disconnect(); mic.connect(amplitude);</code>), then once enabled (when window.micEnabled is true), read <code>amplitude.getLevel()</code></td>
                         </tr>
                     </tbody>
                 </table>

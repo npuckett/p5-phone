@@ -1,4 +1,5 @@
 let mic;
+let amplitude;
 let level = 0;
 let tiltX = 0;
 let tiltY = 0;
@@ -12,6 +13,9 @@ function setup()
     lockGestures();
 
     mic = new p5.AudioIn();
+    amplitude = new p5.Amplitude();
+    mic.disconnect(); // Keep the live mic out of the speakers (prevents feedback)
+    mic.connect(amplitude);
 
     textAlign(CENTER, CENTER);
     textSize(18);
@@ -43,7 +47,7 @@ function draw()
 
 function updateInputValues()
 {
-    level = lerp(level, mic.getLevel(), 0.2);
+    level = lerp(level, amplitude.getLevel(), 0.2);
     tiltX = constrain(rotationY, -45, 45);
     tiltY = constrain(rotationX, -45, 45);
     circleX = map(tiltX, -45, 45, 80, width - 80);

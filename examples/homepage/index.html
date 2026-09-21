@@ -144,8 +144,18 @@ function draw() {
 
         <article class="starter-card">
           <h3>Microphone</h3>
-          <pre><code>if (window.micEnabled) {
-  let level = mic.getLevel();
+          <pre><code>function setup() {
+  mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  // don't play the mic out loud
+  mic.disconnect();
+  mic.connect(amplitude);
+  enableMicTap();
+}
+
+// in draw():
+if (window.micEnabled) {
+  let level = amplitude.getLevel();
   circle(width / 2, height / 2, level * 500);
 }</code></pre>
         </article>
@@ -210,7 +220,7 @@ if (window.sensorsEnabled && window.micEnabled) {
   circle(
     width / 2 + rotationY * 3,
     height / 2 + rotationX * 3,
-    80 + mic.getLevel() * 400
+    80 + amplitude.getLevel() * 400
   );
 }</code></pre>
         </article>
