@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.14.0] - Unreleased
+## [1.14.0] - 2026-09-21
 
 ### Added
 - Added **Share** multi-user shared state via Cloudflare PartyServer: `shareSetup()`, `shareConnect()` / `shareDisconnect()`, proxied `shared` / `me` / `guests`, `shareSet` / `shareSetMe` / `shareEmit`, and `enableShareTap|Button|Canvas|Banner|Minimal|On` gesture helpers.
