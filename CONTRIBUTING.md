@@ -53,11 +53,12 @@ npx p5-webeditor-sync session
    npm run release:patch   # or release:minor / release:major
    ```
    The `postversion` hook pushes commits and tags to origin.
-3. Publish to npm:
+3. Publish to npm (the token from `.env/keys.txt` is passed explicitly; `~/.npmrc` does not read `NPM_TOKEN`):
    ```bash
    export $(grep -v '^#' .env/keys.txt | xargs)
-   npm publish
+   npm publish --//registry.npmjs.org/:_authToken="$NPM_TOKEN"
    ```
+   Check first with `npm publish --dry-run`. Run `npm run test:press` and `npm run test:share` before a release that touches the activation UIs or Share.
 4. Update CDN version pins (`p5-phone@VERSION`) in:
    - Example `index.html` files (~75 files)
    - [README.md](README.md)
