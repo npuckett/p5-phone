@@ -6,6 +6,8 @@ Several examples link to the p5 Web Editor so users can edit starter sketches an
 
 ## Migration log
 
+**2026-09-21 (p5-phone 1.14.0):** Synced 37 projects with `npm run sync:webeditor` (`gif-fly` failed once with a network error and succeeded on `--slug gif-fly` retry). `npm run verify:webeditor` verified all 37 against `p5-phone@1.14.0`; the three THREE.js projects do not load p5-phone and are skipped. Full-preview smoke test (Pixel 7 emulation) of blank-template, combined-permissions, mic-level and ui-banner: canvas created, `p5-phone@1.14.0` loaded, no page errors. Sketch IDs unchanged.
+
 ## Verified on phone
 
 | Catalog id | Title | Web Editor | Full preview | Notes |

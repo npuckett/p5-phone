@@ -66,6 +66,6 @@
   },
   "verify": {
     "enabled": true,
-    "signature": "p5-phone@1.13.0"
+    "signature": "p5-phone@1.14.0"
   }
 }
