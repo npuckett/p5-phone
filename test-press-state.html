@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5-phone: press state + micOpen device test</title>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; }
+    #customBtn { position: fixed; bottom: 16px; left: 16px; z-index: 5; padding: 16px 20px; font-size: 16px; display: none; }
+  </style>
+  <!--
+    Manual on-device check (iOS Safari / Android Chrome). Serve over HTTPS or localhost:
+      npm run serve:docs  ->  /test-press-state.html?p5=2&style=tap
+    Query params:
+      p5    = 1 | 2                                   (default 2)
+      style = tap | button | banner | minimal | on    (default tap)
+      hw    = vibration | mic | gyro                  (default vibration; fastest handler, hardest case)
+
+    PASS after ONE tap on the enabling UI, without touching the screen again:
+      mouseIsPressed: false, touches: 0, and a release event in the log.
+    With hw=mic: micOpen is true only if access was granted; deny it and micOpen
+    stays false while micEnabled is true.
+  -->
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      var v1 = q.get('p5') === '1';
+      var urls = v1
+        ? ['https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.js', 'https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/addons/p5.sound.min.js']
+        : ['https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js', 'https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js'];
+      urls.push('src/p5-phone.js');
+      urls.forEach(function (u) { document.write('<script src="' + u + '"><\/script>'); });
+    })();
+  </script>
+</head>
+<body>
+<button id="customBtn">custom element</button>
+<script>
+const q = new URLSearchParams(location.search);
+const style = q.get('style') || 'tap';
+const hw = q.get('hw') || 'vibration';
+const events = [];
+let mic;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  if (hw === 'mic') mic = new p5.AudioIn();
+
+  const feature = { vibration: 'Vibration', mic: 'Mic', gyro: 'Gyro' }[hw] || 'Vibration';
+  const suffix = { tap: 'Tap', button: 'Button', banner: 'Banner', minimal: 'Minimal', on: 'On' }[style] || 'Tap';
+  if (suffix === 'On') {
+    document.getElementById('customBtn').style.display = 'block';
+    window['enable' + feature + 'On']('#customBtn');
+  } else {
+    window['enable' + feature + suffix]();
+  }
+}
+
+function draw() {
+  const stuck = mouseIsPressed || touches.length > 0;
+  background(stuck ? color(150, 30, 30) : color(30, 30, 50));
+  fill(255);
+  textSize(16);
+  textAlign(LEFT, TOP);
+  const lines = [
+    'p5.js ' + p5.VERSION + '   style=' + style + '   hw=' + hw,
+    '',
+    'mouseIsPressed: ' + mouseIsPressed,
+    'touches: ' + touches.length,
+    'micEnabled: ' + window.micEnabled + '   micOpen: ' + window.micOpen,
+    '',
+    'events: ' + (events.join(', ') || '(none)'),
+    '',
+    'Red background with no finger down = stuck press (FAIL)',
+  ];
+  text(lines.join('\n'), 16, 80, width - 32);
+}
+
+function mousePressed() { events.push('mousePressed'); }
+function mouseReleased() { events.push('mouseReleased'); }
+function touchStarted() { events.push('touchStarted'); }
+function touchEnded() { events.push('touchEnded'); }
+</script>
+</body>
+</html>
