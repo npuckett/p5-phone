@@ -32,6 +32,10 @@ jobs:
   create-release:
     needs: test
     runs-on: ubuntu-latest
+    # The default GITHUB_TOKEN is read-only here; creating a release needs write access
+    # (every tagged run since v1.6.3 failed with 403 without this).
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v4
     
