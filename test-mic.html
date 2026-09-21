@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!--
+  Phone check for the published p5-phone@1.14.0 microphone path.
+  Open on a desktop and scan the QR, or open this URL on the phone directly.
+  Tap once: the circle should follow sound, micOpen should read true (false if you
+  deny the microphone), and the bottom line should read "released" after the tap.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mic check</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #0f121c; }
+    canvas { display: block; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.14.0/dist/p5-phone.min.js"></script>
+</head>
+<body>
+<script>
+let mic;
+let amplitude;
+let level = 0;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  textAlign(CENTER, CENTER);
+  textFont('system-ui');
+
+  mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect(); // keep the live mic out of the speakers
+  mic.connect(amplitude);
+
+  enableMicTap('Tap to start the microphone');
+  showDesktopQr({ label: 'Scan to open on your phone' });
+}
+
+function draw() {
+  background(15, 18, 28);
+  const unit = min(width, height);
+
+  if (window.micOpen) {
+    level = lerp(level, amplitude.getLevel(), 0.3);
+    // A quiet room reads ~0.01 and talking ~0.05-0.2, so scale up and cap the size
+    const loudness = constrain(level * 6, 0, 1);
+    noStroke();
+    fill(90, 200, 255);
+    circle(width / 2, height / 2, unit * (0.15 + 0.6 * loudness));
+  }
+
+  noStroke();
+  fill(240);
+  textSize(unit * 0.06);
+  text(statusMessage(), width / 2, height * 0.12);
+
+  textSize(unit * 0.04);
+  fill(170);
+  text('micEnabled: ' + window.micEnabled + '    micOpen: ' + window.micOpen, width / 2, height * 0.82);
+  text('level: ' + nf(level, 1, 3), width / 2, height * 0.87);
+
+  // After the enabling tap this should read "released" (it used to stay stuck on)
+  fill(mouseIsPressed ? color(255, 100, 100) : color(100, 220, 130));
+  text(mouseIsPressed ? 'finger down' : 'released', width / 2, height * 0.93);
+}
+
+function statusMessage() {
+  if (!window.micEnabled) return 'Tap to start';
+  if (!window.micOpen) return 'No microphone (denied or unavailable?)';
+  return 'Make some noise';
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+</script>
+</body>
+</html>
