@@ -138,7 +138,7 @@ Full matrix:
 Notes:
 
 - `enableBle*` take an **options object** (`{ label, message, statusText, position }`), unlike the other families which take positional `(message, position)` / `(buttonText, statusText)`.
-- `enableShare*` also take an **options object** (same shape as `enableBle*`). Call `shareSetup({ host, room })` first; deploy [companion/P5PhoneShare](companion/P5PhoneShare/).
+- `enableShare*` take a label string or an **options object** (same shape as `enableBle*`). Call `shareSetup({ host, room })` first; deploy [companion/P5PhoneShare](companion/P5PhoneShare/).
 - `enableGyro*` is a **legacy alias** for `enableSensor*`. Prefer `enableSensor*` for new examples; use `enableGyro*` only to match older published sketches.
 - `enableAll*` is shorthand for sensors + mic. For any other mix, use `enablePermissions*`.
 - `enableHardware*` is an exact alias of `enablePermissions*`.
@@ -454,11 +454,15 @@ Full path: `companion/P5PhoneShare/README.md`.
 
 Rules:
 - Values must be JSON-serializable plain data (no functions, DOM, `NaN`, class instances).
-- Mutate `shared` / `me` like objects, or use `shareSet('pos.x', v)` / `shareSetMe(...)`.
+- Mutate `shared` / `me` like objects (arrays too: `shared.list.push(x)`), or use `shareSet('pos.x', v)` / `shareSetMe(...)`.
+- Writing `me.x = mouseX` every frame is fine: unchanged values are not sent and changes are batched (`shareSetup({ sendInterval })`, default 50 ms). Do not add your own throttling.
+- Last write wins, and all phones converge on the worker's value. Two simultaneous `shared.score += 1` taps count once: for counts, keep a per-phone tally in `me` and sum `guests`, or let `shareIsHost` own the value.
+- On phones the page leaves the room while hidden (locked screen) and rejoins when visible, keeping `me` (`disconnectWhenHidden`, default on mobile). `shared` edits made while disconnected are replaced by the room state on rejoin.
 - `guests` is read-mostly (other players' `me` snapshots); mutating it does not sync.
-- `shareIsHost` is true for the lexicographically first connected client; re-elected on leave.
+- `shareIsHost` is true for the first client to join; when the host leaves, the lexicographically first remaining client takes over.
+- After updating p5-phone, redeploy the worker (`npx wrangler deploy`): 1.14.0 speaks protocol v2, and a mismatch shows as `shareError` "Unsupported protocol version".
 - Wire protocol: see `companion/P5PhoneShare/PROTOCOL.md`.
-- Roadmap: localStorage host memory, short room codes, one-click deploy, adapters, `shareThrottle`.
+- Roadmap: localStorage host memory, short room codes, one-click deploy, adapters.
 
 ## Vibration
 

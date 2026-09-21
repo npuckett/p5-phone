@@ -1265,6 +1265,13 @@ function enableBleOn(selector) {
   });
 }
 
+// enableShare*('Tap to join') works like the other enable* helpers; an options object
+// ({ label, statusText, position, ... }) is also accepted.
+function _shareUiOptions(options) {
+  if (typeof options === 'string') return { label: options };
+  return options && typeof options === 'object' ? options : {};
+}
+
 function _shareConnectFromUI(source) {
   if (!_shareProfile) {
     debugWarn('Call shareSetup() in setup() before connecting.');
@@ -1276,6 +1283,7 @@ function _shareConnectFromUI(source) {
 }
 
 function enableShareButton(options = {}) {
+  options = _shareUiOptions(options);
   const label = options.label || 'Join room';
   const status = options.statusText || 'Connecting...';
   _createPermissionButton(label, status, () => {
@@ -1284,6 +1292,7 @@ function enableShareButton(options = {}) {
 }
 
 function enableShareTap(options = {}) {
+  options = _shareUiOptions(options);
   const message = options.label || options.message || 'Tap to join shared room';
   _createTapToEnable(message, () => {
     _shareConnectFromUI('tap');
@@ -1291,6 +1300,7 @@ function enableShareTap(options = {}) {
 }
 
 function enableShareCanvas(options = {}) {
+  options = _shareUiOptions(options);
   const message = options.label || options.message || 'Touch to join room';
   _createCanvasToEnable(message, () => {
     _shareConnectFromUI('canvas');
@@ -1298,6 +1308,7 @@ function enableShareCanvas(options = {}) {
 }
 
 function enableShareBanner(options = {}) {
+  options = _shareUiOptions(options);
   const message = options.label || options.message || 'Tap to join shared room';
   const position = options.position || 'top';
   _createBannerToEnable(message, position, () => {
@@ -1306,6 +1317,7 @@ function enableShareBanner(options = {}) {
 }
 
 function enableShareMinimal(options = {}) {
+  options = _shareUiOptions(options);
   const message = options.label || options.message;
   _createMinimalToEnable(message, options, () => {
     _shareConnectFromUI('minimal');
@@ -3548,8 +3560,9 @@ function _addActivationListeners(element, handler) {
     // A touch pointerup is followed by touchend on the same element. A fast handler
     // would remove the element in between, and a touchend dispatched to a detached
     // element never reaches window, so p5 1.x would miss the release. Let touchend
-    // activate instead; click still covers browsers without touch events.
-    if (e.pointerType === 'touch' && 'ontouchend' in window) return;
+    // activate instead; click still covers browsers without touch events. Pen counts
+    // too: Apple Pencil also fires touch events on iPad.
+    if (e.pointerType !== 'mouse' && 'ontouchend' in window) return;
     handler();
   });
 }

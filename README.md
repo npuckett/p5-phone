@@ -1207,16 +1207,18 @@ https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
 2. Call `enableShareTap()` (or another `enableShare*` helper) so the user joins from a tap. On desktop, `showDesktopQr()` helps others join.
 
 **Commands:**
-- `shareSetup({ host, room, app, shared, me, autoReconnect })` — configure PartyServer host and room (URL query params override host/room/app when present)
+- `shareSetup({ host, room, app, shared, me, autoReconnect, sendInterval, disconnectWhenHidden })` — configure PartyServer host and room (URL query params override host/room/app when present)
+  - `sendInterval` (ms, default `50`): changes are batched and sent at most this often; `0` sends each change at once
+  - `disconnectWhenHidden` (default `true` on phones): leave the room while the page is hidden (screen locked, another app) and rejoin when it is visible, keeping `me`
 - `getShareJoinUrl()` — sketch URL with `shareHost` / `room` / `app` for copy/QR sharing
-- `enableShareTap(options?)`, `enableShareButton(options?)`, `enableShareCanvas(options?)`, `enableShareBanner(options?)`, `enableShareMinimal(options?)`, `enableShareOn(selector)` — gesture-gated join UI
+- `enableShareTap(label | options?)`, `enableShareButton(label | options?)`, `enableShareCanvas(label | options?)`, `enableShareBanner(label | options?)`, `enableShareMinimal(label | options?)`, `enableShareOn(selector)` — gesture-gated join UI
 - `shareConnect()` / `shareDisconnect()` — low-level connect/disconnect
 - `shareSet(path, value)` / `shareSetMe(path, value)` — explicit path writes (`'pos.x'`)
 - `shareEmit(name, data?)` — room one-shot events (not stored)
 - `isShareSupported()` — WebSocket availability check
 
 **Live objects / status:**
-- `shared` — room-scoped object (Proxy; assign like `shared.score = 1`)
+- `shared` — room-scoped object (Proxy; assign like `shared.score = 1`; arrays sync too: `shared.list.push(x)`)
 - `me` — this client's per-guest object
 - `guests` — array of other clients' `me` objects
 - `window.shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`
@@ -1271,8 +1273,11 @@ function mousePressed() {
 - Deploy **your own** P5PhoneShare worker for your project (free Cloudflare account)
 - To invite others, share a sketch link (or desktop QR) that already contains `shareHost` + `room`
 - Keep values JSON-serializable (no functions, DOM, `NaN`)
-- Throttle high-rate sensor writes into `me` yourself for now (a helper is on the roadmap)
-- See [companion/P5PhoneShare/PROTOCOL.md](companion/P5PhoneShare/PROTOCOL.md) for the wire format and persistence roadmap
+- Writing `me.x = mouseX` every frame is fine: unchanged values are not sent and changes are batched (`sendInterval`), which keeps a class inside the free Cloudflare tier
+- Last write wins. If two phones write the same key at the same moment, every phone ends up with the same value, but one write is lost: two simultaneous `shared.score += 1` taps count once. For counts, have each phone keep its own tally in `me` and add up `guests`, or let the host (`shareIsHost`) own the value
+- Changes to `shared` made while disconnected are replaced by the room's state when you rejoin; `me` is kept
+- **After updating p5-phone, redeploy your worker** (`npx wrangler deploy`). 1.14.0 uses protocol v2; an older worker answers with an "Unsupported protocol version" error
+- See [companion/P5PhoneShare/PROTOCOL.md](companion/P5PhoneShare/PROTOCOL.md) for the wire format
 
 **Roadmap (not built yet):** remember host in `localStorage`, short room codes only, one-click Cloudflare deploy button, optional Supabase/Vercel adapters.
 

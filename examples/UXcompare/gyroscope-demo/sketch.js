@@ -20,12 +20,16 @@ function setup() {
   
   // Create initial targets
   createTargets();
+  
+  // START GAME (in index.html) asks for the motion sensors
+  enableGyroOn('#startButton');
 }
 
 function draw() {
   background(20, 30, 50);
   
   if (window.sensorsEnabled) {
+    hideStartButton();
     gameStarted = true;
     updateGame();
   } else {
@@ -155,6 +159,12 @@ function showWaitingScreen() {
   text("Waiting for motion sensors...", width/2, height/2);
   textSize(16);
   text("Make sure to allow permissions!", width/2, height/2 + 40);
+}
+
+// The START button lives in index.html; hide it once the hardware is on
+function hideStartButton() {
+  let button = select('#startButton');
+  if (button) button.hide();
 }
 
 function windowResized() {

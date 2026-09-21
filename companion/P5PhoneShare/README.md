@@ -60,10 +60,16 @@ Friends open that link — they do not run Wrangler. `shareSetup` reads `shareHo
 
 ```bash
 npm run dev
-# host: 'http://127.0.0.1:8787' — phones must reach your computer on the LAN
+# host: 'http://127.0.0.1:8787'
 ```
 
-Prefer `wrangler deploy` for anything you share with other people.
+This is for several browser tabs on the same computer, with the sketch served from `http://localhost`. Phones cannot use it: a sketch served over HTTPS may not open an insecure `ws://` connection, and phone sensors need HTTPS anyway. Use `wrangler deploy` for phones and for anything you share with other people.
+
+The repo's end-to-end test runs this way: `npm run test:share` (from the repo root) starts the worker locally and drives several emulated phones against it.
+
+### Updating
+
+Redeploy after updating p5-phone: `npx wrangler deploy`. The sketch and the worker must speak the same protocol version (v2 since p5-phone 1.14.0). A mismatch shows up as `shareError` "Unsupported protocol version".
 
 ## How long does the worker stay up?
 

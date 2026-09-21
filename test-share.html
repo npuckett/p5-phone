@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<!--
+  On-device Share check that runs the unpublished src/p5-phone.js (npm run test:share
+  covers the same ground in emulation). Serve over HTTPS (GitHub Pages) and open:
+
+    test-share.html?ex=03&shareHost=https://YOUR.workers.dev&room=phone-test
+
+  ex = 01 (shared score), 02 (presence), 03 (both; default).
+  On a desktop the page shows a QR with the same link; scan it with two or more phones.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Share phone test</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #0f121c; }
+    canvas { display: block; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
+  <script src="src/p5-phone.js"></script>
+  <script>
+    (function () {
+      var ex = new URLSearchParams(location.search).get('ex') || '03';
+      var dirs = { '01': '01_share_shared', '02': '02_share_presence', '03': '03_share_both' };
+      var dir = dirs[ex] || dirs['03'];
+      document.write('<script src="examples/Phone%20Sensor%20Examples/share/' + dir + '/sketch.js"><\/script>');
+    })();
+  </script>
+</head>
+<body></body>
+</html>

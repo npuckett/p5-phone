@@ -16,6 +16,9 @@ function setup() {
   mic.disconnect(); // Keep the live mic out of the speakers (prevents feedback)
   mic.connect(amplitude);
   
+  // START VISUALIZER (in index.html) asks for the microphone
+  enableMicOn('#startButton');
+  
   // Initialize particles
   for (let i = 0; i < 50; i++) {
     particles.push(createParticle());
@@ -28,6 +31,7 @@ function draw() {
   background(0, 0, 10, 0.1);
   
   if (window.micEnabled) {
+    hideStartButton();
     drawVisualizer();
   } else {
     showWaitingScreen();
@@ -207,6 +211,12 @@ function showWaitingScreen() {
   text("Waiting for microphone...", width/2, height/2);
   textSize(16);
   text("Allow microphone access to continue", width/2, height/2 + 40);
+}
+
+// The START button lives in index.html; hide it once the hardware is on
+function hideStartButton() {
+  let button = select('#startButton');
+  if (button) button.hide();
 }
 
 function windowResized() {

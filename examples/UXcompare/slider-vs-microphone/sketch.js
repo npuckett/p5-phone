@@ -246,56 +246,7 @@ function updateSliderValue(x) {
   sliderValue = constrain(sliderValue, sliderMin, sliderMax);
 }
 
-// Handle touch interaction for mobile
-function mousePressed() {
-  // Check slider for touch in top section
-  if (touches && touches.length >= 1) {
-    for (let touch of touches) {
-      if (touch && touch.y < dividerY) {
-        if (isSliderPressed(touch.x, touch.y)) {
-          isDraggingSlider = true;
-          updateSliderValue(touch.x);
-          return false; // Only prevent default if we actually handled the slider
-        }
-      }
-    }
-  }
-  // Don't prevent default if we didn't handle the touch - this allows overlay clicks to work
-}
-
-function mouseDragged() {
-  // Update slider if dragging
-  if (isDraggingSlider && touches && touches.length >= 1) {
-    for (let touch of touches) {
-      if (touch && touch.y < dividerY) {
-        updateSliderValue(touch.x);
-        return false; // Only prevent default when actively dragging
-      }
-    }
-  }
-  // Don't prevent default if we're not dragging
-}
-
-function mouseReleased() {
-  // Check if any touches remain in slider area
-  if (isDraggingSlider) {
-    let sliderTouchExists = false;
-    if (touches && touches.length > 0) {
-      for (let touch of touches) {
-        if (touch && touch.y < dividerY && isSliderPressed(touch.x, touch.y)) {
-          sliderTouchExists = true;
-          break;
-        }
-      }
-    }
-    if (!sliderTouchExists) {
-      isDraggingSlider = false;
-    }
-  }
-  // Don't prevent default - allow other handlers to process the event
-}
-
-// Handle mouse interaction for desktop testing
+// Slider dragging: mouseX / mouseY follow the finger on phones too
 function mousePressed() {
   if (mouseY < dividerY) {
     if (isSliderPressed(mouseX, mouseY)) {
