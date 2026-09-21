@@ -372,6 +372,10 @@ this.enableGyroTap('Tap to start');
 - `window.cameraEnabled` - Boolean indicating if camera startup has succeeded
 - `window.lastNfcSerialNumber` - Serial number string for the most recently read NFC tag
 - `window.lastNfcAlias` - Alias string for the most recently read NFC tag, if one has been set
+- `window.shareConnected` - Boolean indicating if the Share PartyServer room is connected
+- `window.shareStatus` - Share status (`idle`/`connecting`/`connected`/`error`/`unsupported`)
+- `window.shareIsHost` - Boolean indicating if this client is the room host
+- `shared` / `me` / `guests` - Live multi-user objects (see Share section)
 
 **Usage:**
 ```javascript
@@ -1137,6 +1141,115 @@ Omit characteristic `uuid` fields to auto-derive them from the service UUID and 
 - Read `bleValues` in `draw()`; do not assume a fresh value every frame
 - Use `showDebug()` when testing on phones without devtools
 - Pair with a matching [P5PhoneBLE](companion/P5PhoneBLE/) Arduino sketch (same names, types, and order)
+
+### Share (multi-user shared state)
+
+**Purpose:** Sync plain JSON variables across phones in the same room — multiplayer sketches, shared scoreboards, presence cursors. Backend is a small [PartyServer](https://github.com/cloudflare/partykit/tree/main/packages/partyserver) Durable Object **you deploy for your project** (free Cloudflare Workers tier). Companion: [**P5PhoneShare**](companion/P5PhoneShare/).
+
+**Platform Support:**
+- ✅ Any modern mobile/desktop browser with WebSocket (iOS Safari, Android Chrome, desktop)
+- Sketch hosting can be GitHub Pages / p5 editor / static hosting; only the sync worker deploys to Cloudflare
+
+**Launch a server for your project** (once; student or anyone):
+
+```bash
+cd companion/P5PhoneShare
+npm install
+npx wrangler login    # free Cloudflare account
+npx wrangler deploy   # prints https://….workers.dev — yours until you delete it
+```
+
+1. Put that URL in `shareSetup({ host })` in **your** sketch.
+2. Pick a `room` name (any string). Same room = same shared state.
+3. Open the sketch on phones and tap to join.
+4. Optional: `showDesktopQr()` so friends can scan/copy a link with `shareHost` + `room` already in the URL (they do not need to deploy).
+
+Full student-oriented steps: [companion/P5PhoneShare/README.md](companion/P5PhoneShare/README.md).
+
+**Join links** (invite others without them running Wrangler):
+
+```text
+https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
+```
+
+- `shareSetup()` reads `shareHost` / `room` / `app` from the URL (URL wins over config defaults).
+- `getShareJoinUrl()` returns the current page URL with those params filled in.
+- `showDesktopQr()` after `shareSetup()` encodes that join URL (opt out with `{ share: false }`).
+
+**Sketch workflow:**
+
+1. Call `shareSetup({ host, room, shared?, me?, app? })` in `setup()` (host/room may come from the URL instead).
+2. Call `enableShareTap()` (or another `enableShare*` helper) so the user joins from a tap. On desktop, `showDesktopQr()` helps others join.
+
+**Commands:**
+- `shareSetup({ host, room, app, shared, me, autoReconnect })` — configure PartyServer host and room (URL query params override host/room/app when present)
+- `getShareJoinUrl()` — sketch URL with `shareHost` / `room` / `app` for copy/QR sharing
+- `enableShareTap(options?)`, `enableShareButton(options?)`, `enableShareCanvas(options?)`, `enableShareBanner(options?)`, `enableShareMinimal(options?)`, `enableShareOn(selector)` — gesture-gated join UI
+- `shareConnect()` / `shareDisconnect()` — low-level connect/disconnect
+- `shareSet(path, value)` / `shareSetMe(path, value)` — explicit path writes (`'pos.x'`)
+- `shareEmit(name, data?)` — room one-shot events (not stored)
+- `isShareSupported()` — WebSocket availability check
+
+**Live objects / status:**
+- `shared` — room-scoped object (Proxy; assign like `shared.score = 1`)
+- `me` — this client's per-guest object
+- `guests` — array of other clients' `me` objects
+- `window.shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`
+
+**Optional callbacks:**
+
+```javascript
+function shareReady() { /* welcome applied */ }
+function shareReceive(path, value) { /* remote patch */ }
+function shareClosed() {}
+function shareHostChanged(isHost) {}
+function shareEvent(name, data) { /* shareEmit traffic */ }
+```
+
+**Minimal sketch:**
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  shareSetup({
+    host: 'https://YOUR.workers.dev', // from: cd companion/P5PhoneShare && npx wrangler deploy
+    room: 'demo',
+    shared: { score: 0 },
+    me: { x: 0.5, y: 0.5 }
+  });
+  enableShareTap('Tap to join room');
+  showDesktopQr(); // optional invite QR / copy-link for friends
+}
+
+function draw() {
+  background(20);
+  if (!shareConnected) return;
+  fill(255);
+  text(shared.score, width / 2, 40);
+  circle(me.x * width, me.y * height, 40);
+  for (const g of guests) {
+    circle(g.x * width, g.y * height, 30);
+  }
+}
+
+function mousePressed() {
+  if (!shareConnected) return false;
+  shared.score = (shared.score || 0) + 1;
+  me.x = mouseX / width;
+  me.y = mouseY / height;
+  return false;
+}
+```
+
+**Best practices:**
+- Deploy **your own** P5PhoneShare worker for your project (free Cloudflare account)
+- To invite others, share a sketch link (or desktop QR) that already contains `shareHost` + `room`
+- Keep values JSON-serializable (no functions, DOM, `NaN`)
+- Throttle high-rate sensor writes into `me` yourself for now (a helper is on the roadmap)
+- See [companion/P5PhoneShare/PROTOCOL.md](companion/P5PhoneShare/PROTOCOL.md) for the wire format and persistence roadmap
+
+**Roadmap (not built yet):** remember host in `localStorage`, short room codes only, one-click Cloudflare deploy button, optional Supabase/Vercel adapters.
 
 ### Speech Recognition Activation
 

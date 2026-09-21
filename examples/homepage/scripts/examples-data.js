@@ -255,6 +255,48 @@ window.P5PHONE_EXAMPLES = [
     companion: { label: 'Arduino example', href: 'companion/P5PhoneBLE/examples/05_P5Phone_Both', external: true }
   },
   {
+    id: 'share-shared',
+    title: 'Share Shared State',
+    category: 'Input',
+    subcategory: 'Share',
+    level: 'Starter',
+    p5: '1.x and 2.0',
+    description: 'Multi-phone room: mutate shared.score and shared.color. Deploy your own P5PhoneShare worker, then invite others with the QR / join link.',
+    path: 'Phone%20Sensor%20Examples/share/01_share_shared/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/share/01_share_shared',
+    platforms: ['iOS Safari', 'Android Chrome', 'Desktop'],
+    capabilities: ['share', 'multiplayer'],
+    companion: { label: 'PartyServer deploy', href: 'companion/P5PhoneShare', external: true }
+  },
+  {
+    id: 'share-presence',
+    title: 'Share Presence',
+    category: 'Input',
+    subcategory: 'Share',
+    level: 'Starter',
+    p5: '1.x and 2.0',
+    description: 'Per-phone me cursors plus guests[] roster. Deploy your worker, then drag on multiple devices.',
+    path: 'Phone%20Sensor%20Examples/share/02_share_presence/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/share/02_share_presence',
+    platforms: ['iOS Safari', 'Android Chrome', 'Desktop'],
+    capabilities: ['share', 'presence'],
+    companion: { label: 'PartyServer deploy', href: 'companion/P5PhoneShare', external: true }
+  },
+  {
+    id: 'share-both',
+    title: 'Share Score and Presence',
+    category: 'Input',
+    subcategory: 'Share',
+    level: 'Intermediate',
+    p5: '1.x and 2.0',
+    description: 'Shared scoreboard, per-player cursors, and shareEmit pulse events. Deploy your P5PhoneShare worker, invite via QR/link.',
+    path: 'Phone%20Sensor%20Examples/share/03_share_both/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/share/03_share_both',
+    platforms: ['iOS Safari', 'Android Chrome', 'Desktop'],
+    capabilities: ['share', 'multiplayer', 'events'],
+    companion: { label: 'PartyServer deploy', href: 'companion/P5PhoneShare', external: true }
+  },
+  {
     id: 'nfc-tag-identifier',
     title: 'NFC Tag Identifier',
     category: 'Input',

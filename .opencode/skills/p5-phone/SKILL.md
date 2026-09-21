@@ -1,12 +1,12 @@
 ---
 name: p5-phone
-description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, torch/flashlight, NFC, Bluetooth BLE, GPS/geolocation, geoDistance/geoInPolygon, lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
+description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, torch/flashlight, NFC, Bluetooth BLE, Share multi-user PartyServer rooms, GPS/geolocation, geoDistance/geoInPolygon, lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
 argument-hint: "Describe the p5-phone example or API question"
 ---
 
 # p5-phone: Mobile Hardware for p5.js
 
-p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, and Bluetooth LE — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.13.0**.
+p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, Bluetooth LE, and multi-user Share rooms — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.14.0**.
 
 It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public function is attached to `window` (global mode) and mirrored on `p5.prototype` (instance mode), so you call them as bare globals like `lockGestures()` and `enableSensorTap()`.
 
@@ -14,7 +14,7 @@ It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public 
 
 ## When to use this skill
 
-Use it whenever the request involves a p5-phone sketch, mobile p5.js hardware interaction, or an explanation of how p5-phone works: device orientation / accelerometer / gyroscope, touch, microphone / p5.sound, speech recognition, `PhoneCamera` and ML5 mapping, vibration, torch/flashlight, NFC, GPS/geolocation (`geoRead`, `geoDistance`, `geoInPolygon`), Bluetooth BLE, `lockGestures`, `enablePermissionsTap` / `enableHardwareTap`, arbitrary hardware combinations, mobile browser permissions, or p5.js 2 compatibility.
+Use it whenever the request involves a p5-phone sketch, mobile p5.js hardware interaction, or an explanation of how p5-phone works: device orientation / accelerometer / gyroscope, touch, microphone / p5.sound, speech recognition, `PhoneCamera` and ML5 mapping, vibration, torch/flashlight, NFC, GPS/geolocation (`geoRead`, `geoDistance`, `geoInPolygon`), Bluetooth BLE, Share multi-user rooms (`shareSetup`, `shared`/`me`/`guests`), `lockGestures`, `enablePermissionsTap` / `enableHardwareTap`, arbitrary hardware combinations, mobile browser permissions, or p5.js 2 compatibility.
 
 ## Quick Start
 
@@ -130,6 +130,7 @@ Full matrix:
 | NFC | `enableNfcTap(msg)` | `enableNfcButton(text)` | `enableNfcCanvas(msg)` | `enableNfcBanner(msg)` | `enableNfcOn(sel)` |
 | GPS / geolocation | `enableGeoTap(msg)` | `enableGeoButton(text)` | `enableGeoCanvas(msg)` | `enableGeoBanner(msg)` | `enableGeoOn(sel)` |
 | Bluetooth (BLE) | `enableBleTap(opts?)` | `enableBleButton(opts?)` | `enableBleCanvas(opts?)` | `enableBleBanner(opts?)` | `enableBleOn(sel)` |
+| Share (multi-user) | `enableShareTap(opts?)` | `enableShareButton(opts?)` | `enableShareCanvas(opts?)` | `enableShareBanner(opts?)` | `enableShareOn(sel)` |
 | Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraOn(sel)` |
 | Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllOn(sel)` |
 | Any combination | `enablePermissionsTap(list, msg)` | `enablePermissionsButton(list, text)` | `enablePermissionsCanvas(list, msg)` | `enablePermissionsBanner(list, msg)` | `enablePermissionsOn(sel, list)` |
@@ -137,6 +138,7 @@ Full matrix:
 Notes:
 
 - `enableBle*` take an **options object** (`{ label, message, statusText, position }`), unlike the other families which take positional `(message, position)` / `(buttonText, statusText)`.
+- `enableShare*` also take an **options object** (same shape as `enableBle*`). Call `shareSetup({ host, room })` first; deploy [companion/P5PhoneShare](companion/P5PhoneShare/).
 - `enableGyro*` is a **legacy alias** for `enableSensor*`. Prefer `enableSensor*` for new examples; use `enableGyro*` only to match older published sketches.
 - `enableAll*` is shorthand for sensors + mic. For any other mix, use `enablePermissions*`.
 - `enableHardware*` is an exact alias of `enablePermissions*`.
@@ -175,6 +177,7 @@ Read these `window.*` flags before using hardware data:
 - **NFC:** `nfcEnabled`, `nfcStatus`, `nfcError`, `nfcTagAliases`, `lastNfcSerialNumber`, `lastNfcAlias`, `lastNfcMessage`
 - **GPS:** `geoEnabled`, `geoStatus`, `geoError`, `lastGeoPosition`
 - **BLE:** `bleSupported`, `bleConnected`, `bleStatus`, `bleError`, `bleDeviceName`, `bleValues`
+- **Share:** `shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`, `shared`, `me`, `guests`
 - **Camera:** `cameraEnabled`
 - **Gestures:** `gesturesLocked`
 
@@ -186,6 +189,9 @@ Callbacks your sketch can define (p5-phone calls them if present):
 - `geoRead(position)` — a new GPS position arrived. `position` is a plain object: `{ latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed, timestamp }`.
 - `onGeoError(error)` — a GPS stream error after the watch started. `error.code`: 1=`PERMISSION_DENIED`, 2=`POSITION_UNAVAILABLE`, 3=`TIMEOUT`.
 - `bleReceive(name, value)` — a BLE characteristic notified or was read.
+- `shareReady()` — Share room welcome applied.
+- `shareReceive(path, value)` — remote Share patch applied.
+- `shareClosed()` / `shareHostChanged(isHost)` / `shareEvent(name, data)` — Share lifecycle and emits.
 
 ```javascript
 function userSetupComplete() {
@@ -408,6 +414,48 @@ Lifecycle and I/O:
 
 `window.bleStatus` progresses through `idle`/`connecting`/`connected`/`requesting`/`disconnected`/`error`/`unsupported`. `bleValues` is not cleared on disconnect (sketches keep rendering last-known values).
 
+## Share (multi-user / PartyServer)
+
+Sync JSON variables across phones in one room. Client API mirrors BLE (`shareSetup` → gesture connect → status globals). Backend is [companion/P5PhoneShare](companion/P5PhoneShare/) (Cloudflare PartyServer Durable Object) — **each project deploys its own free worker**.
+
+**Agent: launch a server for this user’s project** (student, artist, or class):
+
+1. Confirm they have (or can create) a free Cloudflare account
+2. `cd companion/P5PhoneShare && npm install`
+3. `npx wrangler login` (interactive — ask the user to finish in the browser if needed)
+4. `npx wrangler deploy` — capture the printed `https://….workers.dev` URL
+5. Put that URL in **their** sketch: `shareSetup({ host: 'https://…', room: '…' })`
+6. Explain: the worker stays up without their laptop; friends join the sketch URL / QR (`showDesktopQr()`), and do not need to deploy unless they want their own project server
+7. Do **not** invent or reuse a public shared relay URL
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  shareSetup({
+    host: 'https://YOUR.workers.dev', // from wrangler deploy — this project’s server
+    room: 'my-game',
+    app: 'final-project',
+    shared: { score: 0 },
+    me: { x: 0.5, y: 0.5, name: 'a' }
+  });
+  enableShareTap({ label: 'Tap to join room' });
+  showDesktopQr(); // invite link for friends; also updates the address bar
+}
+```
+
+Join URL shape: `?shareHost=https://….workers.dev&room=my-game&app=final-project`  
+Helpers: `getShareJoinUrl()`, `showDesktopQr({ share: false })` to opt out.  
+Full path: `companion/P5PhoneShare/README.md`.
+
+Rules:
+- Values must be JSON-serializable plain data (no functions, DOM, `NaN`, class instances).
+- Mutate `shared` / `me` like objects, or use `shareSet('pos.x', v)` / `shareSetMe(...)`.
+- `guests` is read-mostly (other players' `me` snapshots); mutating it does not sync.
+- `shareIsHost` is true for the lexicographically first connected client; re-elected on leave.
+- Wire protocol: see `companion/P5PhoneShare/PROTOCOL.md`.
+- Roadmap: localStorage host memory, short room codes, one-click deploy, adapters, `shareThrottle`.
+
 ## Vibration
 
 Use `enableVibration*` before `vibrate(pattern)`. iOS does not support the Vibration API — write examples that still show useful feedback when `window.vibrationEnabled` is false.
@@ -485,6 +533,7 @@ Most useful for camera, NFC, BLE, and permission troubleshooting. Use sparingly 
 | NFC | ✗ | ✓ (HTTPS) |
 | GPS / geolocation | ✓ (HTTPS, user gesture) | ✓ (HTTPS, user gesture) |
 | Bluetooth BLE | ✗ (use Bluefy app) | ✓ (HTTPS) |
+| Share (PartyServer) | ✓ (WebSocket) | ✓ (WebSocket) |
 
 All hardware requires a secure context (HTTPS or localhost).
 
@@ -496,13 +545,14 @@ All hardware requires a secure context (HTTPS or localhost).
 - **GPS hangs on "Acquiring…" or times out** — cold start can take 5-30s, longer indoors; move outdoors, retry, and confirm OS-level Location Services is on. `window.geoStatus` tells you which state you're in.
 - **GPS denied even after tapping Allow** — the OS-level Location Services toggle (iOS Settings → Privacy & Security → Location Services; Android Settings → Location) must also be on; in-app browsers (Instagram/Facebook) usually fail — open in Safari/Chrome.
 - **BLE won't connect on iPhone** — Web Bluetooth is unavailable in iOS Safari/Chrome; use the Bluefy app.
+- **Share won't connect** — confirm `shareSetup({ host })` uses the deployed `*.workers.dev` URL (https), `wrangler deploy` succeeded, and the room name matches across devices.
 - **Touch callbacks never run** — `touchStarted/Moved/Ended` are no-ops in p5.js 2; switch to `mousePressed/mouseDragged/mouseReleased`.
 - **Mic example throws in preview** — don't call `p5.Amplitude.setInput(mic)` before `window.micEnabled`; read `mic.getLevel()` after permission.
 
 ## Answering questions
 
 - Explain the browser-permission reason, especially iOS transient user activation.
-- Distinguish sensors, mic, sound-only, speech, camera, vibration, torch, NFC, and GPS permissions.
+- Distinguish sensors, mic, sound-only, speech, camera, vibration, torch, NFC, GPS, BLE, and Share permissions/connections.
 - Mention HTTPS requirements for mobile hardware.
 - Mention p5.js 2 event changes when touch callbacks are involved.
 - Flag browser/device limits clearly: torch and NFC are Android-Chrome-oriented; vibration is unsupported on iOS; BLE needs Bluefy on iOS; speech recognition depends on Web Speech API support.

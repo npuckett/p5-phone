@@ -8,6 +8,7 @@ window.P5PHONE_PERMISSION_MATRIX = [
   { capability: 'NFC', status: 'window.nfcEnabled', tap: 'enableNfcTap(message)', button: 'enableNfcButton(text)', canvas: 'enableNfcCanvas(message)', banner: 'enableNfcBanner(message, position)', minimal: 'enableNfcMinimal(message|opts)', custom: 'enableNfcOn(selector)', notes: 'Android Chrome with HTTPS only. Use nfcRead(message, serialNumber).' },
   { capability: 'GPS / geolocation', status: 'window.geoEnabled', tap: 'enableGeoTap(message)', button: 'enableGeoButton(text)', canvas: 'enableGeoCanvas(message)', banner: 'enableGeoBanner(message, position)', minimal: 'enableGeoMinimal(message|opts)', custom: 'enableGeoOn(selector)', notes: 'iOS Safari + Android Chrome over HTTPS. Coarse by default; setGeoOptions({ enableHighAccuracy: true }) for real GPS. Use geoRead(position).' },
   { capability: 'Bluetooth (BLE)', status: 'window.bleConnected', tap: 'enableBleTap(options?)', button: 'enableBleButton(options?)', canvas: 'enableBleCanvas(options?)', banner: 'enableBleBanner(options?)', minimal: 'enableBleMinimal(options?)', custom: 'enableBleOn(selector)', notes: 'Call bleSetup() first. Chrome/Edge over HTTPS. iOS: Bluefy browser. iframe needs allow="bluetooth".' },
+  { capability: 'Share (multi-user)', status: 'window.shareConnected', tap: 'enableShareTap(options?)', button: 'enableShareButton(options?)', canvas: 'enableShareCanvas(options?)', banner: 'enableShareBanner(options?)', minimal: 'enableShareMinimal(options?)', custom: 'enableShareOn(selector)', notes: 'Call shareSetup({ host, room }) first. Deploy companion/P5PhoneShare (PartyServer). Mutate shared / me; read guests.' },
   { capability: 'Camera', status: 'window.cameraEnabled || cam.ready', tap: 'enableCameraTap(message)', button: 'enableCameraButton(text)', canvas: 'enableCameraCanvas(message)', banner: 'enableCameraBanner(message, position)', minimal: 'enableCameraMinimal(message|opts)', custom: 'enableCameraOn(selector)', notes: 'Pair with createPhoneCamera() for ML5-friendly mapping.' },
   { capability: 'Motion + microphone', status: 'window.sensorsEnabled && window.micEnabled', tap: 'enableAllTap(message)', button: 'enableAllButton(text)', canvas: 'enableAllCanvas(message)', banner: 'enableAllBanner(message, position)', minimal: 'enableAllMinimal(message|opts)', custom: 'enableAllOn(selector)', notes: 'Convenience flow for sketches that need both sensors and mic.' },
   { capability: 'Any combination', status: 'depends on selected permissions', tap: "enablePermissionsTap(['sensors', 'torch'])", button: "enablePermissionsButton(['torch', 'vibration'], text)", canvas: "enablePermissionsCanvas(['camera', 'mic'])", banner: "enablePermissionsBanner(['sensors', 'nfc'], msg)", minimal: "enablePermissionsMinimal(['sensors', 'mic'], msg|opts)", custom: "enablePermissionsOn(selector, ['camera', 'mic'])", notes: 'Use sensors, mic, sound, speech, vibration, torch, nfc, geo, and camera in any combination. enableHardware* aliases are also available.' }
@@ -103,6 +104,19 @@ window.P5PHONE_API_SECTIONS = [
     ]
   },
   {
+    id: 'share',
+    title: 'Share (multi-user)',
+    description: 'PartyServer-backed shared variables across phones. Deploy companion/P5PhoneShare, call shareSetup(), then connect from a user gesture.',
+    items: [
+      { name: 'shareSetup', signature: "shareSetup({ host, room, app, shared, me })", summary: 'Configures the PartyServer host and room. Seeds shared (room) and me (this client). URL ?shareHost=&room=&app= override host/room/app when present.', tags: ['share', 'setup'] },
+      { name: 'getShareJoinUrl', signature: 'getShareJoinUrl()', summary: 'Returns the sketch URL with shareHost/room/app query params for copy-link or QR sharing.', tags: ['share'] },
+      { name: 'enableShareTap', signature: "enableShareTap({ label: 'Tap to join room' })", summary: 'Shows a join overlay. Other styles: enableShareButton, Canvas, Banner, Minimal, On. Pair with showDesktopQr() on desktop.', tags: ['share', 'tap'] },
+      { name: 'shared / me / guests', signature: 'shared.score = 1; me.x = 0.5; guests.length', summary: 'Proxied live objects. Mutate shared and me; read guests in draw().', tags: ['share', 'status'] },
+      { name: 'shareEmit', signature: "shareEmit('pulse', data)", summary: 'Room one-shot events. Handle with function shareEvent(name, data).', tags: ['share'] },
+      { name: 'shareReady', signature: 'function shareReady() { ... }', summary: 'Optional callback after welcome state is applied.', tags: ['callback', 'share'] }
+    ]
+  },
+  {
     id: 'nfc',
     title: 'NFC',
     description: 'Web NFC helpers for Android Chrome sketches that read physical tags and assign aliases. Compatible with widely available NFC Type 2 tags (NTAG213/215/216) and any NDEF-formatted tag.',
@@ -174,6 +188,7 @@ window.P5PHONE_API_SECTIONS = [
       { name: 'NFC state', signature: 'window.nfcStatus, nfcError, lastNfcMessage, lastNfcSerialNumber, lastNfcAlias, nfcTagAliases', summary: 'NFC diagnostic and tag alias state for sketches and debug screens.', tags: ['nfc', 'status'] },
       { name: 'GPS state', signature: 'window.geoStatus, geoError, lastGeoPosition', summary: 'GPS status string, latest error message, and most recent normalized position for sketches and debug screens.', tags: ['geo', 'status'] },
       { name: 'BLE state', signature: 'window.bleSupported, bleConnected, bleStatus, bleError, bleDeviceName, bleValues', summary: 'Web Bluetooth connection state and latest decoded characteristic values.', tags: ['ble', 'status'] },
+      { name: 'Share state', signature: 'window.shareSupported, shareConnected, shareStatus, shareError, shareRoom, shareClientId, shareIsHost, shared, me, guests', summary: 'PartyServer multi-user connection state and live shared objects.', tags: ['share', 'status'] },
       { name: 'gesture state', signature: 'window.gesturesLocked', summary: 'True after lockGestures() has installed the mobile gesture prevention handlers.', tags: ['status'] }
     ]
   }

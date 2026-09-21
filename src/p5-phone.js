@@ -106,6 +106,16 @@ window.bleStatus = 'idle';
 window.bleError = '';
 window.bleDeviceName = '';
 window.bleValues = {};
+window.shareSupported = false;
+window.shareConnected = false;
+window.shareStatus = 'idle'; // idle | connecting | connected | error | unsupported
+window.shareError = '';
+window.shareRoom = '';
+window.shareClientId = '';
+window.shareIsHost = false;
+window.shared = {};
+window.me = {};
+window.guests = [];
 window.geoEnabled = false;
 window.geoStatus = 'idle'; // idle | requesting-permission | active | permission-denied | unsupported | secure-context-required | error | stopped
 window.geoError = '';
@@ -136,6 +146,20 @@ const _BLE_VALID_TYPES = new Set([
   'bool', 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
   'float', 'double', 'string', 'bytes'
 ]);
+
+// Share (PartyServer multi-user) internals
+const _SHARE_PROTOCOL_VERSION = 1;
+const _SHARE_RECONNECT_DELAYS = [1500, 3000, 6000, 12000];
+let _shareProfile = null;
+let _shareSocket = null;
+let _shareReconnectTimer = null;
+let _shareReconnectAttempt = 0;
+let _shareReconnectStopped = false;
+let _shareApplyingRemote = false;
+let _shareSharedRoot = {};
+let _shareMeRoot = {};
+let _shareGuestsById = new Map();
+let _shareReadySent = false;
 
 const _gestureLockState = {
   locked: false,
@@ -287,11 +311,17 @@ let _qrState = null; // { panel, options } for the active desktop QR panel
  * phone). Designed for the dev workflow of opening a sketch on desktop, then
  * scanning the QR to load it on a phone for testing.
  *
+ * When Share has been configured via shareSetup(), the QR (and optionally the
+ * address bar) include shareHost / room / app query params so phones join the
+ * same PartyServer room without editing code. Opt out with { share: false }.
+ *
  * @param {Object} [options]
- * @param {string} [options.url] - URL to encode (defaults to location.href)
+ * @param {string} [options.url] - URL to encode (defaults to location.href, then share params may be merged)
+ * @param {boolean} [options.share] - include Share join params (default: true when shareSetup() has run)
+ * @param {boolean} [options.updateLocation=true] - when share params are included, replaceState the address bar so Copy Link works
  * @param {'top-right'|'top-left'|'bottom-right'|'bottom-left'} [options.position='top-right']
  * @param {number} [options.size=180] - QR pixel size
- * @param {string} [options.label='Scan to open on your phone'] - caption under the QR
+ * @param {string} [options.label] - caption under the QR (defaults based on share mode)
  * @param {boolean} [options.closable=true] - show a dismiss × (remembers for the session)
  * @param {boolean} [options.rememberDismiss=true] - keep it hidden after closing this browser session
  */
@@ -302,10 +332,22 @@ function showDesktopQr(options = {}) {
     return;
   }
 
-  const url = options.url || (window.location ? window.location.href : '');
+  const includeShare = options.share === true ||
+    (options.share !== false && _shareProfile && _shareProfile.host);
+  let url = options.url || (window.location ? window.location.href : '');
+  if (includeShare && _shareProfile && _shareProfile.host) {
+    url = getShareJoinUrl(url);
+    if (options.updateLocation !== false) {
+      _shareUpdateLocationFromProfile();
+    }
+  }
+
   const position = options.position || 'top-right';
   const size = typeof options.size === 'number' ? options.size : 180;
-  const label = options.label != null ? options.label : 'Scan to open on your phone';
+  const defaultLabel = includeShare
+    ? 'Scan to join this shared room'
+    : 'Scan to open on your phone';
+  const label = options.label != null ? options.label : defaultLabel;
   const closable = options.closable !== false;
   const rememberDismiss = options.rememberDismiss !== false;
 
@@ -386,7 +428,7 @@ function showDesktopQr(options = {}) {
   }
 
   document.body.appendChild(panel);
-  _qrState = { panel, options };
+  _qrState = { panel, options: Object.assign({}, options, { url: url, share: includeShare }) };
 
   _qrLazyLoadAndRender(qrBox, url, size, () => {
     // CDN blocked (CSP/offline) — remove the empty panel and warn.
@@ -1191,6 +1233,59 @@ function enableBleBanner(options = {}) {
 function enableBleOn(selector) {
   _bindPermissionTo(selector, () => {
     _bleConnectFromUI('custom element');
+  });
+}
+
+function _shareConnectFromUI(source) {
+  if (!_shareProfile) {
+    debugWarn('Call shareSetup() in setup() before connecting.');
+    return;
+  }
+  shareConnect().then(() => {
+    console.log('✅ Share connect initiated via ' + source);
+  }).catch(() => {});
+}
+
+function enableShareButton(options = {}) {
+  const label = options.label || 'Join room';
+  const status = options.statusText || 'Connecting...';
+  _createPermissionButton(label, status, () => {
+    _shareConnectFromUI('button');
+  });
+}
+
+function enableShareTap(options = {}) {
+  const message = options.label || options.message || 'Tap to join shared room';
+  _createTapToEnable(message, () => {
+    _shareConnectFromUI('tap');
+  });
+}
+
+function enableShareCanvas(options = {}) {
+  const message = options.label || options.message || 'Touch to join room';
+  _createCanvasToEnable(message, () => {
+    _shareConnectFromUI('canvas');
+  });
+}
+
+function enableShareBanner(options = {}) {
+  const message = options.label || options.message || 'Tap to join shared room';
+  const position = options.position || 'top';
+  _createBannerToEnable(message, position, () => {
+    _shareConnectFromUI('banner');
+  });
+}
+
+function enableShareMinimal(options = {}) {
+  const message = options.label || options.message;
+  _createMinimalToEnable(message, options, () => {
+    _shareConnectFromUI('minimal');
+  });
+}
+
+function enableShareOn(selector) {
+  _bindPermissionTo(selector, () => {
+    _shareConnectFromUI('custom element');
   });
 }
 
@@ -2379,6 +2474,682 @@ async function bleWrite(name, value, opts = {}) {
     debugError('BLE write "' + name + '" failed: ' + (err && err.message ? err.message : err));
     return false;
   }
+}
+
+// =========================================
+// SHARE (PartyServer multi-user shared state)
+// Call shareSetup() in setup(); connect via enableShare* or shareConnect() from a user gesture.
+// Mutate shared / me like plain objects; read guests in draw().
+// =========================================
+
+function _shareIsJsonSerializable(value, depth) {
+  if (depth === undefined) depth = 0;
+  if (depth > 32) return false;
+  if (value === null) return true;
+  const t = typeof value;
+  if (t === 'string' || t === 'boolean') return true;
+  if (t === 'number') return Number.isFinite(value);
+  if (t === 'undefined' || t === 'function' || t === 'symbol' || t === 'bigint') return false;
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      if (!_shareIsJsonSerializable(value[i], depth + 1)) return false;
+    }
+    return true;
+  }
+  if (t === 'object') {
+    const proto = Object.getPrototypeOf(value);
+    if (proto !== Object.prototype && proto !== null) {
+      return false;
+    }
+    const keys = Object.keys(value);
+    for (let i = 0; i < keys.length; i++) {
+      if (!_shareIsJsonSerializable(value[keys[i]], depth + 1)) return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+function _shareCloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function _shareParsePath(path) {
+  if (typeof path !== 'string' || path.length === 0) return [];
+  return path.split('.').filter(function(p) { return p.length > 0; });
+}
+
+function _shareGetAtPath(obj, path) {
+  const parts = _shareParsePath(path);
+  let cur = obj;
+  for (let i = 0; i < parts.length; i++) {
+    if (cur === null || typeof cur !== 'object') return undefined;
+    cur = cur[parts[i]];
+  }
+  return cur;
+}
+
+function _shareApplyPatchInPlace(obj, path, value) {
+  const parts = _shareParsePath(path);
+  if (parts.length === 0) return false;
+
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+    const next = cur[part];
+    if (next === null || typeof next !== 'object' || Array.isArray(next)) {
+      const created = {};
+      cur[part] = created;
+      cur = created;
+    } else {
+      cur = next;
+    }
+  }
+
+  const leaf = parts[parts.length - 1];
+  if (value === undefined) {
+    delete cur[leaf];
+  } else {
+    cur[leaf] = value;
+  }
+  return true;
+}
+
+function _shareRoomKey(app, room) {
+  const a = (app && String(app).trim()) || 'default';
+  const r = (room && String(room).trim()) || 'main';
+  return a + ':' + r;
+}
+
+/**
+ * Read Share join params from the page URL.
+ * Accepts: shareHost (or host), shareRoom (or room), shareApp (or app).
+ * URL values are intended for workshop link sharing.
+ */
+function _shareReadUrlParams(search) {
+  const out = {};
+  if (typeof search !== 'string') {
+    if (typeof window === 'undefined' || !window.location) return out;
+    search = window.location.search || '';
+  }
+  let params;
+  try {
+    params = new URLSearchParams(search.charAt(0) === '?' ? search.slice(1) : search);
+  } catch (e) {
+    return out;
+  }
+  const host = params.get('shareHost') || params.get('host');
+  const room = params.get('shareRoom') || params.get('room');
+  const app = params.get('shareApp') || params.get('app');
+  if (host) out.host = String(host).trim();
+  if (room) out.room = String(room).trim();
+  if (app) out.app = String(app).trim();
+  return out;
+}
+
+/**
+ * Build a sketch URL that carries Share join params so phones need no code edits.
+ * @param {string} [baseUrl]
+ * @param {{host?: string, room?: string, app?: string}} [profile]
+ * @returns {string}
+ */
+function _shareBuildJoinUrl(baseUrl, profile) {
+  const base = baseUrl || (typeof window !== 'undefined' && window.location ? window.location.href : '');
+  if (!base) return '';
+  let url;
+  try {
+    url = new URL(base, typeof window !== 'undefined' ? window.location.href : undefined);
+  } catch (e) {
+    return base;
+  }
+  const host = profile && profile.host;
+  const room = profile && profile.room;
+  const app = profile && profile.app;
+  if (host) {
+    url.searchParams.set('shareHost', String(host).replace(/\/$/, ''));
+  }
+  if (room) {
+    url.searchParams.set('room', String(room));
+  }
+  if (app && app !== 'default') {
+    url.searchParams.set('app', String(app));
+  } else {
+    url.searchParams.delete('app');
+    url.searchParams.delete('shareApp');
+  }
+  // Prefer canonical names; drop aliases that could confuse scanners.
+  url.searchParams.delete('host');
+  url.searchParams.delete('shareRoom');
+  url.searchParams.delete('shareApp');
+  return url.toString();
+}
+
+/**
+ * Return the current page URL with shareHost / room / app query params from
+ * the active shareSetup() profile (or from an explicit profile object).
+ */
+function getShareJoinUrl(baseUrl, profile) {
+  const p = profile || _shareProfile;
+  if (!p || !p.host) {
+    return baseUrl || (typeof window !== 'undefined' && window.location ? window.location.href : '');
+  }
+  return _shareBuildJoinUrl(baseUrl, p);
+}
+
+function _shareUpdateLocationFromProfile() {
+  if (!_shareProfile || !_shareProfile.host) return;
+  if (typeof window === 'undefined' || !window.location || !window.history || !window.history.replaceState) {
+    return;
+  }
+  const protocol = window.location.protocol;
+  if (protocol !== 'http:' && protocol !== 'https:') return;
+  try {
+    const next = getShareJoinUrl(window.location.href);
+    if (next && next !== window.location.href) {
+      window.history.replaceState(null, '', next);
+    }
+  } catch (e) { /* ignore */ }
+}
+
+function _shareRebuildGuestsArray() {
+  const list = [];
+  _shareGuestsById.forEach(function(data, id) {
+    if (id === window.shareClientId) return;
+    const entry = data && typeof data === 'object' ? data : {};
+    // Expose id for sketches without requiring a nested {id,data} shape.
+    if (entry.id !== id) {
+      try {
+        Object.defineProperty(entry, 'id', {
+          value: id,
+          enumerable: false,
+          configurable: true,
+          writable: false
+        });
+      } catch (e) {
+        entry.id = id;
+      }
+    }
+    list.push(entry);
+  });
+  window.guests = list;
+}
+
+function _shareCreateProxy(target, scope, pathPrefix) {
+  return new Proxy(target, {
+    get: function(obj, prop) {
+      if (prop === '__shareRaw') return obj;
+      const val = Reflect.get(obj, prop);
+      if (
+        val !== null &&
+        typeof val === 'object' &&
+        !Array.isArray(val) &&
+        typeof prop === 'string'
+      ) {
+        const nextPath = pathPrefix ? pathPrefix + '.' + prop : prop;
+        return _shareCreateProxy(val, scope, nextPath);
+      }
+      return val;
+    },
+    set: function(obj, prop, value) {
+      if (typeof prop === 'symbol') {
+        obj[prop] = value;
+        return true;
+      }
+      if (!_shareApplyingRemote && value !== undefined && !_shareIsJsonSerializable(value)) {
+        debugError('share: value for "' + prop + '" must be JSON-serializable');
+        return false;
+      }
+      const path = pathPrefix ? pathPrefix + '.' + prop : String(prop);
+      const ok = Reflect.set(obj, prop, value);
+      if (ok && !_shareApplyingRemote) {
+        _shareSendPatch(scope, path, value);
+      }
+      return ok;
+    },
+    deleteProperty: function(obj, prop) {
+      if (typeof prop === 'symbol') {
+        return Reflect.deleteProperty(obj, prop);
+      }
+      const path = pathPrefix ? pathPrefix + '.' + prop : String(prop);
+      const ok = Reflect.deleteProperty(obj, prop);
+      if (ok && !_shareApplyingRemote) {
+        _shareSendPatch(scope, path, undefined);
+      }
+      return ok;
+    }
+  });
+}
+
+function _shareBindProxies() {
+  window.shared = _shareCreateProxy(_shareSharedRoot, 'shared', '');
+  window.me = _shareCreateProxy(_shareMeRoot, 'me', '');
+}
+
+function _shareResetLocalState(seedShared, seedMe) {
+  _shareSharedRoot = seedShared && typeof seedShared === 'object' && !Array.isArray(seedShared)
+    ? _shareCloneJson(seedShared)
+    : {};
+  _shareMeRoot = seedMe && typeof seedMe === 'object' && !Array.isArray(seedMe)
+    ? _shareCloneJson(seedMe)
+    : {};
+  _shareGuestsById = new Map();
+  window.guests = [];
+  _shareBindProxies();
+}
+
+function isShareSupported() {
+  if (typeof WebSocket === 'undefined') {
+    window.shareSupported = false;
+    window.shareStatus = 'unsupported';
+    window.shareError = 'WebSocket is not available in this environment.';
+    return false;
+  }
+  window.shareSupported = true;
+  if (window.shareStatus === 'unsupported') {
+    window.shareStatus = 'idle';
+    window.shareError = '';
+  }
+  return true;
+}
+
+function shareSetup(config) {
+  config = config && typeof config === 'object' ? config : {};
+  const fromUrl = _shareReadUrlParams();
+
+  // URL params win so a shared / QR link configures every phone without edits.
+  const host = (fromUrl.host || config.host || '').trim();
+  const room = (fromUrl.room || config.room || '').trim();
+  const app = (fromUrl.app || config.app || 'default').trim() || 'default';
+
+  if (!host) {
+    debugError(
+      'shareSetup() needs a host: pass host in config, or open a link with ?shareHost=https://….workers.dev'
+    );
+    return false;
+  }
+  if (!room) {
+    debugError(
+      'shareSetup() needs a room: pass room in config, or open a link with ?room=demo'
+    );
+    return false;
+  }
+
+  isShareSupported();
+
+  const sharedInit =
+    config.shared && typeof config.shared === 'object' && !Array.isArray(config.shared)
+      ? config.shared
+      : {};
+  const meInit =
+    config.me && typeof config.me === 'object' && !Array.isArray(config.me)
+      ? config.me
+      : {};
+
+  if (!_shareIsJsonSerializable(sharedInit) || !_shareIsJsonSerializable(meInit)) {
+    debugError('shareSetup(): shared and me must be JSON-serializable plain objects.');
+    return false;
+  }
+
+  _shareProfile = {
+    host: String(host).replace(/\/$/, ''),
+    room: String(room),
+    app: String(app),
+    shared: _shareCloneJson(sharedInit),
+    me: _shareCloneJson(meInit),
+    autoReconnect: config.autoReconnect !== false
+  };
+
+  window.shareRoom = _shareRoomKey(_shareProfile.app, _shareProfile.room);
+  _shareResetLocalState(_shareProfile.shared, _shareProfile.me);
+  window.shareStatus = 'idle';
+  window.shareError = '';
+  window.shareConnected = false;
+  window.shareClientId = '';
+  window.shareIsHost = false;
+  _shareReadySent = false;
+  debug(
+    'shareSetup room=' + window.shareRoom + ' host=' + _shareProfile.host +
+    (fromUrl.host || fromUrl.room ? ' (from URL)' : '')
+  );
+  return true;
+}
+
+function _shareWsUrl() {
+  const host = _shareProfile.host;
+  const key = encodeURIComponent(_shareRoomKey(_shareProfile.app, _shareProfile.room));
+  const wsBase = host.replace(/^http/i, 'ws');
+  return wsBase + '/parties/share-room/' + key;
+}
+
+function _shareSend(obj) {
+  if (!_shareSocket || _shareSocket.readyState !== WebSocket.OPEN) return false;
+  try {
+    _shareSocket.send(JSON.stringify(obj));
+    return true;
+  } catch (err) {
+    debugError('share send failed: ' + (err && err.message ? err.message : err));
+    return false;
+  }
+}
+
+function _shareSendPatch(scope, path, value) {
+  if (!window.shareConnected) return;
+  if (value !== undefined && !_shareIsJsonSerializable(value)) {
+    debugError('share patch rejected: non-JSON value at ' + path);
+    return;
+  }
+  const msg = {
+    type: 'patch',
+    v: _SHARE_PROTOCOL_VERSION,
+    scope: scope,
+    path: path
+  };
+  if (value !== undefined) {
+    msg.value = _shareCloneJson(value);
+  }
+  _shareSend(msg);
+}
+
+function shareSet(path, value) {
+  if (typeof path !== 'string' || path.length === 0) {
+    debugError('shareSet(path, value) requires a non-empty path string.');
+    return false;
+  }
+  if (value !== undefined && !_shareIsJsonSerializable(value)) {
+    debugError('shareSet(): value must be JSON-serializable.');
+    return false;
+  }
+  _shareApplyingRemote = true;
+  try {
+    _shareApplyPatchInPlace(_shareSharedRoot, path, value === undefined ? undefined : _shareCloneJson(value));
+  } finally {
+    _shareApplyingRemote = false;
+  }
+  _shareSendPatch('shared', path, value);
+  return true;
+}
+
+function shareSetMe(path, value) {
+  if (typeof path !== 'string' || path.length === 0) {
+    debugError('shareSetMe(path, value) requires a non-empty path string.');
+    return false;
+  }
+  if (value !== undefined && !_shareIsJsonSerializable(value)) {
+    debugError('shareSetMe(): value must be JSON-serializable.');
+    return false;
+  }
+  _shareApplyingRemote = true;
+  try {
+    _shareApplyPatchInPlace(_shareMeRoot, path, value === undefined ? undefined : _shareCloneJson(value));
+  } finally {
+    _shareApplyingRemote = false;
+  }
+  _shareSendPatch('me', path, value);
+  return true;
+}
+
+function shareEmit(name, data) {
+  if (!window.shareConnected) {
+    debugWarn('shareEmit(): not connected.');
+    return false;
+  }
+  if (typeof name !== 'string' || name.length === 0) {
+    debugError('shareEmit(name, data?) requires a non-empty name.');
+    return false;
+  }
+  if (data !== undefined && !_shareIsJsonSerializable(data)) {
+    debugError('shareEmit(): data must be JSON-serializable.');
+    return false;
+  }
+  const msg = {
+    type: 'emit',
+    v: _SHARE_PROTOCOL_VERSION,
+    name: name
+  };
+  if (data !== undefined) {
+    msg.data = _shareCloneJson(data);
+  }
+  return _shareSend(msg);
+}
+
+function _shareApplyRemotePatch(msg) {
+  const scope = msg.scope;
+  const path = msg.path;
+  const value = Object.prototype.hasOwnProperty.call(msg, 'value') ? msg.value : undefined;
+  const clientId = msg.clientId;
+
+  _shareApplyingRemote = true;
+  try {
+    if (scope === 'shared') {
+      _shareApplyPatchInPlace(_shareSharedRoot, path, value);
+      if (typeof shareReceive === 'function') {
+        shareReceive(path, value);
+      }
+    } else if (scope === 'me') {
+      if (clientId && clientId === window.shareClientId) {
+        _shareApplyPatchInPlace(_shareMeRoot, path, value);
+      } else if (clientId) {
+        let guest = _shareGuestsById.get(clientId);
+        if (!guest) {
+          guest = {};
+          _shareGuestsById.set(clientId, guest);
+        }
+        _shareApplyPatchInPlace(guest, path, value);
+        _shareRebuildGuestsArray();
+      }
+      if (typeof shareReceive === 'function') {
+        shareReceive(path, value);
+      }
+    }
+  } finally {
+    _shareApplyingRemote = false;
+  }
+}
+
+function _shareHandleMessage(raw) {
+  let msg;
+  try {
+    msg = JSON.parse(raw);
+  } catch (e) {
+    debugWarn('share: ignoring non-JSON message');
+    return;
+  }
+  if (!msg || typeof msg.type !== 'string') return;
+
+  switch (msg.type) {
+    case 'welcome': {
+      window.shareClientId = msg.clientId || '';
+      window.shareIsHost = !!msg.isHost;
+      _shareApplyingRemote = true;
+      try {
+        _shareSharedRoot = msg.shared && typeof msg.shared === 'object' ? _shareCloneJson(msg.shared) : {};
+        _shareMeRoot = msg.you && typeof msg.you === 'object' ? _shareCloneJson(msg.you) : _shareCloneJson(_shareProfile.me);
+        _shareBindProxies();
+        _shareGuestsById = new Map();
+        const guests = Array.isArray(msg.guests) ? msg.guests : [];
+        for (let i = 0; i < guests.length; i++) {
+          const g = guests[i];
+          if (g && g.id) {
+            _shareGuestsById.set(g.id, g.data && typeof g.data === 'object' ? _shareCloneJson(g.data) : {});
+          }
+        }
+        _shareRebuildGuestsArray();
+      } finally {
+        _shareApplyingRemote = false;
+      }
+      window.shareConnected = true;
+      window.shareStatus = 'connected';
+      window.shareError = '';
+      if (!_shareReadySent) {
+        _shareReadySent = true;
+        if (typeof shareReady === 'function') {
+          shareReady();
+        }
+      }
+      debug('share welcome id=' + window.shareClientId + ' host=' + window.shareIsHost);
+      break;
+    }
+    case 'patch':
+      _shareApplyRemotePatch(msg);
+      break;
+    case 'presence': {
+      _shareGuestsById = new Map();
+      const guests = Array.isArray(msg.guests) ? msg.guests : [];
+      for (let i = 0; i < guests.length; i++) {
+        const g = guests[i];
+        if (g && g.id && g.id !== window.shareClientId) {
+          _shareGuestsById.set(g.id, g.data && typeof g.data === 'object' ? _shareCloneJson(g.data) : {});
+        }
+      }
+      _shareRebuildGuestsArray();
+      break;
+    }
+    case 'host': {
+      const wasHost = window.shareIsHost;
+      window.shareIsHost = !!msg.isHost;
+      if (wasHost !== window.shareIsHost && typeof shareHostChanged === 'function') {
+        shareHostChanged(window.shareIsHost);
+      }
+      break;
+    }
+    case 'emit':
+      if (typeof shareEvent === 'function') {
+        shareEvent(msg.name, msg.data);
+      }
+      break;
+    case 'error':
+      window.shareError = msg.message || 'Share server error';
+      window.shareStatus = 'error';
+      debugError('share: ' + window.shareError);
+      break;
+    default:
+      break;
+  }
+}
+
+function _shareClearReconnect() {
+  if (_shareReconnectTimer) {
+    clearTimeout(_shareReconnectTimer);
+    _shareReconnectTimer = null;
+  }
+}
+
+function _shareScheduleReconnect() {
+  if (!_shareProfile || !_shareProfile.autoReconnect || _shareReconnectStopped) return;
+  if (_shareReconnectTimer) return;
+  const delay = _SHARE_RECONNECT_DELAYS[
+    Math.min(_shareReconnectAttempt, _SHARE_RECONNECT_DELAYS.length - 1)
+  ];
+  _shareReconnectAttempt += 1;
+  debug('share reconnect in ' + delay + 'ms (attempt ' + _shareReconnectAttempt + ')');
+  _shareReconnectTimer = setTimeout(function() {
+    _shareReconnectTimer = null;
+    shareConnect().catch(function() {});
+  }, delay);
+}
+
+function shareConnect() {
+  if (!_shareProfile) {
+    debugError('Call shareSetup() before shareConnect().');
+    return Promise.reject(new Error('shareSetup required'));
+  }
+  if (!isShareSupported()) {
+    return Promise.reject(new Error(window.shareError || 'WebSocket unsupported'));
+  }
+
+  _shareReconnectStopped = false;
+  _shareClearReconnect();
+
+  if (_shareSocket && (_shareSocket.readyState === WebSocket.OPEN || _shareSocket.readyState === WebSocket.CONNECTING)) {
+    return Promise.resolve();
+  }
+
+  window.shareStatus = 'connecting';
+  window.shareError = '';
+  window.shareConnected = false;
+  _shareReadySent = false;
+
+  return new Promise(function(resolve, reject) {
+    let settled = false;
+    const url = _shareWsUrl();
+    debug('share connecting ' + url);
+
+    let socket;
+    try {
+      socket = new WebSocket(url);
+    } catch (err) {
+      window.shareStatus = 'error';
+      window.shareError = err && err.message ? err.message : String(err);
+      reject(err);
+      return;
+    }
+
+    _shareSocket = socket;
+
+    socket.onopen = function() {
+      _shareReconnectAttempt = 0;
+      _shareSend({
+        type: 'hello',
+        v: _SHARE_PROTOCOL_VERSION,
+        app: _shareProfile.app,
+        room: _shareProfile.room,
+        me: _shareCloneJson(_shareProfile.me),
+        shared: _shareCloneJson(_shareProfile.shared)
+      });
+      if (!settled) {
+        settled = true;
+        resolve();
+      }
+    };
+
+    socket.onmessage = function(event) {
+      _shareHandleMessage(event.data);
+    };
+
+    socket.onerror = function() {
+      window.shareStatus = 'error';
+      if (!window.shareError) {
+        window.shareError = 'Share WebSocket error';
+      }
+      if (!settled) {
+        settled = true;
+        reject(new Error(window.shareError));
+      }
+    };
+
+    socket.onclose = function() {
+      const wasConnected = window.shareConnected;
+      window.shareConnected = false;
+      if (window.shareStatus !== 'unsupported') {
+        window.shareStatus = _shareReconnectStopped ? 'idle' : 'error';
+      }
+      if (_shareSocket === socket) {
+        _shareSocket = null;
+      }
+      if (wasConnected && typeof shareClosed === 'function') {
+        shareClosed();
+      }
+      if (!_shareReconnectStopped) {
+        _shareScheduleReconnect();
+      }
+    };
+  });
+}
+
+function shareDisconnect() {
+  _shareReconnectStopped = true;
+  _shareClearReconnect();
+  if (_shareSocket) {
+    try {
+      _shareSocket.close();
+    } catch (e) { /* ignore */ }
+    _shareSocket = null;
+  }
+  window.shareConnected = false;
+  window.shareStatus = 'idle';
+  window.shareIsHost = false;
+  window.shareClientId = '';
+  _shareReadySent = false;
 }
 
 function _normalizePermissionList(permissions) {
@@ -3630,6 +4401,16 @@ window.bleRead = bleRead;
 window.bleWrite = bleWrite;
 window.enableBleTap = enableBleTap;
 window.enableBleButton = enableBleButton;
+window.isShareSupported = isShareSupported;
+window.shareSetup = shareSetup;
+window.shareConnect = shareConnect;
+window.shareDisconnect = shareDisconnect;
+window.shareSet = shareSet;
+window.shareSetMe = shareSetMe;
+window.shareEmit = shareEmit;
+window.getShareJoinUrl = getShareJoinUrl;
+window.enableShareTap = enableShareTap;
+window.enableShareButton = enableShareButton;
 window.enableAllTap = enableAllTap;
 window.enableAllButton = enableAllButton;
 window.enablePermissionsTap = enablePermissionsTap;
@@ -3647,6 +4428,7 @@ window.enableVibrationCanvas = enableVibrationCanvas;
 window.enableNfcCanvas = enableNfcCanvas;
 window.enableGeoCanvas = enableGeoCanvas;
 window.enableBleCanvas = enableBleCanvas;
+window.enableShareCanvas = enableShareCanvas;
 window.enableAllCanvas = enableAllCanvas;
 window.enableCameraCanvas = enableCameraCanvas;
 window.enablePermissionsCanvas = enablePermissionsCanvas;
@@ -3662,6 +4444,7 @@ window.enableVibrationBanner = enableVibrationBanner;
 window.enableNfcBanner = enableNfcBanner;
 window.enableGeoBanner = enableGeoBanner;
 window.enableBleBanner = enableBleBanner;
+window.enableShareBanner = enableShareBanner;
 window.enableAllBanner = enableAllBanner;
 window.enableCameraBanner = enableCameraBanner;
 window.enablePermissionsBanner = enablePermissionsBanner;
@@ -3677,6 +4460,7 @@ window.enableVibrationMinimal = enableVibrationMinimal;
 window.enableNfcMinimal = enableNfcMinimal;
 window.enableGeoMinimal = enableGeoMinimal;
 window.enableBleMinimal = enableBleMinimal;
+window.enableShareMinimal = enableShareMinimal;
 window.enableAllMinimal = enableAllMinimal;
 window.enableCameraMinimal = enableCameraMinimal;
 window.enablePermissionsMinimal = enablePermissionsMinimal;
@@ -3694,6 +4478,7 @@ window.enableVibrationOn = enableVibrationOn;
 window.enableNfcOn = enableNfcOn;
 window.enableGeoOn = enableGeoOn;
 window.enableBleOn = enableBleOn;
+window.enableShareOn = enableShareOn;
 window.enableAllOn = enableAllOn;
 window.enableCameraOn = enableCameraOn;
 window.enablePermissionsOn = enablePermissionsOn;
@@ -4630,6 +5415,16 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.bleWrite = bleWrite;
   p5.prototype.enableBleTap = enableBleTap;
   p5.prototype.enableBleButton = enableBleButton;
+  p5.prototype.isShareSupported = isShareSupported;
+  p5.prototype.shareSetup = shareSetup;
+  p5.prototype.shareConnect = shareConnect;
+  p5.prototype.shareDisconnect = shareDisconnect;
+  p5.prototype.shareSet = shareSet;
+  p5.prototype.shareSetMe = shareSetMe;
+  p5.prototype.shareEmit = shareEmit;
+  p5.prototype.getShareJoinUrl = getShareJoinUrl;
+  p5.prototype.enableShareTap = enableShareTap;
+  p5.prototype.enableShareButton = enableShareButton;
   p5.prototype.enableAllTap = enableAllTap;
   p5.prototype.enableAllButton = enableAllButton;
   p5.prototype.enablePermissionsTap = enablePermissionsTap;
@@ -4649,6 +5444,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableNfcCanvas = enableNfcCanvas;
   p5.prototype.enableGeoCanvas = enableGeoCanvas;
   p5.prototype.enableBleCanvas = enableBleCanvas;
+  p5.prototype.enableShareCanvas = enableShareCanvas;
   p5.prototype.enableAllCanvas = enableAllCanvas;
   p5.prototype.enableCameraCanvas = enableCameraCanvas;
   p5.prototype.enablePermissionsCanvas = enablePermissionsCanvas;
@@ -4666,6 +5462,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableNfcBanner = enableNfcBanner;
   p5.prototype.enableGeoBanner = enableGeoBanner;
   p5.prototype.enableBleBanner = enableBleBanner;
+  p5.prototype.enableShareBanner = enableShareBanner;
   p5.prototype.enableAllBanner = enableAllBanner;
   p5.prototype.enableCameraBanner = enableCameraBanner;
   p5.prototype.enablePermissionsBanner = enablePermissionsBanner;
@@ -4683,6 +5480,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableNfcMinimal = enableNfcMinimal;
   p5.prototype.enableGeoMinimal = enableGeoMinimal;
   p5.prototype.enableBleMinimal = enableBleMinimal;
+  p5.prototype.enableShareMinimal = enableShareMinimal;
   p5.prototype.enableAllMinimal = enableAllMinimal;
   p5.prototype.enableCameraMinimal = enableCameraMinimal;
   p5.prototype.enablePermissionsMinimal = enablePermissionsMinimal;
@@ -4700,6 +5498,7 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
   p5.prototype.enableNfcOn = enableNfcOn;
   p5.prototype.enableGeoOn = enableGeoOn;
   p5.prototype.enableBleOn = enableBleOn;
+  p5.prototype.enableShareOn = enableShareOn;
   p5.prototype.enableAllOn = enableAllOn;
   p5.prototype.enableCameraOn = enableCameraOn;
   p5.prototype.enablePermissionsOn = enablePermissionsOn;
@@ -4794,6 +5593,16 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.bleWrite = bleWrite;
       this.enableBleTap = enableBleTap;
       this.enableBleButton = enableBleButton;
+      this.isShareSupported = isShareSupported;
+      this.shareSetup = shareSetup;
+      this.shareConnect = shareConnect;
+      this.shareDisconnect = shareDisconnect;
+      this.shareSet = shareSet;
+      this.shareSetMe = shareSetMe;
+      this.shareEmit = shareEmit;
+      this.getShareJoinUrl = getShareJoinUrl;
+      this.enableShareTap = enableShareTap;
+      this.enableShareButton = enableShareButton;
       this.enableAllTap = enableAllTap;
       this.enableAllButton = enableAllButton;
       this.enablePermissionsTap = enablePermissionsTap;
@@ -4813,6 +5622,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableNfcCanvas = enableNfcCanvas;
       this.enableGeoCanvas = enableGeoCanvas;
       this.enableBleCanvas = enableBleCanvas;
+      this.enableShareCanvas = enableShareCanvas;
       this.enableAllCanvas = enableAllCanvas;
       this.enableCameraCanvas = enableCameraCanvas;
       this.enablePermissionsCanvas = enablePermissionsCanvas;
@@ -4830,6 +5640,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableNfcBanner = enableNfcBanner;
       this.enableGeoBanner = enableGeoBanner;
       this.enableBleBanner = enableBleBanner;
+      this.enableShareBanner = enableShareBanner;
       this.enableAllBanner = enableAllBanner;
       this.enableCameraBanner = enableCameraBanner;
       this.enablePermissionsBanner = enablePermissionsBanner;
@@ -4847,6 +5658,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableNfcMinimal = enableNfcMinimal;
       this.enableGeoMinimal = enableGeoMinimal;
       this.enableBleMinimal = enableBleMinimal;
+      this.enableShareMinimal = enableShareMinimal;
       this.enableAllMinimal = enableAllMinimal;
       this.enableCameraMinimal = enableCameraMinimal;
       this.enablePermissionsMinimal = enablePermissionsMinimal;
@@ -4864,6 +5676,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.enableNfcOn = enableNfcOn;
       this.enableGeoOn = enableGeoOn;
       this.enableBleOn = enableBleOn;
+      this.enableShareOn = enableShareOn;
       this.enableAllOn = enableAllOn;
       this.enableCameraOn = enableCameraOn;
       this.enablePermissionsOn = enablePermissionsOn;
@@ -4888,6 +5701,7 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       // Release the GPS watch so removing/reloading a sketch never leaks the
       // position subscription (fixes the old p5.geolocation shared-watch bug).
       try { stopGeo(); } catch (e) { /* ignore */ }
+      try { shareDisconnect(); } catch (e) { /* ignore */ }
     };
 
     console.log('✅ Mobile p5.js Permissions: registered as p5.js 2.0 addon');

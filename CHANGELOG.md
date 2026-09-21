@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 
 ### Added
+- Added **Share** multi-user shared state via Cloudflare PartyServer: `shareSetup()`, `shareConnect()` / `shareDisconnect()`, proxied `shared` / `me` / `guests`, `shareSet` / `shareSetMe` / `shareEmit`, and `enableShareTap|Button|Canvas|Banner|Minimal|On` gesture helpers.
+- Share join links: `shareSetup` reads `?shareHost=&room=&app=` (URL overrides config); `getShareJoinUrl()` builds the link; `showDesktopQr()` after `shareSetup` encodes it (and updates the address bar) so students only scan/open one URL.
+- Added companion template [`companion/P5PhoneShare`](companion/P5PhoneShare) (Durable Object room + wire protocol) for free-tier deploy with Wrangler.
+- Added examples `share/01_share_shared`, `02_share_presence`, `03_share_both`.
+- Added `test-share-contract.js` for JSON/patch helpers; wired into `npm test`.
 - Added a sixth permission-activation style, **Minimal**: a bare semi-transparent full-screen overlay with an optional radiating circular icon in the center, as a cleaner alternative to the frosted message box used by `Tap`. Color, opacity, icon, icon color, and icon size are all adjustable.
 - Added `enableSensorMinimal()`, `enableMicMinimal()`, `enableSoundMinimal()`, `enableSpeechMinimal()`, `enableVibrationMinimal()`, `enableTorchMinimal()` (+ `enableFlashlightMinimal` alias), `enableNfcMinimal()`, `enableGeoMinimal()`, `enableBleMinimal()`, `enableAllMinimal()`, `enableCameraMinimal()`, and `enablePermissionsMinimal()` (+ `enableHardwareMinimal` alias). Call forms: `enableXxxMinimal('Tap')`, `enableXxxMinimal({ color, opacity, icon, iconColor, iconSize, message })`, or `enableXxxMinimal('Tap', { opacity: 0.6 })`.
 - Added `showDesktopQr()`, `hideDesktopQr()`, and `setQrUrl()` — a dev helper that renders a floating QR code of the current page on **desktop only** and is a no-op on mobile, so you never have to generate or dismiss a QR on the phone. Options: `{ url, position, size, label, closable, rememberDismiss }`. Closing the panel hides it for the session.

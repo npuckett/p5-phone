@@ -1,0 +1,19 @@
+{
+  "name": "p5-phone-share",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-04-07",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ShareRoom",
+        "class_name": "ShareRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ShareRoom"]
+    }
+  ]
+}
