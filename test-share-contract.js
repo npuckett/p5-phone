@@ -24,6 +24,7 @@ function loadShareHelpers() {
       '  shareIsJsonSerializable: _shareIsJsonSerializable,\n' +
       '  shareCloneJson: _shareCloneJson,\n' +
       '  shareParsePath: _shareParsePath,\n' +
+      '  shareIsSafePath: _shareIsSafePath,\n' +
       '  shareGetAtPath: _shareGetAtPath,\n' +
       '  shareApplyPatchInPlace: _shareApplyPatchInPlace,\n' +
       '  shareRoomKey: _shareRoomKey,\n' +
@@ -38,6 +39,7 @@ const {
   shareIsJsonSerializable,
   shareCloneJson,
   shareParsePath,
+  shareIsSafePath,
   shareGetAtPath,
   shareApplyPatchInPlace,
   shareRoomKey,
@@ -92,6 +94,19 @@ assert(tree.pos.x === undefined && !('x' in tree.pos), 'leaf deleted');
 assert(shareApplyPatchInPlace(tree, 'deep.child.val', 3) === true, 'create intermediate objects');
 assert(tree.deep.child.val === 3, 'deep path created');
 assert(shareApplyPatchInPlace(tree, '', 1) === false, 'empty path rejected');
+
+// Arrays are walked into, so index paths (sent for push / index writes) work.
+const withList = { list: [1, 2] };
+assert(shareApplyPatchInPlace(withList, 'list.2', 3) === true && withList.list.join() === '1,2,3', 'index path appends');
+assert(Array.isArray(withList.list), 'index path keeps the array');
+assert(shareApplyPatchInPlace(withList, 'list.length', 1) === true && withList.list.join() === '1', 'length path truncates');
+
+// Paths into Object.prototype are refused everywhere.
+assert(shareIsSafePath('a.b') && !shareIsSafePath(''), 'safe path basics');
+assert(!shareIsSafePath('__proto__.x') && !shareIsSafePath('a.constructor.prototype.x') && !shareIsSafePath('a.prototype'), 'prototype keys refused');
+assert(shareApplyPatchInPlace({}, '__proto__.polluted', 'yes') === false, '__proto__ patch refused');
+assert(shareApplyPatchInPlace({}, 'constructor.prototype.polluted', 'yes') === false, 'constructor patch refused');
+assert(({}).polluted === undefined, 'Object.prototype untouched');
 
 assert(shareRoomKey(undefined, 'demo') === 'default:demo', 'default app');
 assert(shareRoomKey('app', undefined) === 'app:main', 'default room');

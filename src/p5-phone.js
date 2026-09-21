@@ -167,8 +167,13 @@ const _BLE_VALID_TYPES = new Set([
 ]);
 
 // Share (PartyServer multi-user) internals
-const _SHARE_PROTOCOL_VERSION = 1;
+// v2: 'batch' messages, and the worker echoes shared patches to their sender.
+const _SHARE_PROTOCOL_VERSION = 2;
 const _SHARE_RECONNECT_DELAYS = [1500, 3000, 6000, 12000];
+// Changes are batched and sent at most this often (ms). A drag that writes me.x and
+// me.y every frame is then ~20 messages/s per phone instead of ~120, which keeps a
+// class inside the Cloudflare free tier (2M incoming WebSocket messages/day).
+const _SHARE_DEFAULT_SEND_INTERVAL = 50;
 let _shareProfile = null;
 let _shareSocket = null;
 let _shareReconnectTimer = null;
@@ -179,6 +184,11 @@ let _shareSharedRoot = {};
 let _shareMeRoot = {};
 let _shareGuestsById = new Map();
 let _shareReadySent = false;
+let _shareOutbox = []; // queued {scope, path, value} ops, in order, not yet sent
+let _shareFlushTimer = null;
+let _sharePending = new Map(); // shared path -> my sent writes the worker has not echoed yet
+let _shareHiddenClosed = false; // socket closed because the page was hidden
+let _shareVisibilityBound = false;
 
 const _gestureLockState = {
   locked: false,
@@ -2546,6 +2556,19 @@ function _shareParsePath(path) {
   return path.split('.').filter(function(p) { return p.length > 0; });
 }
 
+// Path segments that would walk into Object.prototype. A patch from another phone
+// with one of these must never be applied.
+const _SHARE_BLOCKED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
+function _shareIsSafePath(path) {
+  const parts = _shareParsePath(path);
+  if (parts.length === 0) return false;
+  for (let i = 0; i < parts.length; i++) {
+    if (_SHARE_BLOCKED_KEYS.has(parts[i])) return false;
+  }
+  return true;
+}
+
 function _shareGetAtPath(obj, path) {
   const parts = _shareParsePath(path);
   let cur = obj;
@@ -2557,14 +2580,15 @@ function _shareGetAtPath(obj, path) {
 }
 
 function _shareApplyPatchInPlace(obj, path, value) {
+  if (!_shareIsSafePath(path)) return false;
   const parts = _shareParsePath(path);
-  if (parts.length === 0) return false;
 
   let cur = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const part = parts[i];
     const next = cur[part];
-    if (next === null || typeof next !== 'object' || Array.isArray(next)) {
+    // Arrays are walked into, so 'list.2' sets an element (array writes send index paths).
+    if (next === null || typeof next !== 'object') {
       const created = {};
       cur[part] = created;
       cur = created;
@@ -2701,6 +2725,8 @@ function _shareRebuildGuestsArray() {
   window.guests = list;
 }
 
+// Objects and arrays are both wrapped, so shared.list.push(3) and shared.list[0] = 9
+// sync like shared.score = 1 does (arrays send index paths plus length).
 function _shareCreateProxy(target, scope, pathPrefix) {
   return new Proxy(target, {
     get: function(obj, prop) {
@@ -2709,8 +2735,8 @@ function _shareCreateProxy(target, scope, pathPrefix) {
       if (
         val !== null &&
         typeof val === 'object' &&
-        !Array.isArray(val) &&
-        typeof prop === 'string'
+        typeof prop === 'string' &&
+        Object.prototype.hasOwnProperty.call(obj, prop)
       ) {
         const nextPath = pathPrefix ? pathPrefix + '.' + prop : prop;
         return _shareCreateProxy(val, scope, nextPath);
@@ -2722,14 +2748,26 @@ function _shareCreateProxy(target, scope, pathPrefix) {
         obj[prop] = value;
         return true;
       }
+      if (_SHARE_BLOCKED_KEYS.has(prop)) {
+        debugError('share: "' + prop + '" cannot be used as a key');
+        return false;
+      }
       if (!_shareApplyingRemote && value !== undefined && !_shareIsJsonSerializable(value)) {
         debugError('share: value for "' + prop + '" must be JSON-serializable');
         return false;
       }
+      const isObject = value !== null && typeof value === 'object';
+      // me.x = mouseX every frame should cost nothing while the value is unchanged.
+      if (!isObject && Object.prototype.hasOwnProperty.call(obj, prop) && Object.is(obj[prop], value)) {
+        return true;
+      }
       const path = pathPrefix ? pathPrefix + '.' + prop : String(prop);
-      const ok = Reflect.set(obj, prop, value);
+      // Store a copy: later edits to the sketch's own object (or another shared proxy)
+      // must not change shared state without syncing.
+      const stored = isObject ? _shareCloneJson(value) : value;
+      const ok = Reflect.set(obj, prop, stored);
       if (ok && !_shareApplyingRemote) {
-        _shareSendPatch(scope, path, value);
+        _shareQueuePatch(scope, path, stored);
       }
       return ok;
     },
@@ -2737,10 +2775,11 @@ function _shareCreateProxy(target, scope, pathPrefix) {
       if (typeof prop === 'symbol') {
         return Reflect.deleteProperty(obj, prop);
       }
+      if (!Object.prototype.hasOwnProperty.call(obj, prop)) return true;
       const path = pathPrefix ? pathPrefix + '.' + prop : String(prop);
       const ok = Reflect.deleteProperty(obj, prop);
       if (ok && !_shareApplyingRemote) {
-        _shareSendPatch(scope, path, undefined);
+        _shareQueuePatch(scope, path, undefined);
       }
       return ok;
     }
@@ -2823,10 +2862,20 @@ function shareSetup(config) {
     app: String(app),
     shared: _shareCloneJson(sharedInit),
     me: _shareCloneJson(meInit),
-    autoReconnect: config.autoReconnect !== false
+    autoReconnect: config.autoReconnect !== false,
+    sendInterval: Number.isFinite(config.sendInterval) && config.sendInterval >= 0
+      ? config.sendInterval
+      : _SHARE_DEFAULT_SEND_INTERVAL,
+    // A locked or backgrounded phone leaves the room right away instead of lingering
+    // in everyone's guests (and possibly as host) until its socket times out.
+    disconnectWhenHidden: config.disconnectWhenHidden !== undefined
+      ? !!config.disconnectWhenHidden
+      : !!window.isMobile
   };
+  _shareBindVisibility();
 
   window.shareRoom = _shareRoomKey(_shareProfile.app, _shareProfile.room);
+  _shareClearQueues();
   _shareResetLocalState(_shareProfile.shared, _shareProfile.me);
   window.shareStatus = 'idle';
   window.shareError = '';
@@ -2859,27 +2908,76 @@ function _shareSend(obj) {
   }
 }
 
-function _shareSendPatch(scope, path, value) {
+// Queue a change and send it with the next batch. A queued op that this one overwrites
+// (same path, or a path inside it) is dropped; everything else keeps its order.
+function _shareQueuePatch(scope, path, value) {
   if (!window.shareConnected) return;
+  if (!_shareIsSafePath(path)) {
+    debugError('share patch rejected: invalid path ' + path);
+    return;
+  }
   if (value !== undefined && !_shareIsJsonSerializable(value)) {
     debugError('share patch rejected: non-JSON value at ' + path);
     return;
   }
-  const msg = {
-    type: 'patch',
-    v: _SHARE_PROTOCOL_VERSION,
-    scope: scope,
-    path: path
-  };
-  if (value !== undefined) {
-    msg.value = _shareCloneJson(value);
+  const inside = path + '.';
+  _shareOutbox = _shareOutbox.filter(function(op) {
+    return !(op.scope === scope && (op.path === path || op.path.indexOf(inside) === 0));
+  });
+  const op = { scope: scope, path: path };
+  if (value !== undefined) op.value = _shareCloneJson(value);
+  _shareOutbox.push(op);
+
+  const interval = _shareProfile ? _shareProfile.sendInterval : 0;
+  if (interval <= 0) {
+    _shareFlush();
+  } else if (!_shareFlushTimer) {
+    _shareFlushTimer = setTimeout(_shareFlush, interval);
   }
-  _shareSend(msg);
+}
+
+function _shareFlush() {
+  if (_shareFlushTimer) {
+    clearTimeout(_shareFlushTimer);
+    _shareFlushTimer = null;
+  }
+  if (_shareOutbox.length === 0) return;
+  const ops = _shareOutbox;
+  _shareOutbox = [];
+  if (!window.shareConnected) return;
+  const msg = ops.length === 1
+    ? Object.assign({ type: 'patch', v: _SHARE_PROTOCOL_VERSION }, ops[0])
+    : { type: 'batch', v: _SHARE_PROTOCOL_VERSION, ops: ops };
+  if (!_shareSend(msg)) return;
+  for (let i = 0; i < ops.length; i++) {
+    if (ops[i].scope === 'shared') {
+      _sharePending.set(ops[i].path, (_sharePending.get(ops[i].path) || 0) + 1);
+    }
+  }
+}
+
+function _shareClearQueues() {
+  if (_shareFlushTimer) {
+    clearTimeout(_shareFlushTimer);
+    _shareFlushTimer = null;
+  }
+  _shareOutbox = [];
+  _sharePending = new Map();
+}
+
+// Shared paths with a local write the worker has not applied yet: queued or unechoed.
+function _shareUnconfirmedPaths() {
+  const paths = [];
+  _sharePending.forEach(function(count, p) { paths.push(p); });
+  for (let i = 0; i < _shareOutbox.length; i++) {
+    if (_shareOutbox[i].scope === 'shared') paths.push(_shareOutbox[i].path);
+  }
+  return paths;
 }
 
 function shareSet(path, value) {
-  if (typeof path !== 'string' || path.length === 0) {
-    debugError('shareSet(path, value) requires a non-empty path string.');
+  if (typeof path !== 'string' || !_shareIsSafePath(path)) {
+    debugError('shareSet(path, value) requires a non-empty path string (no __proto__ / prototype / constructor).');
     return false;
   }
   if (value !== undefined && !_shareIsJsonSerializable(value)) {
@@ -2892,13 +2990,13 @@ function shareSet(path, value) {
   } finally {
     _shareApplyingRemote = false;
   }
-  _shareSendPatch('shared', path, value);
+  _shareQueuePatch('shared', path, value);
   return true;
 }
 
 function shareSetMe(path, value) {
-  if (typeof path !== 'string' || path.length === 0) {
-    debugError('shareSetMe(path, value) requires a non-empty path string.');
+  if (typeof path !== 'string' || !_shareIsSafePath(path)) {
+    debugError('shareSetMe(path, value) requires a non-empty path string (no __proto__ / prototype / constructor).');
     return false;
   }
   if (value !== undefined && !_shareIsJsonSerializable(value)) {
@@ -2911,7 +3009,7 @@ function shareSetMe(path, value) {
   } finally {
     _shareApplyingRemote = false;
   }
-  _shareSendPatch('me', path, value);
+  _shareQueuePatch('me', path, value);
   return true;
 }
 
@@ -2928,6 +3026,8 @@ function shareEmit(name, data) {
     debugError('shareEmit(): data must be JSON-serializable.');
     return false;
   }
+  // Send queued changes first, so others see the state the event refers to.
+  _shareFlush();
   const msg = {
     type: 'emit',
     v: _SHARE_PROTOCOL_VERSION,
@@ -2939,17 +3039,50 @@ function shareEmit(name, data) {
   return _shareSend(msg);
 }
 
-function _shareApplyRemotePatch(msg) {
+// The worker applies patches in one order and sends every shared patch to everyone,
+// the sender included. A phone keeps its own unconfirmed writes on screen and skips
+// remote writes that one of them will override on the worker, so all phones settle
+// on the worker's value even when two write the same key at once.
+function _shareApplySharedPatch(path, value, clientId) {
+  if (clientId && clientId === window.shareClientId) {
+    // Echo of my own write: the worker has applied it. Local state already shows it.
+    const left = (_sharePending.get(path) || 1) - 1;
+    if (left > 0) _sharePending.set(path, left);
+    else _sharePending.delete(path);
+    return false;
+  }
+  const unconfirmed = _shareUnconfirmedPaths();
+  const inside = [];
+  for (let i = 0; i < unconfirmed.length; i++) {
+    const p = unconfirmed[i];
+    // My write to this path, or to an object containing it, reaches the worker later.
+    if (p === path || path.indexOf(p + '.') === 0) return false;
+    if (p.indexOf(path + '.') === 0) inside.push(p);
+  }
+  // A remote write replaces an object I have unconfirmed writes inside: apply it, then
+  // put my writes back on top, as the worker will.
+  const keep = inside.map(function(p) {
+    const v = _shareGetAtPath(_shareSharedRoot, p);
+    return [p, v === undefined ? undefined : _shareCloneJson(v)];
+  });
+  _shareApplyPatchInPlace(_shareSharedRoot, path, value);
+  for (let i = 0; i < keep.length; i++) {
+    _shareApplyPatchInPlace(_shareSharedRoot, keep[i][0], keep[i][1]);
+  }
+  return true;
+}
+
+function _shareApplyRemotePatch(msg, fromId) {
   const scope = msg.scope;
   const path = msg.path;
   const value = Object.prototype.hasOwnProperty.call(msg, 'value') ? msg.value : undefined;
-  const clientId = msg.clientId;
+  const clientId = fromId || msg.clientId;
+  if (!_shareIsSafePath(path)) return;
 
   _shareApplyingRemote = true;
   try {
     if (scope === 'shared') {
-      _shareApplyPatchInPlace(_shareSharedRoot, path, value);
-      if (typeof shareReceive === 'function') {
+      if (_shareApplySharedPatch(path, value, clientId) && typeof shareReceive === 'function') {
         shareReceive(path, value);
       }
     } else if (scope === 'me') {
@@ -2987,10 +3120,11 @@ function _shareHandleMessage(raw) {
     case 'welcome': {
       window.shareClientId = msg.clientId || '';
       window.shareIsHost = !!msg.isHost;
+      _shareClearQueues();
       _shareApplyingRemote = true;
       try {
         _shareSharedRoot = msg.shared && typeof msg.shared === 'object' ? _shareCloneJson(msg.shared) : {};
-        _shareMeRoot = msg.you && typeof msg.you === 'object' ? _shareCloneJson(msg.you) : _shareCloneJson(_shareProfile.me);
+        _shareMeRoot = msg.you && typeof msg.you === 'object' ? _shareCloneJson(msg.you) : _shareCloneJson(_shareMeRoot);
         _shareBindProxies();
         _shareGuestsById = new Map();
         const guests = Array.isArray(msg.guests) ? msg.guests : [];
@@ -3017,8 +3151,15 @@ function _shareHandleMessage(raw) {
       break;
     }
     case 'patch':
-      _shareApplyRemotePatch(msg);
+      _shareApplyRemotePatch(msg, msg.clientId);
       break;
+    case 'batch': {
+      const ops = Array.isArray(msg.ops) ? msg.ops : [];
+      for (let i = 0; i < ops.length; i++) {
+        if (ops[i] && typeof ops[i] === 'object') _shareApplyRemotePatch(ops[i], msg.clientId);
+      }
+      break;
+    }
     case 'presence': {
       _shareGuestsById = new Map();
       const guests = Array.isArray(msg.guests) ? msg.guests : [];
@@ -3045,8 +3186,11 @@ function _shareHandleMessage(raw) {
       }
       break;
     case 'error':
+      // A write the worker rejected is never echoed; stop waiting on pending writes.
+      _sharePending = new Map();
       window.shareError = msg.message || 'Share server error';
-      window.shareStatus = 'error';
+      // A rejected write leaves the connection up; only a failed join is an error state.
+      if (!window.shareConnected) window.shareStatus = 'error';
       debugError('share: ' + window.shareError);
       break;
     default:
@@ -3085,6 +3229,7 @@ function shareConnect() {
   }
 
   _shareReconnectStopped = false;
+  _shareHiddenClosed = false;
   _shareClearReconnect();
 
   if (_shareSocket && (_shareSocket.readyState === WebSocket.OPEN || _shareSocket.readyState === WebSocket.CONNECTING)) {
@@ -3120,8 +3265,10 @@ function shareConnect() {
         v: _SHARE_PROTOCOL_VERSION,
         app: _shareProfile.app,
         room: _shareProfile.room,
-        me: _shareCloneJson(_shareProfile.me),
-        shared: _shareCloneJson(_shareProfile.shared)
+        // Current state, not the shareSetup() seed: me set before joining or before a
+        // reconnect survives, and an emptied room is reseeded from where it was.
+        me: _shareCloneJson(_shareMeRoot),
+        shared: _shareCloneJson(_shareSharedRoot)
       });
       if (!settled) {
         settled = true;
@@ -3130,6 +3277,7 @@ function shareConnect() {
     };
 
     socket.onmessage = function(event) {
+      if (_shareSocket !== socket) return; // replaced by a newer connection
       _shareHandleMessage(event.data);
     };
 
@@ -3145,31 +3293,42 @@ function shareConnect() {
     };
 
     socket.onclose = function() {
+      if (_shareSocket && _shareSocket !== socket) return; // replaced by a newer connection
       const wasConnected = window.shareConnected;
       window.shareConnected = false;
       if (window.shareStatus !== 'unsupported') {
-        window.shareStatus = _shareReconnectStopped ? 'idle' : 'error';
+        window.shareStatus = _shareReconnectStopped || _shareHiddenClosed ? 'idle' : 'error';
       }
       if (_shareSocket === socket) {
         _shareSocket = null;
       }
+      _shareClearQueues();
       if (wasConnected && typeof shareClosed === 'function') {
         shareClosed();
       }
-      if (!_shareReconnectStopped) {
+      if (!_shareReconnectStopped && !_shareHiddenClosed) {
         _shareScheduleReconnect();
       }
     };
   });
 }
 
+// Close with an explicit code. A bare close() sends no status, and PartyServer cannot
+// echo the reserved 1005 back, so the socket would sit half-open on the phone.
+function _shareCloseSocket(reason) {
+  if (!_shareSocket) return;
+  try {
+    _shareSocket.close(1000, reason || 'bye');
+  } catch (e) { /* ignore */ }
+}
+
 function shareDisconnect() {
   _shareReconnectStopped = true;
+  _shareHiddenClosed = false;
   _shareClearReconnect();
+  _shareClearQueues();
   if (_shareSocket) {
-    try {
-      _shareSocket.close();
-    } catch (e) { /* ignore */ }
+    _shareCloseSocket('disconnect');
     _shareSocket = null;
   }
   window.shareConnected = false;
@@ -3177,6 +3336,23 @@ function shareDisconnect() {
   window.shareIsHost = false;
   window.shareClientId = '';
   _shareReadySent = false;
+}
+
+function _shareBindVisibility() {
+  if (_shareVisibilityBound || typeof document === 'undefined') return;
+  _shareVisibilityBound = true;
+  document.addEventListener('visibilitychange', function() {
+    if (!_shareProfile || !_shareProfile.disconnectWhenHidden || _shareReconnectStopped) return;
+    if (document.visibilityState === 'hidden') {
+      if (!_shareSocket && !_shareReconnectTimer) return;
+      _shareHiddenClosed = true;
+      _shareClearReconnect();
+      _shareFlush();
+      _shareCloseSocket('hidden');
+    } else if (_shareHiddenClosed) {
+      shareConnect().catch(function() {});
+    }
+  });
 }
 
 function _normalizePermissionList(permissions) {

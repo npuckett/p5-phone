@@ -13,7 +13,9 @@ import {
   decodeMessage,
   encodeMessage,
   isJsonSerializable,
+  isSafePath,
   type GuestEntry,
+  type PatchOp,
   type ShareMessage,
   type ShareScope
 } from './protocol';
@@ -28,6 +30,11 @@ type RoomMeta = {
   seeded: boolean;
 };
 
+// Storage writes are debounced: the free tier allows 100,000 row writes a day, and a
+// sketch that moves a shared object every frame would otherwise use them up in minutes.
+// A pending timer keeps the room awake, so state is written before it can hibernate.
+const PERSIST_DELAY_MS = 1000;
+
 function emptyState(): ConnState {
   return { me: {}, helloDone: false };
 }
@@ -38,6 +45,7 @@ export class ShareRoom extends Server {
   shared: Record<string, unknown> = {};
   hostId: string | null = null;
   seeded = false;
+  persistTimer: ReturnType<typeof setTimeout> | null = null;
 
   async onStart() {
     // Light persistence so hibernation wake does not wipe room state.
@@ -81,7 +89,10 @@ export class ShareRoom extends Server {
         void this.handleHello(connection, msg);
         break;
       case 'patch':
-        void this.handlePatch(connection, msg);
+        this.handleOps(connection, [{ scope: msg.scope, path: msg.path, value: msg.value }]);
+        break;
+      case 'batch':
+        this.handleOps(connection, Array.isArray(msg.ops) ? msg.ops : []);
         break;
       case 'emit':
         this.handleEmit(connection, msg);
@@ -92,19 +103,26 @@ export class ShareRoom extends Server {
   }
 
   async onClose(connection: Connection) {
-    const wasHost = this.hostId === connection.id;
-    this.broadcastPresence(undefined, connection.id);
+    // PartyServer calls onClose before it closes the socket, so the leaving connection
+    // can still be listed as open here. Leave it out explicitly.
+    const leftId = connection.id;
+    const remaining = [...this.getConnections()].filter((c) => c.id !== leftId);
+    this.broadcastPresence(undefined, leftId, [leftId]);
 
-    if (wasHost) {
-      await this.electHost();
-    }
-
-    const remaining = [...this.getConnections()];
     if (remaining.length === 0) {
       this.shared = {};
       this.hostId = null;
       this.seeded = false;
+      if (this.persistTimer) {
+        clearTimeout(this.persistTimer);
+        this.persistTimer = null;
+      }
       await this.ctx.storage.deleteAll();
+      return;
+    }
+
+    if (this.hostId === leftId) {
+      await this.electHost(remaining);
     }
   }
 
@@ -113,11 +131,23 @@ export class ShareRoom extends Server {
   }
 
   private async persistRoom() {
-    await this.ctx.storage.put('shared', this.shared);
-    await this.ctx.storage.put('meta', {
-      hostId: this.hostId,
-      seeded: this.seeded
-    } satisfies RoomMeta);
+    try {
+      await this.ctx.storage.put({
+        shared: this.shared,
+        meta: { hostId: this.hostId, seeded: this.seeded } satisfies RoomMeta
+      });
+    } catch (err) {
+      // Over the free-tier write limit: keep the live room working from memory.
+      console.error('ShareRoom persist failed', err);
+    }
+  }
+
+  private schedulePersist() {
+    if (this.persistTimer) return;
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      void this.persistRoom();
+    }, PERSIST_DELAY_MS);
   }
 
   private async handleHello(
@@ -157,7 +187,7 @@ export class ShareRoom extends Server {
       clientId: connection.id,
       isHost,
       shared: cloneJson(this.shared),
-      guests: this.guestList(connection.id),
+      guests: this.guestList([connection.id]),
       you: cloneJson(me)
     };
     connection.send(encodeMessage(welcome));
@@ -165,59 +195,55 @@ export class ShareRoom extends Server {
     this.broadcastPresence(connection.id, undefined, [connection.id]);
   }
 
-  private async handlePatch(
-    connection: Connection,
-    msg: Extract<ShareMessage, { type: 'patch' }>
-  ) {
+  // Apply a list of patches in order. Shared patches go to everyone, the sender
+  // included: the echo tells the sender where its write landed in the room's order, so
+  // phones that write the same key at once still agree. A phone's own me patches go to
+  // the others only (nobody else writes them).
+  private handleOps(connection: Connection, ops: PatchOp[]) {
     const state = (connection.state || emptyState()) as ConnState;
     if (!state.helloDone) {
       this.sendError(connection, 'Send hello before patch');
       return;
     }
 
-    const scope = msg.scope as ShareScope;
-    if (scope !== 'shared' && scope !== 'me') {
-      this.sendError(connection, 'Invalid patch scope');
-      return;
+    const applied: PatchOp[] = [];
+    let meChanged = false;
+    for (const op of ops) {
+      if (!op || (op.scope !== 'shared' && op.scope !== 'me')) {
+        this.sendError(connection, 'Invalid patch scope');
+        continue;
+      }
+      if (!isSafePath(op.path)) {
+        this.sendError(connection, 'Invalid patch path');
+        continue;
+      }
+      if (op.value !== undefined && !isJsonSerializable(op.value)) {
+        this.sendError(connection, 'Patch value must be JSON-serializable');
+        continue;
+      }
+      const value = op.value === undefined ? undefined : cloneJson(op.value);
+      applyPatchInPlace(op.scope === 'shared' ? this.shared : state.me, op.path, value);
+      if (op.scope === 'me') meChanged = true;
+      const out: PatchOp = { scope: op.scope, path: op.path };
+      if (value !== undefined) out.value = value;
+      applied.push(out);
     }
-    if (typeof msg.path !== 'string' || msg.path.length === 0) {
-      this.sendError(connection, 'Invalid patch path');
-      return;
-    }
-    if (msg.value !== undefined && !isJsonSerializable(msg.value)) {
-      this.sendError(connection, 'Patch value must be JSON-serializable');
-      return;
-    }
+    if (applied.length === 0) return;
 
-    const value = msg.value === undefined ? undefined : cloneJson(msg.value);
+    if (meChanged) connection.setState({ me: state.me, helloDone: true } satisfies ConnState);
+    const shared = applied.filter((op) => op.scope === 'shared');
+    if (shared.length) this.schedulePersist();
 
-    if (scope === 'shared') {
-      applyPatchInPlace(this.shared, msg.path, value);
-      await this.persistRoom();
-      const out: ShareMessage = {
-        type: 'patch',
-        v: SHARE_PROTOCOL_VERSION,
-        scope: 'shared',
-        path: msg.path,
-        value,
-        clientId: connection.id
-      };
-      this.broadcast(encodeMessage(out), [connection.id]);
-      return;
-    }
+    this.broadcast(this.encodeOps(applied, connection.id), [connection.id]);
+    if (shared.length) connection.send(this.encodeOps(shared, connection.id));
+  }
 
-    applyPatchInPlace(state.me, msg.path, value);
-    connection.setState({ me: state.me, helloDone: true } satisfies ConnState);
-
-    const out: ShareMessage = {
-      type: 'patch',
-      v: SHARE_PROTOCOL_VERSION,
-      scope: 'me',
-      path: msg.path,
-      value,
-      clientId: connection.id
-    };
-    this.broadcast(encodeMessage(out), [connection.id]);
+  private encodeOps(ops: PatchOp[], clientId: string): string {
+    const msg: ShareMessage =
+      ops.length === 1
+        ? { type: 'patch', v: SHARE_PROTOCOL_VERSION, ...ops[0], clientId }
+        : { type: 'batch', v: SHARE_PROTOCOL_VERSION, ops, clientId };
+    return encodeMessage(msg);
   }
 
   private handleEmit(
@@ -248,8 +274,8 @@ export class ShareRoom extends Server {
     this.broadcast(encodeMessage(out), [connection.id]);
   }
 
-  private async electHost() {
-    const connections = [...this.getConnections()];
+  private async electHost(connections: Connection[] = [...this.getConnections()]) {
+    connections = [...connections];
     if (connections.length === 0) {
       this.hostId = null;
       await this.persistRoom();
@@ -269,10 +295,10 @@ export class ShareRoom extends Server {
     }
   }
 
-  private guestList(excludeId?: string): GuestEntry[] {
+  private guestList(exclude: string[] = []): GuestEntry[] {
     const guests: GuestEntry[] = [];
     for (const c of this.getConnections()) {
-      if (excludeId && c.id === excludeId) continue;
+      if (exclude.includes(c.id)) continue;
       const state = (c.state || emptyState()) as ConnState;
       if (!state.helloDone) continue;
       guests.push({ id: c.id, data: cloneJson(state.me) });
@@ -281,7 +307,7 @@ export class ShareRoom extends Server {
   }
 
   private broadcastPresence(joined?: string, left?: string, exclude: string[] = []) {
-    const guests = this.guestList();
+    const guests = this.guestList(left ? [left] : []);
     const msg: ShareMessage = {
       type: 'presence',
       v: SHARE_PROTOCOL_VERSION,

@@ -1,20 +1,28 @@
 /**
- * p5-phone Share wire protocol helpers (v1).
+ * p5-phone Share wire protocol helpers (v2).
  * Keep in sync with the SHARE helpers in src/p5-phone.js.
  */
 
-export const SHARE_PROTOCOL_VERSION = 1;
+// v2: 'batch' messages, and shared patches are echoed to their sender.
+export const SHARE_PROTOCOL_VERSION = 2;
 
 export type ShareScope = 'shared' | 'me';
 
 export type ShareMessage =
   | { type: 'hello'; v: number; app: string; room: string; me: Record<string, unknown>; shared?: Record<string, unknown> }
   | { type: 'welcome'; v: number; clientId: string; isHost: boolean; shared: Record<string, unknown>; guests: GuestEntry[]; you: Record<string, unknown> }
-  | { type: 'patch'; v: number; scope: ShareScope; path: string; value: unknown; clientId?: string }
+  | { type: 'patch'; v: number; scope: ShareScope; path: string; value?: unknown; clientId?: string }
+  | { type: 'batch'; v: number; ops: PatchOp[]; clientId?: string }
   | { type: 'presence'; v: number; guests: GuestEntry[]; joined?: string; left?: string }
   | { type: 'host'; v: number; clientId: string; isHost: boolean }
   | { type: 'emit'; v: number; name: string; data?: unknown; clientId?: string }
   | { type: 'error'; v: number; message: string };
+
+export type PatchOp = {
+  scope: ShareScope;
+  path: string;
+  value?: unknown;
+};
 
 export type GuestEntry = {
   id: string;
@@ -57,6 +65,15 @@ export function parsePath(path: string): string[] {
   return path.split('.').filter((p) => p.length > 0);
 }
 
+// Path segments that would walk into Object.prototype.
+const BLOCKED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
+export function isSafePath(path: unknown): path is string {
+  if (typeof path !== 'string') return false;
+  const parts = parsePath(path);
+  return parts.length > 0 && parts.every((p) => !BLOCKED_KEYS.has(p));
+}
+
 export function getAtPath(obj: Record<string, unknown>, path: string): unknown {
   const parts = parsePath(path);
   let cur: unknown = obj;
@@ -69,21 +86,22 @@ export function getAtPath(obj: Record<string, unknown>, path: string): unknown {
 
 /**
  * Apply a path patch in place. `undefined` value deletes the leaf property.
- * Returns false if the path is empty or intermediate is not an object.
+ * Returns false if the path is empty or walks into __proto__ / prototype / constructor.
  */
 export function applyPatchInPlace(
   obj: Record<string, unknown>,
   path: string,
   value: unknown
 ): boolean {
+  if (!isSafePath(path)) return false;
   const parts = parsePath(path);
-  if (parts.length === 0) return false;
 
   let cur: Record<string, unknown> = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const part = parts[i];
     const next = cur[part];
-    if (next === null || typeof next !== 'object' || Array.isArray(next)) {
+    // Arrays are walked into, so 'list.2' sets an element.
+    if (next === null || typeof next !== 'object') {
       const created: Record<string, unknown> = {};
       cur[part] = created;
       cur = created;
