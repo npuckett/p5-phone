@@ -68,7 +68,7 @@ p5-phone supports both **p5.js 1.x** and **p5.js 2.0+**.
 
 | Feature | p5.js 1.x | p5.js 2.0+ |
 |---------|-----------|------------|
-| Permission UI (Tap/Button/Canvas/Banner/Custom) | ✅ | ✅ |
+| Permission UI (Tap/Button/Canvas/Banner/Minimal/Custom) | ✅ | ✅ |
 | Motion sensors (rotationX/Y/Z, accelerationX/Y/Z) | ✅ | ✅ |
 | Microphone / Speech / Sound | ✅ | ✅ |
 | Camera (PhoneCamera) | ✅ | ✅ |
@@ -76,6 +76,8 @@ p5-phone supports both **p5.js 1.x** and **p5.js 2.0+**.
 | NFC Tag Reading (Android only) | ✅ | ✅ |
 | GPS / Geolocation (iOS + Android) | ✅ | ✅ |
 | Bluetooth Low Energy (Web Bluetooth) | ✅ | ✅ |
+| Share (multi-user rooms) | ✅ | ✅ |
+| Desktop QR helper | ✅ | ✅ |
 | Debug console | ✅ | ✅ |
 | lockGestures() | ✅ | ✅ |
 | `touchStarted()` / `touchEnded()` | ✅ | ❌ Use `mousePressed()` / `mouseReleased()` |
@@ -99,23 +101,27 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   - [Core Functions](#core-functions)
   - [Status Variables](#status-variables)
   - [lockGestures()](#lockgestures)
+  - [unlockGestures()](#unlockgestures)
   - [Motion Sensor Activation](#motion-sensor-activation)
   - [Microphone Activation](#microphone-activation)
   - [Sound Output Activation](#sound-output-activation)
-  - [Speech Recognition Activation](#speech-recognition-activation)
-  - [Combined Activation](#combined-activation)
   - [Vibration Motor (Android Only)](#vibration-motor-android-only)
   - [Torch / Flashlight (Android Chrome)](#torch--flashlight-android-chrome)
   - [NFC Tag Reading (Android Only)](#nfc-tag-reading-android-only)
   - [GPS / Geolocation (iOS + Android)](#gps--geolocation-ios--android)
+  - [Bluetooth Low Energy (Web Bluetooth)](#bluetooth-low-energy-web-bluetooth)
+  - [Share (multi-user shared state)](#share-multi-user-shared-state)
+  - [Speech Recognition Activation](#speech-recognition-activation)
+  - [Combined Activation](#combined-activation)
   - [PhoneCamera (ML5 Integration)](#phonecamera-ml5-integration)
   - [Debug System](#debug-system)
+  - [Desktop QR Helper and Device Detection](#desktop-qr-helper-and-device-detection)
 - [Permission UI Styles](#permission-ui-styles)
-  - [Tap (Full-Screen Overlay)](#tap-full-screen-overlay)
-  - [Button (Centered Button)](#button-centered-button)
-  - [Canvas (First Touch)](#canvas-first-touch)
-  - [Banner (Top/Bottom Bar)](#banner-topbottom-bar)
-  - [Custom Element Binding](#custom-element-binding)
+  - [Canvas Style](#canvas-style)
+  - [Banner Style](#banner-style)
+  - [Custom Element Style](#custom-element-style)
+  - [Minimal Style](#minimal-style)
+  - [Which Style Should I Use?](#which-style-should-i-use)
 - [Troubleshooting / FAQ](#troubleshooting--faq)
 
 ### CDN (Recommended)
@@ -241,7 +247,7 @@ function mouseReleased() {
 // Essential mobile setup
 lockGestures()  // Prevent browser gestures (call in setup())
 
-// Motion sensor activation  
+// Motion sensor activation (enableSensor* is the same; enableGyro* is the older name)
 enableGyroTap(message)    // Tap anywhere to enable sensors
 enableGyroButton(text)    // Button-based sensor activation
 
@@ -267,7 +273,8 @@ enablePermissionsButton(['torch', 'vibration'], text, statusText)
 enablePermissionsCanvas(['camera', 'mic'], message)
 enablePermissionsBanner(['sensors', 'nfc'], message, position)
 enablePermissionsOn('#start-button', ['camera', 'mic'])
-// Also available as enableHardwareTap/Button/Canvas/Banner/On
+// Also: enablePermissionsMinimal(list, message | options)
+// Also available as enableHardwareTap/Button/Canvas/Banner/Minimal/On
 
 // Vibration motor (Android only)
 enableVibrationTap(message)   // Tap anywhere to enable vibration
@@ -283,7 +290,7 @@ torchOff()                    // Turn flashlight off
 toggleTorch()                 // Toggle flashlight state
 setTorch(true)                // Set flashlight to a boolean state
 stopTorch()                   // Turn off and release the camera stream
-// Flashlight aliases also work: enableFlashlightTap(), flashlightOn(), etc.
+// Flashlight aliases also work: enableFlashlightTap(), flashlightOn(), toggleFlashlight(), stopFlashlight(), etc.
 
 // Camera (ML5 integration)
 createPhoneCamera(active, mirror, mode)  // Create camera instance
@@ -299,26 +306,44 @@ geoDistance(lat1, lon1, lat2, lon2, units) // Haversine distance: 'm' (default),
 geoInPolygon(polygon, point)             // Point-in-geofence test (ray casting)
 stopGeo()                                // Stop the GPS watch and release the subscription
 
+// Bluetooth LE and multi-user rooms: see their sections below
+// bleSetup(), enableBleTap(), bleConnect(), bleWrite(), bleRead(), bleDisconnect()
+// shareSetup(), enableShareTap(), shared / me / guests, shareEmit(), shareDisconnect()
+
+// Desktop QR helper (no-op on phones) and device detection (v1.14.0)
+showDesktopQr(options)   // Floating QR of this page on desktop; scan it to open the sketch on a phone
+setQrUrl(url)            // Point the QR at a different URL
+hideDesktopQr()          // Remove the QR panel
+window.isMobile          // true on phones and tablets (best effort)
+window.isDesktop         // true otherwise
+
 // --- Alternative Permission UI Styles (v1.7.0) ---
 
 // Canvas-first-touch — permissions fire on first canvas interaction
 enableGyroCanvas(message)    // Also: enableMicCanvas, enableSoundCanvas,
-                             //        enableSpeechCanvas, enableVibrationCanvas,
+                             //        enableSpeechCanvas, enableVibrationCanvas, enableTorchCanvas,
                              //        enableAllCanvas, enableNfcCanvas, enableGeoCanvas,
-                             //        enableCameraCanvas
+                             //        enableCameraCanvas, enableBleCanvas(opts), enableShareCanvas(opts)
 
 // Banner — slim notification bar at top or bottom of screen
 enableGyroBanner(message, position)   // position: 'top' or 'bottom'
                                       // Also: enableMicBanner, enableSoundBanner,
-                                      //        enableSpeechBanner, enableVibrationBanner,
+                                      //        enableSpeechBanner, enableVibrationBanner, enableTorchBanner,
                                       //        enableAllBanner, enableNfcBanner, enableGeoBanner,
-                                      //        enableCameraBanner
+                                      //        enableCameraBanner, enableBleBanner(opts), enableShareBanner(opts)
 
 // Custom element binding — attach to your own DOM element
 enableGyroOn(selector)    // e.g., enableGyroOn('#my-button')
                           // Also: enableMicOn, enableSoundOn, enableSpeechOn,
-                          //        enableVibrationOn, enableAllOn, enableNfcOn, enableGeoOn,
-                          //        enableCameraOn
+                          //        enableVibrationOn, enableTorchOn, enableAllOn, enableNfcOn, enableGeoOn,
+                          //        enableCameraOn, enableBleOn, enableShareOn
+
+// Minimal — bare semi-transparent overlay with a pulsing icon (v1.14.0)
+enableGyroMinimal(message)                 // or enableGyroMinimal({ color, opacity, icon, iconColor, iconSize, message })
+                          // Also: enableMicMinimal, enableSoundMinimal, enableSpeechMinimal,
+                          //        enableVibrationMinimal, enableTorchMinimal, enableNfcMinimal,
+                          //        enableGeoMinimal, enableAllMinimal, enableCameraMinimal,
+                          //        enableBleMinimal(opts), enableShareMinimal(opts)
 
 // Status variables (check these in your code)
 window.sensorsEnabled     // Boolean: true when motion sensors are active
@@ -382,6 +407,8 @@ this.enableGyroTap('Tap to start');
 - `window.shareStatus` - Share status (`idle`/`connecting`/`connected`/`error`/`unsupported`)
 - `window.shareIsHost` - Boolean indicating if this client is the room host
 - `shared` / `me` / `guests` - Live multi-user objects (see Share section)
+- `window.gesturesLocked` - Boolean, `true` after `lockGestures()` has installed its handlers
+- `window.isMobile` / `window.isDesktop` - Best-effort device detection (see [Desktop QR Helper and Device Detection](#desktop-qr-helper-and-device-detection))
 
 **Usage:**
 ```javascript
@@ -1567,23 +1594,54 @@ debug("Touch points:", touches);
 debug({rotation: rotationX, acceleration: accelerationX});
 ```
 
+### Desktop QR Helper and Device Detection
+
+**Purpose:** Get a sketch from your laptop onto your phone without typing a URL. `showDesktopQr()` shows a small floating QR code of the current page **on desktop only**; on a phone it does nothing, so you can leave it in the sketch.
+
+**Commands:**
+
+| Function / variable | Purpose |
+|---------------------|---------|
+| `showDesktopQr(options?)` | Show the QR panel on desktop (no-op on phones) |
+| `setQrUrl(url)` | Point the QR at a different URL |
+| `hideDesktopQr()` | Remove the QR panel |
+| `window.isMobile` | `true` on phones and tablets (user agent, touch, and coarse-pointer checks, including iPadOS reporting a Mac user agent) |
+| `window.isDesktop` | `!isMobile` |
+
+**Options** (all optional): `url` (defaults to the current page), `position` (`'top-right'` default, `'top-left'`, `'bottom-right'`, `'bottom-left'`), `size` (pixels, default `180`), `label` (caption), `closable` (default `true`), `rememberDismiss` (default `true`: stays hidden for the browser session after closing), `share` (after `shareSetup()`, the QR includes the room's join link; `false` opts out).
+
+The QR library (`qrcodejs`) is loaded from a CDN only when the panel is shown on desktop, so phones download nothing extra. If the CDN is blocked, the panel is removed with a console warning.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  enableMicTap('Tap to start');
+  showDesktopQr({ label: 'Scan to open on your phone' });
+}
+
+function draw() {
+  background(20);
+  if (window.isDesktop) {
+    text('Open this sketch on your phone', 20, 30);
+  }
+}
+```
+
 ---
 
 ## Permission UI Styles
 
-Beyond the default **Tap** and **Button** styles, p5-phone v1.7.0 provides three additional ways to present permission prompts. Each permission type (sensors, microphone, speech, all, camera) has all five variants.
+Beyond the default **Tap** and **Button** styles, p5-phone has four more ways to present permission prompts: **Canvas**, **Banner**, and **Custom Element** (v1.7.0), and **Minimal** (v1.14.0). Every family has all six: Sensor (or Gyro), Mic, Sound, Speech, Vibration, Torch, Nfc, Geo, Camera, All, Permissions, Ble, and Share. `enableBle*` and `enableShare*` take an options object; the others take a message.
 
 ### Canvas Style
 
 The canvas displays a centered message until the user taps. Great for "full-screen tap to start" experiences where you want the canvas to feel like a splash screen.
 
 **Commands:**
-- `enableSensorCanvas(message)`
-- `enableMicCanvas(message)`
-- `enableSpeechCanvas(message)`
-- `enableNfcCanvas(message)`
-- `enableAllCanvas(message)`  
-- `enableCameraCanvas(message)`
+- `enableSensorCanvas(message)`, `enableMicCanvas(message)`, `enableSoundCanvas(message)`, `enableSpeechCanvas(message)`
+- `enableVibrationCanvas(message)`, `enableTorchCanvas(message)`, `enableNfcCanvas(message)`, `enableGeoCanvas(message)`
+- `enableCameraCanvas(message)`, `enableAllCanvas(message)`, `enablePermissionsCanvas(list, message)`
+- `enableBleCanvas(options)`, `enableShareCanvas(options)`
 
 **Usage:**
 ```javascript
@@ -1607,12 +1665,10 @@ function draw() {
 A styled banner slides in from the top of the screen with an animated entrance. After the user taps, the banner slides away and permissions are activated. Ideal when you want to keep your canvas visible underneath the prompt.
 
 **Commands:**
-- `enableSensorBanner(message)`
-- `enableMicBanner(message)`
-- `enableSpeechBanner(message)`
-- `enableNfcBanner(message)`
-- `enableAllBanner(message)`
-- `enableCameraBanner(message)`
+- `enableSensorBanner(message)`, `enableMicBanner(message)`, `enableSoundBanner(message)`, `enableSpeechBanner(message)`
+- `enableVibrationBanner(message)`, `enableTorchBanner(message)`, `enableNfcBanner(message)`, `enableGeoBanner(message)`
+- `enableCameraBanner(message)`, `enableAllBanner(message)`, `enablePermissionsBanner(list, message)`
+- `enableBleBanner(options)`, `enableShareBanner(options)`
 
 **Usage:**
 ```javascript
@@ -1632,15 +1688,13 @@ function draw() {
 
 ### Custom Element Style
 
-Bind the permission activation to any existing HTML element on the page using a CSS selector. This gives you full control over the look and placement of the trigger. The element is hidden after successful activation.
+Bind the permission activation to any existing HTML element on the page using a CSS selector. This gives you full control over the look and placement of the trigger. The element stays on the page after activation, so hide it yourself once the matching flag is `true` (see below).
 
 **Commands:**
-- `enableSensorOn(selector)`
-- `enableMicOn(selector)`
-- `enableSpeechOn(selector)`
-- `enableNfcOn(selector)`
-- `enableAllOn(selector)`
-- `enableCameraOn(selector)`
+- `enableSensorOn(selector)`, `enableMicOn(selector)`, `enableSoundOn(selector)`, `enableSpeechOn(selector)`
+- `enableVibrationOn(selector)`, `enableTorchOn(selector)`, `enableNfcOn(selector)`, `enableGeoOn(selector)`
+- `enableCameraOn(selector)`, `enableAllOn(selector)`, `enablePermissionsOn(selector, list)`
+- `enableBleOn(selector)`, `enableShareOn(selector)`
 
 **Usage (HTML):**
 ```html
@@ -1661,6 +1715,36 @@ function draw() {
   background(220);
 
   if (window.sensorsEnabled) {
+    select('#start-btn').hide(); // the button stays on the page until you hide it
+    circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
+  }
+}
+```
+
+### Minimal Style
+
+A bare, semi-transparent full-screen overlay with an optional pulsing circle in the center, and no message box. Use it when the frosted **Tap** box is too much and the sketch should show through. Tapping anywhere activates.
+
+**Commands:**
+- `enableSensorMinimal(...)`, `enableMicMinimal(...)`, `enableSoundMinimal(...)`, `enableSpeechMinimal(...)`
+- `enableVibrationMinimal(...)`, `enableTorchMinimal(...)`, `enableNfcMinimal(...)`, `enableGeoMinimal(...)`
+- `enableCameraMinimal(...)`, `enableAllMinimal(...)`, `enablePermissionsMinimal(list, ...)`
+- `enableBleMinimal(options)`, `enableShareMinimal(options)`
+
+**Call forms:** `enableMicMinimal()`, `enableMicMinimal('Tap')`, `enableMicMinimal({ color, opacity, icon, iconColor, iconSize, message })`, or `enableMicMinimal('Tap', { opacity: 0.6 })`.
+
+**Options:** `color` (overlay color, default `'#000000'`), `opacity` (0 to 1, default `0.5`), `icon` (`false` hides the pulsing circle), `iconColor` (default `'#ffffff'`), `iconSize` (pixels, default `14`), `message` (optional small text).
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  enableSensorMinimal({ color: '#1a1030', opacity: 0.4, iconColor: '#ffcc00' });
+}
+
+function draw() {
+  background(220);
+  if (window.sensorsEnabled) {
     circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
   }
 }
@@ -1674,6 +1758,7 @@ function draw() {
 | **Button** | Clear UI | Auto-generated styled button |
 | **Canvas** | Splash screens | Message drawn on the p5 canvas |
 | **Banner** | Polished apps | Animated slide-in banner |
+| **Minimal** | Letting the sketch show through | Semi-transparent overlay with a pulsing icon |
 | **Custom** | Custom designs | Bind to your own HTML element |
 
 ---

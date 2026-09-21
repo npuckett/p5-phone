@@ -37,7 +37,7 @@ function draw() {
 
 ## Permission Functions
 
-Each permission type has 5 UI styles — pick the one that fits your design:
+Each permission type has 6 UI styles — pick the one that fits your design:
 
 | Style | Sensor | Microphone | Speech | Both | Camera | Torch | NFC |
 |-------|--------|------------|--------|------|--------|-------|-----|
@@ -45,9 +45,12 @@ Each permission type has 5 UI styles — pick the one that fits your design:
 | **Button** | `enableSensorButton(txt)` | `enableMicButton(txt)` | `enableSpeechButton(txt)` | `enableAllButton(txt)` | `enableCameraButton(txt)` | `enableTorchButton(txt)` | `enableNfcButton(txt)` |
 | **Canvas** | `enableSensorCanvas(msg)` | `enableMicCanvas(msg)` | `enableSpeechCanvas(msg)` | `enableAllCanvas(msg)` | `enableCameraCanvas(msg)` | `enableTorchCanvas(msg)` | `enableNfcCanvas(msg)` |
 | **Banner** | `enableSensorBanner(msg)` | `enableMicBanner(msg)` | `enableSpeechBanner(msg)` | `enableAllBanner(msg)` | `enableCameraBanner(msg)` | `enableTorchBanner(msg)` | `enableNfcBanner(msg)` |
+| **Minimal** (v1.14.0) | `enableSensorMinimal(msg?)` | `enableMicMinimal(msg?)` | `enableSpeechMinimal(msg?)` | `enableAllMinimal(msg?)` | `enableCameraMinimal(msg?)` | `enableTorchMinimal(msg?)` | `enableNfcMinimal(msg?)` |
 | **Custom** | `enableSensorOn(sel)` | `enableMicOn(sel)` | `enableSpeechOn(sel)` | `enableAllOn(sel)` | `enableCameraOn(sel)` | `enableTorchOn(sel)` | `enableNfcOn(sel)` |
 
-For arbitrary combinations, use `enablePermissionsTap(['sensors', 'torch'])`, `enablePermissionsButton([...])`, `enablePermissionsCanvas([...])`, `enablePermissionsBanner([...])`, or `enablePermissionsOn(selector, [...])`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, and `camera`. `enableHardware*` aliases also work.
+Sound, vibration, GPS (`Geo`), Bluetooth (`Ble`, options object) and Share (`Share`, label or options object) have the same six styles, e.g. `enableGeoTap(msg)`, `enableBleButton({ label })`. Minimal also takes options: `enableMicMinimal({ color, opacity, icon, iconColor, iconSize, message })`. A custom element (`enable…On(sel)`) stays on the page after activation; hide it yourself.
+
+For arbitrary combinations, use `enablePermissionsTap(['sensors', 'torch'])`, `enablePermissionsButton([...])`, `enablePermissionsCanvas([...])`, `enablePermissionsBanner([...])`, `enablePermissionsMinimal([...])`, or `enablePermissionsOn(selector, [...])`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo`, and `camera`. `enableHardware*` aliases also work.
 
 Legacy aliases: `enableGyroTap`, `enableGyroButton` also work (same as `enableSensor*`).
 
@@ -55,8 +58,14 @@ Legacy aliases: `enableGyroTap`, `enableGyroButton` also work (same as `enableSe
 
 Check these to know if permissions have been granted:
 - `window.sensorsEnabled` — motion sensors active
-- `window.micEnabled` — microphone active
+- `window.micOpen` — microphone stream really live (gate mic reads on this)
+- `window.micEnabled` — microphone request ran (also `true` when the mic was denied)
+- `window.soundEnabled` — sound output unlocked
 - `window.speechEnabled` — speech recognition active
+- `window.vibrationEnabled` — vibration available (Android only)
+- `window.geoEnabled` — GPS watch active; latest fix in `window.lastGeoPosition`
+- `window.bleConnected` — Bluetooth device connected; values in `window.bleValues`
+- `window.shareConnected` — joined a Share room; live objects `shared`, `me`, `guests`
 - `window.cameraEnabled` — camera startup succeeded
 - `window.torchEnabled` — torch control stream active (Android Chrome)
 - `window.torchActive` — flashlight currently on
@@ -64,7 +73,9 @@ Check these to know if permissions have been granted:
 - `window.lastNfcSerialNumber` — most recently read NFC tag ID
 - `window.lastNfcAlias` — alias for the most recently read NFC tag, if set
 
-Prefer wrapping hardware-dependent code in positive checks, such as `if (window.sensorsEnabled) { ... }` or `if (window.micEnabled) { ... }`.
+Prefer wrapping hardware-dependent code in positive checks, such as `if (window.sensorsEnabled) { ... }` or `if (window.micOpen) { ... }`.
+
+Dev helper: `showDesktopQr()` shows a QR of the page on desktop only (no-op on phones) so the sketch can be scanned onto a phone. `window.isMobile` / `window.isDesktop` give best-effort device detection.
 
 ## Callback
 

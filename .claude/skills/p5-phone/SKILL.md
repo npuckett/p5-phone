@@ -109,31 +109,32 @@ Two specific traps worth calling out:
 
 ## Permissions model
 
-Every hardware family exposes the same **five activation styles**. Pick one:
+Every hardware family exposes the same **six activation styles**. Pick one:
 
 - **Tap** — `enable<Feature>Tap(message)` — full-screen tap overlay.
 - **Button** — `enable<Feature>Button(buttonText, statusText?)` — auto-generated button.
 - **Canvas** — `enable<Feature>Canvas(message)` — prompt drawn on the p5 canvas.
 - **Banner** — `enable<Feature>Banner(message, position?)` — animated slide-in banner (`position` = `'top'`/`'bottom'`).
-- **On (custom element)** — `enable<Feature>On(selector)` — bind activation to any existing HTML element by CSS selector.
+- **On (custom element)** — `enable<Feature>On(selector)` — bind activation to any existing HTML element by CSS selector. The element stays on the page; hide it in `draw()` once the flag is true (`select('#start').hide()`).
+- **Minimal** — `enable<Feature>Minimal(message?)` or `enable<Feature>Minimal({ color, opacity, icon, iconColor, iconSize, message })` — bare semi-transparent overlay with a pulsing icon, no message box (v1.14.0).
 
 Full matrix:
 
-| Feature | Tap | Button | Canvas | Banner | On (selector) |
-| --- | --- | --- | --- | --- | --- |
-| Motion sensors | `enableSensorTap(msg)` | `enableSensorButton(text)` | `enableSensorCanvas(msg)` | `enableSensorBanner(msg)` | `enableSensorOn(sel)` |
-| Microphone | `enableMicTap(msg)` | `enableMicButton(text)` | `enableMicCanvas(msg)` | `enableMicBanner(msg)` | `enableMicOn(sel)` |
-| Sound output | `enableSoundTap(msg)` | `enableSoundButton(text)` | `enableSoundCanvas(msg)` | `enableSoundBanner(msg)` | `enableSoundOn(sel)` |
-| Speech | `enableSpeechTap(msg)` | `enableSpeechButton(text)` | `enableSpeechCanvas(msg)` | `enableSpeechBanner(msg)` | `enableSpeechOn(sel)` |
-| Vibration | `enableVibrationTap(msg)` | `enableVibrationButton(text)` | `enableVibrationCanvas(msg)` | `enableVibrationBanner(msg)` | `enableVibrationOn(sel)` |
-| Torch / flashlight | `enableTorchTap(msg)` | `enableTorchButton(text)` | `enableTorchCanvas(msg)` | `enableTorchBanner(msg)` | `enableTorchOn(sel)` |
-| NFC | `enableNfcTap(msg)` | `enableNfcButton(text)` | `enableNfcCanvas(msg)` | `enableNfcBanner(msg)` | `enableNfcOn(sel)` |
-| GPS / geolocation | `enableGeoTap(msg)` | `enableGeoButton(text)` | `enableGeoCanvas(msg)` | `enableGeoBanner(msg)` | `enableGeoOn(sel)` |
-| Bluetooth (BLE) | `enableBleTap(opts?)` | `enableBleButton(opts?)` | `enableBleCanvas(opts?)` | `enableBleBanner(opts?)` | `enableBleOn(sel)` |
-| Share (multi-user) | `enableShareTap(opts?)` | `enableShareButton(opts?)` | `enableShareCanvas(opts?)` | `enableShareBanner(opts?)` | `enableShareOn(sel)` |
-| Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraOn(sel)` |
-| Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllOn(sel)` |
-| Any combination | `enablePermissionsTap(list, msg)` | `enablePermissionsButton(list, text)` | `enablePermissionsCanvas(list, msg)` | `enablePermissionsBanner(list, msg)` | `enablePermissionsOn(sel, list)` |
+| Feature | Tap | Button | Canvas | Banner | Minimal | On (selector) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Motion sensors | `enableSensorTap(msg)` | `enableSensorButton(text)` | `enableSensorCanvas(msg)` | `enableSensorBanner(msg)` | `enableSensorMinimal(msg/opts?)` | `enableSensorOn(sel)` |
+| Microphone | `enableMicTap(msg)` | `enableMicButton(text)` | `enableMicCanvas(msg)` | `enableMicBanner(msg)` | `enableMicMinimal(msg/opts?)` | `enableMicOn(sel)` |
+| Sound output | `enableSoundTap(msg)` | `enableSoundButton(text)` | `enableSoundCanvas(msg)` | `enableSoundBanner(msg)` | `enableSoundMinimal(msg/opts?)` | `enableSoundOn(sel)` |
+| Speech | `enableSpeechTap(msg)` | `enableSpeechButton(text)` | `enableSpeechCanvas(msg)` | `enableSpeechBanner(msg)` | `enableSpeechMinimal(msg/opts?)` | `enableSpeechOn(sel)` |
+| Vibration | `enableVibrationTap(msg)` | `enableVibrationButton(text)` | `enableVibrationCanvas(msg)` | `enableVibrationBanner(msg)` | `enableVibrationMinimal(msg/opts?)` | `enableVibrationOn(sel)` |
+| Torch / flashlight | `enableTorchTap(msg)` | `enableTorchButton(text)` | `enableTorchCanvas(msg)` | `enableTorchBanner(msg)` | `enableTorchMinimal(msg/opts?)` | `enableTorchOn(sel)` |
+| NFC | `enableNfcTap(msg)` | `enableNfcButton(text)` | `enableNfcCanvas(msg)` | `enableNfcBanner(msg)` | `enableNfcMinimal(msg/opts?)` | `enableNfcOn(sel)` |
+| GPS / geolocation | `enableGeoTap(msg)` | `enableGeoButton(text)` | `enableGeoCanvas(msg)` | `enableGeoBanner(msg)` | `enableGeoMinimal(msg/opts?)` | `enableGeoOn(sel)` |
+| Bluetooth (BLE) | `enableBleTap(opts?)` | `enableBleButton(opts?)` | `enableBleCanvas(opts?)` | `enableBleBanner(opts?)` | `enableBleMinimal(opts?)` | `enableBleOn(sel)` |
+| Share (multi-user) | `enableShareTap(opts?)` | `enableShareButton(opts?)` | `enableShareCanvas(opts?)` | `enableShareBanner(opts?)` | `enableShareMinimal(opts?)` | `enableShareOn(sel)` |
+| Camera | `enableCameraTap(msg)` | `enableCameraButton(text)` | `enableCameraCanvas(msg)` | `enableCameraBanner(msg)` | `enableCameraMinimal(msg/opts?)` | `enableCameraOn(sel)` |
+| Sensors + mic | `enableAllTap(msg)` | `enableAllButton(text)` | `enableAllCanvas(msg)` | `enableAllBanner(msg)` | `enableAllMinimal(msg/opts?)` | `enableAllOn(sel)` |
+| Any combination | `enablePermissionsTap(list, msg)` | `enablePermissionsButton(list, text)` | `enablePermissionsCanvas(list, msg)` | `enablePermissionsBanner(list, msg)` | `enablePermissionsMinimal(list, msg/opts)` | `enablePermissionsOn(sel, list)` |
 
 Notes:
 
@@ -141,7 +142,7 @@ Notes:
 - `enableShare*` take a label string or an **options object** (same shape as `enableBle*`). Call `shareSetup({ host, room })` first; deploy [companion/P5PhoneShare](companion/P5PhoneShare/).
 - `enableGyro*` is a **legacy alias** for `enableSensor*`. Prefer `enableSensor*` for new examples; use `enableGyro*` only to match older published sketches.
 - `enableAll*` is shorthand for sensors + mic. For any other mix, use `enablePermissions*`.
-- `enableHardware*` is an exact alias of `enablePermissions*`.
+- `enableHardware*` is an exact alias of `enablePermissions*` (all six styles). `enableFlashlight*` is an alias of `enableTorch*`.
 
 ### Combining features
 
@@ -180,6 +181,7 @@ Read these `window.*` flags before using hardware data:
 - **Share:** `shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`, `shared`, `me`, `guests`
 - **Camera:** `cameraEnabled`
 - **Gestures:** `gesturesLocked`
+- **Device:** `isMobile`, `isDesktop` (best-effort detection, set when the library loads)
 
 Callbacks your sketch can define (p5-phone calls them if present):
 
@@ -448,6 +450,8 @@ function setup() {
 }
 ```
 
+Functions: `shareSetup(config)`, `enableShare*` (or `shareConnect()` from a gesture), `shareDisconnect()`, `shareSet(path, v)` / `shareSetMe(path, v)`, `shareEmit(name, data?)` (one-shot room event, received in `shareEvent(name, data)`, not stored, not echoed to the sender), `getShareJoinUrl()`, `isShareSupported()`.
+
 Join URL shape: `?shareHost=https://….workers.dev&room=my-game&app=final-project`  
 Helpers: `getShareJoinUrl()`, `showDesktopQr({ share: false })` to opt out.  
 Full path: `companion/P5PhoneShare/README.md`.
@@ -526,6 +530,20 @@ For on-device troubleshooting, call `showDebug()` once in `setup()`, then log:
 - `hideDebug()`, `toggleDebug()`
 
 Most useful for camera, NFC, BLE, and permission troubleshooting. Use sparingly in finished examples.
+
+## Desktop QR and device detection
+
+`showDesktopQr(options?)` shows a floating QR code of the current page on **desktop only** and does nothing on phones, so it can stay in a sketch: open the sketch on a laptop, scan, test on the phone. `setQrUrl(url)` points it elsewhere; `hideDesktopQr()` removes it. Options: `url`, `position` (`'top-right'` default / `'top-left'` / `'bottom-right'` / `'bottom-left'`), `size` (px, default 180), `label`, `closable`, `rememberDismiss`, `share` (after `shareSetup()` the QR carries the room join link; `false` opts out). The QR library loads from a CDN only when shown on desktop.
+
+`window.isMobile` / `window.isDesktop` are booleans set when the library loads (user agent + touch + coarse-pointer checks, including iPadOS with a Mac user agent). Use them for desktop-only hints; gate hardware reads on the `*Enabled` flags, not on `isMobile`.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  enableMicTap('Tap to start');
+  showDesktopQr({ label: 'Scan to open on your phone' });
+}
+```
 
 ## Platform support matrix
 

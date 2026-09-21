@@ -28,7 +28,10 @@ window.P5PHONE_API_SECTIONS = [
     items: [
       { name: 'lockGestures', signature: 'lockGestures(options?)', summary: 'Disables browser gestures that interfere with mobile sketches. Default fullscreen mode blocks scroll, zoom, pull-to-refresh, context menu, and back-swipe page-wide. Use { mode: "embedded", element: canvas } for canvases inside scrollable multi-page sites.', tags: ['setup', 'mobile'] },
       { name: 'unlockGestures', signature: 'unlockGestures()', summary: 'Removes gesture blocking listeners and restores saved handlers. Called automatically on p.remove().', tags: ['setup', 'mobile'] },
-      { name: 'userSetupComplete', signature: 'function userSetupComplete() { ... }', summary: 'Optional sketch callback. p5-phone calls it after a permission request completes successfully.', tags: ['callback'] }
+      { name: 'userSetupComplete', signature: 'function userSetupComplete() { ... }', summary: 'Optional sketch callback. p5-phone calls it after a permission request completes successfully.', tags: ['callback'] },
+      { name: 'showDesktopQr', signature: "showDesktopQr({ label: 'Scan to open on your phone' })", summary: 'Floating QR code of the current page on desktop only; does nothing on phones, so it can stay in the sketch. setQrUrl(url) changes the link, hideDesktopQr() removes it. Options: url, position, size, label, closable, rememberDismiss, share.', tags: ['setup', 'mobile'] },
+      { name: 'isMobile / isDesktop', signature: 'window.isMobile, window.isDesktop', summary: 'Best-effort device detection set when the library loads (user agent, touch, and coarse-pointer checks, including iPadOS). Use for desktop-only hints; gate hardware reads on the *Enabled flags.', tags: ['setup', 'status'] },
+      { name: 'alias families', signature: 'enableSensor* = enableGyro*, enableHardware* = enablePermissions*, enableFlashlight* = enableTorch*', summary: 'Alternate names for the same helpers. Each alias family exists in all six styles: Tap, Button, Canvas, Banner, Minimal, and On.', tags: ['setup', 'alias'] }
     ]
   },
   {
@@ -100,7 +103,10 @@ window.P5PHONE_API_SECTIONS = [
       { name: 'bleWrite', signature: "bleWrite('brightness', value, { ack: false })", summary: 'Writes a typed value to a declared characteristic. Default uses writeWithResponse; ack:false streams without response.', tags: ['ble'] },
       { name: 'bleValues', signature: 'bleValues.temp', summary: 'Object of latest decoded notification values. Read synchronously in draw().', tags: ['ble', 'status'] },
       { name: 'bleReceive', signature: 'function bleReceive(name, value) { ... }', summary: 'Optional callback fired on each notification, like nfcRead for NFC.', tags: ['callback', 'ble'] },
-      { name: 'isBleSupported', signature: 'isBleSupported()', summary: 'Returns whether Web Bluetooth is available. Sets bleSupported and bleError when unsupported.', tags: ['ble', 'status'] }
+      { name: 'isBleSupported', signature: 'isBleSupported()', summary: 'Returns whether Web Bluetooth is available. Sets bleSupported and bleError when unsupported.', tags: ['ble', 'status'] },
+      { name: 'bleConnect', signature: 'await bleConnect()', summary: 'Opens the browser device chooser and connects. Must run from a user gesture; the enableBle* helpers call it for you.', tags: ['ble'] },
+      { name: 'bleRead', signature: "await bleRead('temp')", summary: 'Reads a readable characteristic once and returns the decoded value (also updates bleValues). For values without notify.', tags: ['ble'] },
+      { name: 'bleDisconnect', signature: 'bleDisconnect()', summary: 'Disconnects and stops auto-reconnect.', tags: ['ble'] }
     ]
   },
   {
@@ -113,7 +119,10 @@ window.P5PHONE_API_SECTIONS = [
       { name: 'enableShareTap', signature: "enableShareTap({ label: 'Tap to join room' })", summary: 'Shows a join overlay. Other styles: enableShareButton, Canvas, Banner, Minimal, On. Pair with showDesktopQr() on desktop.', tags: ['share', 'tap'] },
       { name: 'shared / me / guests', signature: 'shared.score = 1; me.x = 0.5; guests.length', summary: 'Proxied live objects. Mutate shared and me (arrays too); read guests in draw(). Unchanged values are not re-sent, so me.x = mouseX in draw() is fine.', tags: ['share', 'status'] },
       { name: 'shareEmit', signature: "shareEmit('pulse', data)", summary: 'Room one-shot events. Handle with function shareEvent(name, data).', tags: ['share'] },
-      { name: 'shareReady', signature: 'function shareReady() { ... }', summary: 'Optional callback after welcome state is applied.', tags: ['callback', 'share'] }
+      { name: 'shareReady', signature: 'function shareReady() { ... }', summary: 'Optional callback after welcome state is applied.', tags: ['callback', 'share'] },
+      { name: 'shareSet / shareSetMe', signature: "shareSet('pos.x', 0.5); shareSetMe('name', 'Ana')", summary: 'Explicit dotted-path writes to shared or me; same effect as assigning through the proxies.', tags: ['share'] },
+      { name: 'shareConnect / shareDisconnect', signature: 'shareConnect(); shareDisconnect()', summary: 'Low-level join and leave. shareConnect must run from a user gesture; the enableShare* helpers call it for you.', tags: ['share'] },
+      { name: 'isShareSupported', signature: 'isShareSupported()', summary: 'Returns whether WebSocket is available; sets shareSupported and shareStatus.', tags: ['share', 'status'] }
     ]
   },
   {
@@ -124,6 +133,7 @@ window.P5PHONE_API_SECTIONS = [
       { name: 'enableNfcTap', signature: 'enableNfcTap(message)', summary: 'Starts NFC scanning from a user tap. Requires Android Chrome and HTTPS.', tags: ['nfc', 'tap'] },
       { name: 'nfcRead', signature: 'function nfcRead(message, serialNumber) { ... }', summary: 'Optional sketch callback called whenever a tag is read. message.records contains decoded NDEF records and message.alias when available.', tags: ['callback'] },
       { name: 'setNfcTagAlias', signature: 'setNfcTagAlias(serialNumber, alias)', summary: 'Stores a human-readable alias for a tag ID. Pass an empty alias to remove it.', tags: ['alias'] },
+      { name: 'getNfcTagAlias', signature: 'getNfcTagAlias(serialNumber?)', summary: 'Returns the alias stored for a tag serial number (defaults to the most recently read tag), or null.', tags: ['nfc'] },
       { name: 'isNfcTag', signature: 'isNfcTag(aliasOrSerialNumber, serialNumber)', summary: 'Checks whether the current or supplied serial number matches an alias or raw tag ID. Useful in if statements.', tags: ['alias', 'conditionals'] },
       { name: 'stopNfc', signature: 'stopNfc()', summary: 'Stops active NFC scanning through the internal AbortController.', tags: ['nfc'] }
     ]
@@ -165,7 +175,9 @@ window.P5PHONE_API_SECTIONS = [
       { name: 'toggleTorch', signature: 'await toggleTorch()', summary: 'Switches between on and off using window.torchActive as the current state.', tags: ['torch'] },
       { name: 'setTorch', signature: 'await setTorch(true)', summary: 'Sets the flashlight to a specific boolean state. Aliased as setFlashlight().', tags: ['torch'] },
       { name: 'stopTorch', signature: 'await stopTorch()', summary: 'Turns the flashlight off and releases the internal camera stream.', tags: ['torch'] },
-      { name: 'torch status', signature: 'window.torchEnabled, torchSupported, torchActive, torchError', summary: 'Status values for sketches and diagnostics. Support is device/browser dependent.', tags: ['status'] }
+      { name: 'isTorchSupported', signature: 'isTorchSupported()', summary: 'Returns whether the active camera track reports torch support. window.torchCapability holds the raw capability value.', tags: ['torch', 'status'] },
+      { name: 'flashlight aliases', signature: 'enableFlashlightTap(), flashlightOn(), flashlightOff(), toggleFlashlight(), setFlashlight(), stopFlashlight()', summary: 'Every torch helper also exists under a flashlight name.', tags: ['torch', 'alias'] },
+      { name: 'torch status', signature: 'window.torchEnabled, torchSupported, torchActive, torchError, torchCapability', summary: 'Status values for sketches and diagnostics. Support is device/browser dependent.', tags: ['status'] }
     ]
   },
   {
@@ -176,7 +188,8 @@ window.P5PHONE_API_SECTIONS = [
       { name: 'showDebug', signature: 'showDebug()', summary: 'Displays the mobile debug panel and captures warnings and errors.', tags: ['debug'] },
       { name: 'debug', signature: 'debug(...args)', summary: 'Writes a normal message to the on-screen debug panel.', tags: ['debug'] },
       { name: 'debugWarn', signature: 'debugWarn(...args)', summary: 'Writes a warning message to the debug panel.', tags: ['debug'] },
-      { name: 'debugError', signature: 'debugError(...args)', summary: 'Writes an error message to the debug panel.', tags: ['debug'] }
+      { name: 'debugError', signature: 'debugError(...args)', summary: 'Writes an error message to the debug panel.', tags: ['debug'] },
+      { name: 'hideDebug / toggleDebug', signature: 'hideDebug(); toggleDebug()', summary: 'Hide the debug panel, or switch it on and off.', tags: ['debug'] }
     ]
   },
   {
