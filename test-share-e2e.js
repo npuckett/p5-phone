@@ -23,6 +23,8 @@ const HOST = `http://127.0.0.1:${PORT}`;
 const P5_1 = ['/node_modules/p5/lib/p5.js'];
 const P5_2 = ['https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js'];
 const SERVER_DIR = path.join(__dirname, 'companion', 'P5PhoneShare');
+// SHARE_E2E_LIB=dist/p5-phone.min.js tests the build that npm publishes instead of src/.
+const LIB = path.join(__dirname, process.env.SHARE_E2E_LIB || 'src/p5-phone.js');
 const RUN = Date.now().toString(36);
 
 const STYLES = {
@@ -100,12 +102,12 @@ async function route(p, pageHtml) {
   // p5-phone from the CDN or the local dist build is always served from src/, so the
   // examples are tested against the code in this checkout.
   await p.route(/cdn\.jsdelivr\.net\/npm\/p5-phone@[^/]+\/dist\/p5-phone(\.min)?\.js/, (r) =>
-    r.fulfill({ contentType: 'application/javascript', body: fs.readFileSync(path.join(__dirname, 'src/p5-phone.js')) }));
+    r.fulfill({ contentType: 'application/javascript', body: fs.readFileSync(LIB) }));
   await p.route(ORIGIN + '/**', (r) => {
     let pathname = decodeURIComponent(new URL(r.request().url()).pathname);
     if (pathname === '/' && pageHtml) return r.fulfill({ contentType: 'text/html', body: pageHtml });
-    if (/\/dist\/p5-phone(\.min)?\.js$/.test(pathname)) pathname = '/src/p5-phone.js';
-    const file = path.join(__dirname, pathname);
+    const isLib = pathname === '/src/p5-phone.js' || /\/dist\/p5-phone(\.min)?\.js$/.test(pathname);
+    const file = isLib ? LIB : path.join(__dirname, pathname);
     if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) return r.fulfill({ status: 404, body: '' });
     const type = file.endsWith('.html') ? 'text/html' : file.endsWith('.css') ? 'text/css' : 'application/javascript';
     return r.fulfill({ contentType: type, body: fs.readFileSync(file) });
