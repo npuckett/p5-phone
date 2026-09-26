@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.15.0] - 2026-09-26
+
+### Added
+- **The sound tap starts Tone.js and your own audio contexts, not only p5.sound.** Every activation that asks for sound or the microphone now also calls `Tone.start()` when Tone.js is loaded, and resumes any `AudioContext` the sketch creates after p5-phone loads (for example `let audio = new AudioContext()` for smplr). p5-phone sees those contexts because it wraps the `AudioContext` constructor when it loads; `new AudioContext()` still returns a plain native context. Sketches that load Tone.js without p5.sound used to get no sound from `enableSoundTap()`.
+- **Audio wakes on the next touch.** After the first unlock, any later touch, click or key resumes audio the phone put to sleep, for example after leaving the page or locking the screen. A sketch no longer needs its own `userStartAudio()` in `mousePressed()` for this. Audio the sketch paused on purpose (`userStopAudio()`, `Tone.getContext().rawContext.suspend()`, `ctx.suspend()`) stays paused until the sketch resumes it.
+- Added `npm run test:audio` (`test-audio-unlock.js`), a Playwright check of the unlock and the wake with p5.sound 0.3.0, legacy p5.sound, Tone.js (loaded before and after p5-phone) and a sketch's own context. `test-audio-unlock.html` is the same check for real phones, with a switch to compare against 1.14.0.
+
+### Fixed
+- **Combined taps started sound after the motion prompt.** `enablePermissionsTap(['motion', 'sound'])`, `enableAllTap()` and the other combined and `enableAll…` styles waited for iOS's motion permission before starting audio. Once the person answers the prompt the tap is over, so iOS could leave the audio off until another tap. Audio now starts first, while the tap is still being handled. The single-permission helpers (`enableSoundTap()`, `enableMicTap()`, …) already did this.
+
 ## [1.14.0] - 2026-09-21
 
 ### Added

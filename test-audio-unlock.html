@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Audio unlock check</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #0f121c; font-family: system-ui, sans-serif; }
+    canvas { display: block; }
+    #nav { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 12px 16px; background: rgba(15, 18, 28, 0.92);
+           color: #aab; font-size: 14px; line-height: 1.9; }
+    #nav a { color: #fff; margin-right: 10px; }
+    #nav a.on { color: #ffcc33; font-weight: 600; text-decoration: none; }
+    #nav button { font-size: 15px; padding: 6px 12px; margin-right: 8px; }
+  </style>
+  <!--
+    Phone check for the 1.15.0 audio unlock (iOS Safari, Android Chrome).
+    Serve over HTTPS or localhost:  npm run serve:docs  ->  /test-audio-unlock.html
+    Query params:
+      engine = p5sound | tone | own     p5.sound 0.3.0, Tone.js on its own, or new AudioContext() (default p5sound)
+      call   = motion | sound | all | mic   enablePermissionsTap(['motion','sound']), enableSoundTap,
+                                             enableAllTap, enableMicTap (default motion)
+      lib    = src | 1.14.0             this repo's src/p5-phone.js, or the published 1.14.0 to compare (default src)
+
+    PASS after ONE tap on the overlay:
+      - a short beep plays when the tap finishes (and after the motion prompt, if one appears)
+      - "context now" reads running, and "resume() inside it" names the tap's event (touchend)
+    Wake: switch to another app, come back, tap the screen once. The context reads running again.
+    Held: tap "Stop audio", then an empty part of the bar at the bottom. The context must stay
+    suspended. "Start audio" restarts it. (A tap on the canvas plays a beep, and iOS restarts a
+    stopped context by itself when a sound starts inside a tap, so use the bar for this check.)
+    The motion case only shows the old bug when the motion prompt actually appears
+    (the first visit, or after clearing the site's data).
+  -->
+  <script>
+    // Before any audio library loads: log every resume() with the tap event being handled, if any.
+    // Only these events let a phone start audio; Tone.js's own 'message' events do not count.
+    window.resumeLog = [];
+    (function () {
+      if (typeof AudioContext !== 'function') return;
+      var tapEvents = ['touchend', 'click', 'pointerup', 'mouseup', 'mousedown', 'pointerdown', 'keydown'];
+      var nativeResume = AudioContext.prototype.resume;
+      AudioContext.prototype.resume = function () {
+        var e = window.event;
+        window.resumeLog.push(e && tapEvents.indexOf(e.type) !== -1 ? e.type : 'outside a tap');
+        return nativeResume.apply(this, arguments);
+      };
+    })();
+    (function () {
+      var q = new URLSearchParams(location.search);
+      var engine = q.get('engine') || 'p5sound';
+      var urls = ['https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js'];
+      if (engine === 'p5sound') urls.push('https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js');
+      if (engine === 'tone') urls.push('https://cdn.jsdelivr.net/npm/tone@15.1.22/build/Tone.js');
+      urls.push(q.get('lib') === '1.14.0' ? 'https://cdn.jsdelivr.net/npm/p5-phone@1.14.0/dist/p5-phone.js' : 'src/p5-phone.js');
+      urls.forEach(function (u) { document.write('<script src="' + u + '"><\/script>'); });
+    })();
+  </script>
+</head>
+<body>
+<div id="nav"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const engine = q.get('engine') || 'p5sound';
+const call = q.get('call') || 'motion';
+const lib = q.get('lib') === '1.14.0' ? '1.14.0' : 'src';
+
+let audio;      // engine=own: the sketch's own context, made after p5-phone loads (like smplr)
+let synth;      // engine=tone
+let mic;
+let beeps = 0;
+let stateAtLoad = '';
+let unlockLog = null; // resumeLog as it was when the unlock finished
+
+if (engine === 'own') {
+  audio = new AudioContext();
+}
+if (engine !== 'p5sound') {
+  mic = { start: function () {} }; // no p5.sound: stands in for the mic so enableMicTap runs
+}
+
+function context() {
+  if (engine === 'p5sound') return getAudioContext();
+  if (engine === 'tone') return Tone.getContext();
+  return audio;
+}
+
+function beep() {
+  beeps++;
+  if (engine === 'tone') {
+    synth.triggerAttackRelease('A5', 0.15);
+    return;
+  }
+  const ctx = context();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.frequency.value = 880;
+  gain.gain.setValueAtTime(0.3, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.2);
+}
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  if (location.protocol === 'https:') showDesktopQr({ label: 'Scan to open on your phone' });
+
+  if (engine === 'p5sound') mic = new p5.AudioIn();
+  if (engine === 'tone') synth = new Tone.Synth().toDestination();
+  stateAtLoad = context().state;
+
+  const message = 'Tap once';
+  if (call === 'sound') enableSoundTap(message);
+  else if (call === 'all') enableAllTap(message);
+  else if (call === 'mic') enableMicTap(message);
+  else enablePermissionsTap(['motion', 'sound'], message);
+
+  buildNav();
+}
+
+// Runs after the tap and every prompt. The beep waits a moment so it plays outside the tap,
+// like a sketch that starts its sound in draw(). (iOS starts a suspended context by itself when a
+// sound starts inside a tap, which would hide a tap that failed to start it.)
+// So the beep is only heard if the tap started the audio.
+function userSetupComplete() {
+  unlockLog = window.resumeLog.slice();
+  setTimeout(beep, 300);
+}
+
+function draw() {
+  background(15, 18, 28);
+  const log = unlockLog || [];
+  const inside = log.filter((e) => e !== 'outside a tap');
+  const lines = [
+    'p5-phone: ' + lib + '   engine: ' + engine + '   call: ' + call,
+    '',
+    'context before the tap: ' + stateAtLoad + (stateAtLoad === 'running' ? ' (this browser needs no tap)' : ''),
+    'context now: ' + context().state,
+    'unlock tap, resume() inside it: ' + (unlockLog ? (inside.length ? [...new Set(inside)].join(', ') : 'none') : '-'),
+    'unlock tap, resume() after it ended: ' + (unlockLog ? log.length - inside.length : '-'),
+    'beeps asked for: ' + beeps,
+    '',
+    'Tap the screen for another beep.',
+  ];
+  fill(235);
+  noStroke();
+  textSize(17);
+  textAlign(LEFT, TOP);
+  text(lines.join('\n'), 16, 24, width - 32);
+}
+
+function mousePressed(event) {
+  if (event && event.target && event.target.closest && event.target.closest('#nav')) return;
+  if (window.soundEnabled || window.micEnabled) beep();
+}
+
+function buildNav() {
+  const link = (key, value, label) => {
+    const next = new URLSearchParams(location.search);
+    next.set(key, value);
+    const on = (q.get(key) || { engine: 'p5sound', call: 'motion', lib: 'src' }[key]) === value;
+    return '<a class="' + (on ? 'on' : '') + '" href="?' + next.toString() + '">' + label + '</a>';
+  };
+  document.getElementById('nav').innerHTML =
+    '<div>engine: ' + link('engine', 'p5sound', 'p5.sound') + link('engine', 'tone', 'Tone.js') + link('engine', 'own', 'own context') + '</div>' +
+    '<div>call: ' + link('call', 'motion', 'motion + sound') + link('call', 'sound', 'sound') + link('call', 'all', 'all') + link('call', 'mic', 'mic') + '</div>' +
+    '<div>lib: ' + link('lib', 'src', '1.15.0 (src)') + link('lib', '1.14.0', '1.14.0') + '</div>' +
+    '<div><button id="stop">Stop audio</button><button id="start">Start audio</button></div>';
+  // suspend() on purpose: p5-phone must not wake it on the next tap
+  document.getElementById('stop').onclick = () => context().rawContext ? context().rawContext.suspend() : context().suspend();
+  document.getElementById('start').onclick = () => context().resume();
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+</script>
+</body>
+</html>

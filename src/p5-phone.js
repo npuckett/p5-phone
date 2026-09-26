@@ -1,5 +1,5 @@
 /*!
- * p5-phone v1.14.0
+ * p5-phone v1.15.0
  * Simplified mobile hardware access for p5.js - handle sensors, microphone, touch, and browser gestures with ease
  * https://github.com/npuckett/p5-phone
  * 
@@ -142,6 +142,115 @@ Object.defineProperty(window, 'micOpen', {
     return _isMicOpen(_micInstance || (typeof mic !== 'undefined' ? mic : null));
   }
 });
+
+// Audio unlock. A phone only starts Web Audio inside a tap, so every activation UI that
+// asks for sound or the microphone calls _unlockAudioInGesture() before its first
+// await (an await on the iOS motion prompt ends the tap). It starts every audio context
+// p5-phone can find: p5.sound's, Tone.js's, and any the sketch made with
+// new AudioContext() (smplr and the like), which p5-phone sees because it wraps the
+// constructor when it loads. After that first tap, any later touch, click or key
+// resumes audio the phone put to sleep, unless the sketch paused it on purpose.
+const _audioContexts = new Set(); // contexts made after p5-phone loaded
+let _audioHeldBySketch = false; // the last suspend()/resume() call was a suspend()
+let _audioWakeBound = false;
+
+(function _trackAudioContexts() {
+  const NativeAudioContext = window.AudioContext;
+  if (window._p5phoneAudioTracked || typeof NativeAudioContext !== 'function' || typeof Proxy !== 'function') return;
+  window._p5phoneAudioTracked = true;
+
+  const TrackedAudioContext = new Proxy(NativeAudioContext, {
+    construct(target, args, newTarget) {
+      // Plain `new AudioContext()` constructs the native class exactly as before;
+      // a subclass (class X extends AudioContext) keeps its own prototype.
+      const context = Reflect.construct(target, args, newTarget === TrackedAudioContext ? target : newTarget);
+      _audioContexts.add(context);
+      return context;
+    }
+  });
+  window.AudioContext = TrackedAudioContext;
+
+  // p5.sound's userStopAudio(), Tone.js and raw contexts all end in these native calls.
+  const proto = NativeAudioContext.prototype;
+  const nativeSuspend = proto.suspend;
+  const nativeResume = proto.resume;
+  if (typeof nativeSuspend !== 'function' || typeof nativeResume !== 'function') return;
+  proto.suspend = function() {
+    _audioHeldBySketch = true;
+    return nativeSuspend.apply(this, arguments);
+  };
+  proto.resume = function() {
+    _audioHeldBySketch = false;
+    return nativeResume.apply(this, arguments);
+  };
+})();
+
+function _resumeAudioContext(context) {
+  if (!context || typeof context.resume !== 'function') return;
+  if (context.state === 'running' || context.state === 'closed') return;
+  try {
+    const result = context.resume();
+    if (result && typeof result.catch === 'function') result.catch(function() {});
+  } catch (error) {
+    // 'interrupted' (iOS) can refuse until the interruption ends; the next touch retries
+  }
+}
+
+function _resumeAllAudio() {
+  // p5.sound, legacy and 0.3.x. In 0.3.x this also creates the context now, inside the
+  // tap, when the sketch has not made a p5.sound object yet.
+  if (typeof getAudioContext === 'function') {
+    try { _resumeAudioContext(getAudioContext()); } catch (error) { /* p5.sound not ready */ }
+  }
+  // Tone.js loaded on its own (p5.sound 0.3.x bundles its Tone.js privately)
+  if (window.Tone && typeof window.Tone.start === 'function') {
+    try {
+      const toneContext = typeof window.Tone.getContext === 'function' ? window.Tone.getContext() : null;
+      if (!toneContext || toneContext.state !== 'running') {
+        const started = window.Tone.start();
+        if (started && typeof started.catch === 'function') started.catch(function() {});
+      }
+    } catch (error) { /* Tone.js not ready */ }
+  }
+  for (const context of _audioContexts) {
+    if (context.state === 'closed') {
+      _audioContexts.delete(context);
+    } else {
+      _resumeAudioContext(context);
+    }
+  }
+}
+
+function _wakeAudio() {
+  if (_audioHeldBySketch || document.visibilityState === 'hidden') return;
+  _resumeAllAudio();
+}
+
+// Synchronous on purpose: call it before the first await in an activation handler.
+function _unlockAudioInGesture() {
+  if (typeof userStartAudio === 'function') {
+    try {
+      const started = userStartAudio();
+      if (started && typeof started.catch === 'function') started.catch(function() {});
+    } catch (error) { /* p5.sound not ready */ }
+  }
+  _resumeAllAudio();
+
+  if (!_audioWakeBound) {
+    _audioWakeBound = true;
+    // touchend, not touchstart: iOS only starts audio on the end of a touch
+    for (const type of ['touchend', 'mousedown', 'keydown']) {
+      window.addEventListener(type, _wakeAudio, { capture: true, passive: true });
+    }
+  }
+}
+
+// Speech is left out: recognition does not use Web Audio, and in p5.sound 0.3.x the
+// unlock would create an audio context that runs alongside the recognizer.
+function _isAudioPermission(permission) {
+  return permission === 'mic' || permission === 'sound';
+}
+
 let _nfcReader = null;
 let _nfcAbortController = null;
 let _geoWatchId = null;
@@ -781,8 +890,7 @@ function enableGeoTap(message = 'Tap screen to enable GPS') {
  */
 function enableAllButton(buttonText = 'ENABLE MOTION & MICROPHONE', statusText = 'Requesting permissions...') {
   _createPermissionButton(buttonText, statusText, async () => {
-    await _requestMotionPermissionsCore();
-    await _requestMicrophonePermissionsCore();
+    await _requestPermissionsCore(['sensors', 'mic']); // starts audio before the motion prompt
     _notifySketchReady();
     console.log('✅ Motion sensors and microphone enabled via button');
   });
@@ -794,8 +902,7 @@ function enableAllButton(buttonText = 'ENABLE MOTION & MICROPHONE', statusText =
  */
 function enableAllTap(message = 'Tap screen to enable motion sensors & microphone') {
   _createTapToEnable(message, async () => {
-    await _requestMotionPermissionsCore();
-    await _requestMicrophonePermissionsCore();
+    await _requestPermissionsCore(['sensors', 'mic']); // starts audio before the motion prompt
     _notifySketchReady();
     console.log('✅ Motion sensors and microphone enabled via tap');
   });
@@ -922,8 +1029,7 @@ function enableGeoCanvas(message = 'Touch to start') {
  */
 function enableAllCanvas(message = 'Touch to start') {
   _createCanvasToEnable(message, async () => {
-    await _requestMotionPermissionsCore();
-    await _requestMicrophonePermissionsCore();
+    await _requestPermissionsCore(['sensors', 'mic']); // starts audio before the motion prompt
     _notifySketchReady();
     console.log('✅ Motion sensors and microphone enabled via canvas touch');
   });
@@ -1020,8 +1126,7 @@ function enableGeoBanner(message = 'Tap to enable GPS', position = 'top') {
 
 function enableAllBanner(message = 'Tap to enable sensors & microphone', position = 'top') {
   _createBannerToEnable(message, position, async () => {
-    await _requestMotionPermissionsCore();
-    await _requestMicrophonePermissionsCore();
+    await _requestPermissionsCore(['sensors', 'mic']); // starts audio before the motion prompt
     _notifySketchReady();
     console.log('✅ Motion sensors and microphone enabled via banner');
   });
@@ -1117,8 +1222,7 @@ function enableGeoMinimal(messageOrOpts, options) {
 
 function enableAllMinimal(messageOrOpts, options) {
   _createMinimalToEnable(messageOrOpts, options, async () => {
-    await _requestMotionPermissionsCore();
-    await _requestMicrophonePermissionsCore();
+    await _requestPermissionsCore(['sensors', 'mic']); // starts audio before the motion prompt
     _notifySketchReady();
     console.log('✅ Motion sensors and microphone enabled via minimal overlay');
   });
@@ -1332,8 +1436,7 @@ function enableShareOn(selector) {
 
 function enableAllOn(selector) {
   _bindPermissionTo(selector, async () => {
-    await _requestMotionPermissionsCore();
-    await _requestMicrophonePermissionsCore();
+    await _requestPermissionsCore(['sensors', 'mic']); // starts audio before the motion prompt
     _notifySketchReady();
     console.log('✅ Motion sensors and microphone enabled via custom element');
   });
@@ -1783,6 +1886,8 @@ async function _requestMotionPermissionsCore() {
 
 async function _requestMicrophonePermissionsCore() {
   try {
+    _unlockAudioInGesture();
+
     // Start audio context for p5.sound
     if (typeof userStartAudio !== 'undefined') {
       await userStartAudio();
@@ -1815,6 +1920,9 @@ async function _requestMicrophonePermissionsCore() {
 
 async function _requestSoundOutputCore() {
   try {
+    // p5.sound, Tone.js and the sketch's own audio contexts
+    _unlockAudioInGesture();
+
     // Start audio context for p5.sound (enables sound playback)
     if (typeof userStartAudio !== 'undefined') {
       await userStartAudio();
@@ -3444,6 +3552,11 @@ function _normalizePermissionList(permissions) {
 
 async function _requestPermissionsCore(permissions) {
   const normalized = _normalizePermissionList(permissions);
+
+  // Before the loop: the motion prompt's await would otherwise end the tap first
+  if (normalized.some(_isAudioPermission)) {
+    _unlockAudioInGesture();
+  }
 
   for (const permission of normalized) {
     if (permission === 'sensors') {

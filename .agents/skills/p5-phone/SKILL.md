@@ -242,6 +242,8 @@ function draw() {
 
 For generated audio, use `enableSoundTap()` (or `enableSoundOn(selector)`) to resume the AudioContext, then `p5.Oscillator`. Prefer generated sound over `loadSound()` unless the user provides audio assets — it is more portable in the p5 Web Editor.
 
+The sound tap (and any tap that asks for `sound` or `mic`) also starts other engines. It calls `Tone.start()` when Tone.js is loaded, and resumes any `new AudioContext()` the sketch makes after p5-phone loads (e.g. for smplr). Don't write your own first-tap unlock listener. Combined taps such as `enablePermissionsTap(['motion', 'sound'])` start audio before the iOS motion prompt. After the first tap, any touch resumes audio the phone paused (leaving the page, locking the screen), so don't add `userStartAudio()` to `mousePressed()`. Audio paused on purpose with `userStopAudio()` or `ctx.suspend()` stays paused.
+
 ## Speech recognition
 
 `enableSpeech*` satisfies the mobile audio/user-activation requirement and sets `window.speechEnabled`; it deliberately does **not** create a `p5.AudioIn` (which would conflict with the mic). After activation, create your own Web Speech API `SpeechRecognition` object.

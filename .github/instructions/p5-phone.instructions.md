@@ -113,6 +113,8 @@ function draw() {
 
 Requires p5.sound: `<script src="https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js"></script>`
 
+Sound output (`enableSound*`, and any tap that asks for `sound` or `mic`) also works without p5.sound. The tap calls `Tone.start()` when Tone.js is loaded, and resumes any `new AudioContext()` the sketch makes after p5-phone loads (e.g. for smplr). Audio starts before the motion prompt in combined taps. After the first tap, later touches resume audio the phone paused, so don't add `userStartAudio()` to `mousePressed()`. `userStopAudio()` / `ctx.suspend()` stay paused.
+
 ## Debug Console
 
 ```javascript

@@ -643,6 +643,14 @@ function draw() {
 <script src="https://cdn.jsdelivr.net/npm/p5.sound@0.3.0/dist/p5.sound.min.js"></script>
 ```
 
+**Other sound libraries:** the tap starts whatever is loaded, not only p5.sound:
+- **Tone.js**: the tap calls `Tone.start()`. Load Tone.js before or after p5-phone.
+- **Your own `AudioContext`** (for example for smplr): the tap resumes any `new AudioContext()` made after p5-phone loads, so put your `<script>` after p5-phone's.
+
+The tap starts audio before it asks for anything else, so `enablePermissionsTap(['motion', 'sound'])` and `enableAllTap()` work on iPhone, where the motion prompt would otherwise end the tap first.
+
+**After the first tap:** phones pause audio when you leave the page or lock the screen. The next touch, click, or key starts it again, so you don't need `userStartAudio()` in `mousePressed()`. Audio your sketch paused on purpose (`userStopAudio()`, `ctx.suspend()`) stays paused until your sketch resumes it.
+
 **Commands:**
 - `enableSoundTap(message)` - Tap anywhere on screen to enable sound playback
 - `enableSoundButton(text)` - Creates a button with custom text to enable sound
