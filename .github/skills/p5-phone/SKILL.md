@@ -93,7 +93,7 @@ The most common failure mode is a model **hand-rolling hardware plumbing** (a ra
 | --- | --- | --- |
 | Device orientation | `rotationX`, `rotationY`, `rotationZ` (+ `pRotationX/Y/Z`) | p5 globals; p5-phone only gates them via `sensorsEnabled` |
 | Acceleration | `accelerationX/Y/Z`, `pAccelerationX/Y/Z` | p5 globals |
-| Rotation rate | `rotationRateAlpha`, `rotationRateBeta`, `rotationRateGamma` | p5 globals |
+| How fast it is turning | `rotationX - pRotationX` (and Y, Z) each frame, or `deviceTurned()` with `turnAxis` | p5.js has **no** rotation-rate globals (see the trap below) |
 | Motion events / thresholds | `deviceMoved()`, `deviceShaken()`, `setMoveThreshold()`, `setShakeThreshold()`, `deviceOrientation` | define the callbacks as globals |
 | Touch / pointer input | `mousePressed()`, `mouseDragged()`, `mouseReleased()`, `mouseX`, `mouseY`, `touches[]` | p5.js 2 unifies mouse+touch under the pointer model; use `touches[]` for multitouch. Do **not** add your own `addEventListener('touchstart', …)` |
 | Drawing the camera feed | `image(cam, x, y, w, h)` + `cam.mapKeypoint()/mapBox()` | `PhoneCamera` integrates with p5's `image()`; map ML5 results with its helpers, not manual video compositing |
@@ -105,6 +105,7 @@ The most common failure mode is a model **hand-rolling hardware plumbing** (a ra
 Two specific traps worth calling out:
 
 - **Motion values are p5.js built-ins, not p5-phone APIs.** p5-phone only requests the *permission* and sets `window.sensorsEnabled`. The data (`rotationX`, `accelerationX`, `deviceShaken()`, …) comes straight from p5.js. Do not invent p5-phone getters for them.
+- **p5.js has no rotation rate.** `rotationRateAlpha`, `rotationRateBeta` and `rotationRateGamma` are not p5 globals, in 1.x or 2.x, and p5-phone does not add them. Reading them throws a `ReferenceError` on every frame once the sensors are on, so the sketch stops drawing. For how fast the phone is turning, use the change in `rotationX/Y/Z` from `pRotationX/Y/Z` each frame (watch the wrap at ±180°), or `deviceTurned()` and `turnAxis` for a quarter turn. Only if a sketch truly needs the gyroscope's own rate, read `event.rotationRate` (it can be `null`) in a `devicemotion` listener once `window.sensorsEnabled` is true. That is the one place a listener is the right call.
 - **There is no `bleValue()` getter.** Read incoming BLE data from `window.bleValues[name]` or from the `bleReceive(name, value)` callback. `bleValues` is an object keyed by characteristic name.
 
 ## Permissions model
@@ -207,8 +208,8 @@ After `window.sensorsEnabled` is true, read p5.js built-ins:
 
 - Orientation: `rotationX`, `rotationY`, `rotationZ`
 - Acceleration: `accelerationX`, `accelerationY`, `accelerationZ`
-- Rotational velocity: `rotationRateAlpha`, `rotationRateBeta`, `rotationRateGamma`
-- Events: `deviceMoved()`, `deviceShaken()`
+- Previous frame: `pRotationX/Y/Z`, `pAccelerationX/Y/Z`. For turning speed, use `rotationX - pRotationX`. There is no `rotationRate*` in p5.js.
+- Events: `deviceMoved()`, `deviceShaken()`, `deviceTurned()` (with `turnAxis`)
 - Thresholds: `setMoveThreshold(value)`, `setShakeThreshold(value)`
 - Orientation state: `deviceOrientation`
 
