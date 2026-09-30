@@ -87,6 +87,7 @@ After local examples or CDN pins change:
 ### Intentional exclusions
 
 - **NFC examples** — do not link to p5 Web Editor (iframe blocks Web NFC); host on HTTPS directly
+- **Screen Wake Lock example** (`wakelock/`) — do not link to p5 Web Editor (the preview iframe lacks `allow="screen-wake-lock"`); host on HTTPS directly
 - **Multi-page indexes** (e.g. UX Compare index) — not single editable sketches
 
 ### GIF assets pending

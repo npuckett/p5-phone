@@ -181,6 +181,24 @@ window.P5PHONE_API_SECTIONS = [
     ]
   },
   {
+    id: 'wakelock',
+    title: 'Screen Wake Lock',
+    description: 'Keep the screen from dimming and locking while a sketch runs. Only touches reset the phone\'s auto-lock timer, so motion, sound, GPS, and BLE sketches need this. It is the browser\'s own Screen Wake Lock API, used directly: p5-phone does not wrap it.',
+    relatedApisTitle: 'Browser APIs',
+    relatedApis: [
+      { label: 'Screen Wake Lock API', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API', summary: 'MDN guide and browser support.' },
+      { label: 'WakeLockSentinel', href: 'https://developer.mozilla.org/en-US/docs/Web/API/WakeLockSentinel', summary: 'The object request() returns: release(), released, and the release event.' },
+      { label: 'visibilitychange', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event', summary: 'Fires when the page is hidden or shown. Use it to ask for the lock again.' }
+    ],
+    items: [
+      { name: 'navigator.wakeLock.request', signature: "wakeLock = await navigator.wakeLock.request('screen')", summary: 'Keeps the screen on while the page is visible and returns a WakeLockSentinel. Ask from mouseReleased(): iOS Safari refuses the first request without a tap, and a touch only counts once the finger lifts. Wrap it in try/catch, because power saving or a low battery can refuse it.', tags: ['wake lock', 'tap'] },
+      { name: 'wakeLock.release', signature: 'await wakeLock.release()', summary: 'Lets the screen sleep again. A released sentinel cannot be reused; request a new one.', tags: ['wake lock'] },
+      { name: 'wakeLock.released', signature: 'wakeLock !== null && !wakeLock.released', summary: 'released is true once the lock is gone, whether the sketch released it or the browser did. Check it in draw(), or listen for the release event.', tags: ['wake lock', 'status'] },
+      { name: 'ask again on visibilitychange', signature: "document.addEventListener('visibilitychange', ...)", summary: 'The browser drops the lock whenever the page is hidden (another app, another tab, the side button). Request it again when document.visibilityState is visible. On iOS only the first request needs a tap.', tags: ['wake lock', 'callback'] },
+      { name: 'support', signature: "'wakeLock' in navigator", summary: 'False without HTTPS or in older browsers. Chrome and Edge, Safari on iOS 16.4+ (Home Screen web apps from 18.4), Firefox 126+. Blocked in the p5.js Web Editor preview, whose iframe lacks allow="screen-wake-lock".', tags: ['wake lock', 'status'] }
+    ]
+  },
+  {
     id: 'debug',
     title: 'Debug Console',
     description: 'On-screen logging helpers for testing on phones where developer tools are awkward.',

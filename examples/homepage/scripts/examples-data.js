@@ -431,6 +431,19 @@ window.P5PHONE_EXAMPLES = [
     capabilities: ['torch', 'flashlight', 'motion', 'deviceShaken']
   },
   {
+    id: 'keep-screen-on',
+    title: 'Keep Screen On',
+    category: 'Output',
+    subcategory: 'Wake Lock',
+    level: 'Starter',
+    p5: '1.x and 2.0',
+    description: 'Tap to stop the screen dimming and locking with the browser Screen Wake Lock API. A timer counts the time since your last touch. Not in the p5 Web Editor: its iframe blocks wake lock.',
+    path: 'Phone%20Sensor%20Examples/wakelock/01_keep_screen_on/',
+    sourcePath: 'examples/Phone%20Sensor%20Examples/wakelock/01_keep_screen_on',
+    platforms: ['iOS + Android'],
+    capabilities: ['wake lock', 'touch']
+  },
+  {
     id: 'camera-color-tracking',
     title: 'Camera Color Tracking',
     category: 'Input',

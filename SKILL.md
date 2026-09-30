@@ -1,6 +1,6 @@
 ---
 name: p5-phone
-description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, torch/flashlight, NFC, Bluetooth BLE, Share multi-user PartyServer rooms, GPS/geolocation, geoDistance/geoInPolygon, lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
+description: "Use when generating p5-phone examples or answering questions about p5-phone APIs: mobile sensors, device orientation, accelerometer, gyroscope, touch, microphone, p5.sound, speech recognition, PhoneCamera, ML5 camera mapping, vibration, torch/flashlight, NFC, Bluetooth BLE, Share multi-user PartyServer rooms, GPS/geolocation, geoDistance/geoInPolygon, screen wake lock (keep the screen on), lockGestures, enablePermissionsTap, enableHardwareTap, arbitrary hardware combinations, mobile browser permissions, p5.js 2 compatibility."
 argument-hint: "Describe the p5-phone example or API question"
 ---
 
@@ -14,7 +14,7 @@ It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public 
 
 ## When to use this skill
 
-Use it whenever the request involves a p5-phone sketch, mobile p5.js hardware interaction, or an explanation of how p5-phone works: device orientation / accelerometer / gyroscope, touch, microphone / p5.sound, speech recognition, `PhoneCamera` and ML5 mapping, vibration, torch/flashlight, NFC, GPS/geolocation (`geoRead`, `geoDistance`, `geoInPolygon`), Bluetooth BLE, Share multi-user rooms (`shareSetup`, `shared`/`me`/`guests`), `lockGestures`, `enablePermissionsTap` / `enableHardwareTap`, arbitrary hardware combinations, mobile browser permissions, or p5.js 2 compatibility.
+Use it whenever the request involves a p5-phone sketch, mobile p5.js hardware interaction, or an explanation of how p5-phone works: device orientation / accelerometer / gyroscope, touch, microphone / p5.sound, speech recognition, `PhoneCamera` and ML5 mapping, vibration, torch/flashlight, NFC, GPS/geolocation (`geoRead`, `geoDistance`, `geoInPolygon`), Bluetooth BLE, Share multi-user rooms (`shareSetup`, `shared`/`me`/`guests`), keeping the screen on (Screen Wake Lock), `lockGestures`, `enablePermissionsTap` / `enableHardwareTap`, arbitrary hardware combinations, mobile browser permissions, or p5.js 2 compatibility.
 
 ## Quick Start
 
@@ -509,6 +509,51 @@ async function deviceShaken() {
 
 Keep flashing pulses slow and short, avoid rapid strobing, and call `torchOff()` or `stopTorch()` when the effect ends.
 
+## Screen Wake Lock (keep the screen on)
+
+Only touches reset the phone's auto-lock timer, so a sketch driven by motion, sound, GPS, or BLE goes dark after about 30 seconds. Keep the screen on with the browser's own Screen Wake Lock API. **It is not a p5-phone feature:** there is no `keepScreenOn()`, no `enableWakeLock*()`, and no `wakelock` token for `enablePermissions*`. Do not invent them; call `navigator.wakeLock` directly.
+
+```javascript
+let wakeLock = null;
+let wantAwake = false;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  // The browser drops the lock while the page is hidden. Ask again when it's back.
+  document.addEventListener('visibilitychange', () => {
+    if (wantAwake && document.visibilityState === 'visible') requestWakeLock();
+  });
+}
+
+async function requestWakeLock() {
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+  } catch (err) {
+    debugWarn('Wake lock refused: ' + err.message); // power saving, low battery, blocked iframe
+  }
+}
+
+function mouseReleased() {
+  const awake = wakeLock !== null && !wakeLock.released;
+  if ('wakeLock' in navigator && !awake) {
+    wantAwake = true;
+    requestWakeLock();
+  }
+  return false;
+}
+```
+
+- **Request from `mouseReleased()`.** iOS Safari refuses the first request without a user gesture, and a touch only counts as one when the finger lifts, so `mousePressed()` is too early. `userSetupComplete()` is too late: it runs after the permission prompts, when iOS may no longer count the tap. Chrome needs no gesture.
+- **Request again on `visibilitychange`.** The lock is released whenever the page is hidden (another app, another tab, the side button) and never comes back by itself. On iOS, only the first request needs a tap.
+- Wrap `request()` in `try`/`catch`: power saving and low battery can refuse or drop the lock. Check `wakeLock.released` (or listen for the sentinel's `release` event) rather than assuming the lock is still held.
+- HTTPS or `localhost` only; `'wakeLock' in navigator` is `false` otherwise.
+- It fails in the p5.js Web Editor with `NotAllowedError`, because the preview iframe lacks `allow="screen-wake-lock"`. Host the sketch on its own page (GitHub Pages works).
+- It only keeps the screen on. It can't change the phone's auto-lock setting or brightness, turn on a screen that is off, or keep the sketch running in the background.
+- Support: Chrome and Edge, Safari 16.4+ on iOS (Home Screen web apps from 18.4), Firefox 126+.
+
+Example: `examples/Phone Sensor Examples/wakelock/01_keep_screen_on/`.
+
 ## lockGestures reference
 
 ```javascript
@@ -563,6 +608,7 @@ function setup() {
 | GPS / geolocation | ✓ (HTTPS, user gesture) | ✓ (HTTPS, user gesture) |
 | Bluetooth BLE | ✗ (use Bluefy app) | ✓ (HTTPS) |
 | Share (PartyServer) | ✓ (WebSocket) | ✓ (WebSocket) |
+| Screen wake lock (browser API) | ✓ (16.4+, tap for the first request) | ✓ |
 
 All hardware requires a secure context (HTTPS or localhost).
 
@@ -577,6 +623,7 @@ All hardware requires a secure context (HTTPS or localhost).
 - **Share won't connect** — confirm `shareSetup({ host })` uses the deployed `*.workers.dev` URL (https), `wrangler deploy` succeeded, and the room name matches across devices.
 - **Touch callbacks never run** — `touchStarted/Moved/Ended` are no-ops in p5.js 2; switch to `mousePressed/mouseDragged/mouseReleased`.
 - **Mic example throws in preview** — don't call `p5.Amplitude.setInput(mic)` before `window.micEnabled`. `mic.getLevel is not a function` means p5.sound 0.3.x: use `mic.disconnect(); mic.connect(amplitude);` then `amplitude.getLevel()`.
+- **Screen dims or locks during a motion, audio, or GPS sketch** — only touches reset the auto-lock timer. Hold a Screen Wake Lock (see that section), requested from `mouseReleased()`.
 - **Mic level stays at 0** — check `window.micOpen`. `micEnabled` is `true` even when the microphone was denied or no input exists.
 
 ## Answering questions
@@ -586,7 +633,7 @@ All hardware requires a secure context (HTTPS or localhost).
 - Mention HTTPS requirements for mobile hardware.
 - Mention p5.js 2 event changes when touch callbacks are involved.
 - Flag browser/device limits clearly: torch and NFC are Android-Chrome-oriented; vibration is unsupported on iOS; BLE needs Bluefy on iOS; speech recognition depends on Web Speech API support.
-- Point to the bundled examples under `examples/` when useful — feature folders include `movement/`, `microphone/`, `sound/`, `touch/`, `vibration/`, `camera/`, `torch/`, `nfc/`, `geo/`, `ble/`, and `combined/`, plus `ml5/`, `UIStyles/`, and `UXcompare/`.
+- Point to the bundled examples under `examples/` when useful — feature folders include `movement/`, `microphone/`, `sound/`, `touch/`, `vibration/`, `camera/`, `torch/`, `nfc/`, `geo/`, `ble/`, `wakelock/`, and `combined/`, plus `ml5/`, `UIStyles/`, and `UXcompare/`.
 - When migrating examples to the p5 Web Editor, follow the web-editor batch-sync workflow in `docs/web-editor/` and record links in `webeditorLinks.md`.
 
 ## Example quality checklist

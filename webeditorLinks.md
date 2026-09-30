@@ -81,10 +81,13 @@ Created under `npuckett` with p5-phone@1.12.1. Pair with a P5PhoneBLE Arduino sk
 
 NFC examples are intentionally not linked to p5 Web Editor. Even the Web Editor full-page preview is contained inside a frame, which blocks Web NFC; host these examples directly on an HTTPS server instead.
 
+The Screen Wake Lock example is not linked either, for a similar reason: the Web Editor preview iframe does not include `screen-wake-lock` in its `allow` attribute, so `navigator.wakeLock.request()` fails with `NotAllowedError`.
+
 | Catalog id | Title | Reason |
 | --- | --- | --- |
 | nfc-tag-identifier | NFC Tag Identifier | Requires direct HTTPS hosting; do not add a p5 Web Editor link. |
 | nfc-two-tag-effects | Two Tag Effects | Requires direct HTTPS hosting; do not add a p5 Web Editor link. |
+| keep-screen-on | Keep Screen On | The preview iframe blocks Screen Wake Lock; requires direct HTTPS hosting. |
 | ux-compare | UX Compare Index | This is a multi-page reference index whose buttons point to external hosted demos, not a single editable p5 Web Editor sketch. |
 
 

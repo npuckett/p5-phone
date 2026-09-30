@@ -52,6 +52,8 @@
     { tags: ['vibration'], group: 'p5-phone', label: 'vibrate()', href: '#api-vibration' },
     { tags: ['torch'], group: 'p5-phone', label: 'enableTorchTap()', href: '#api-torch' },
     { tags: ['torch'], group: 'p5-phone', label: 'toggleTorch()', href: '#api-torch' },
+    { tags: ['wake lock'], group: 'p5-phone', label: 'Screen Wake Lock docs', href: '#api-wakelock' },
+    { tags: ['wake lock'], group: 'External', label: 'Screen Wake Lock API', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API' },
     { tags: ['camera'], group: 'p5-phone', label: 'createPhoneCamera()', href: '#api-camera' },
     { tags: ['camera'], group: 'p5-phone', label: 'PhoneCamera', href: '#api-camera' },
     { tags: ['color'], group: 'External', label: 'p5 pixels[]', href: 'https://p5js.org/reference/p5/pixels/' },
@@ -134,12 +136,12 @@
     `;
   }
 
-  function renderRelatedApis(apis) {
+  function renderRelatedApis(apis, title) {
     if (!apis || apis.length === 0) return '';
 
     return `
       <div class="related-api-panel">
-        <h4>Related p5 APIs</h4>
+        <h4>${escapeHtml(title || 'Related p5 APIs')}</h4>
         <div class="related-api-list">
           ${apis.map(api => `
             <a href="${escapeHtml(api.href)}" target="_blank" rel="noreferrer">
@@ -173,7 +175,7 @@
             <h3>${escapeHtml(section.title)}</h3>
             <p>${escapeHtml(section.description)}</p>
           </div>
-          ${renderRelatedApis(section.relatedApis)}
+          ${renderRelatedApis(section.relatedApis, section.relatedApisTitle)}
           <div class="api-grid">${cards}</div>
         </section>
       `;
@@ -309,7 +311,7 @@
     const preferredOrder = {
       Start: ['Starter'],
       Input: ['Touch', 'Movement', 'Microphone', 'Speech', 'BLE', 'NFC', 'GPS', 'Camera'],
-      Output: ['Sound', 'Vibration', 'Torch', 'BLE'],
+      Output: ['Sound', 'Vibration', 'Torch', 'Wake Lock', 'BLE'],
       Reference: ['UI Styles', 'Phone and GIF', 'UX Compare']
     };
     const available = Object.keys(groupedCategory || {});
