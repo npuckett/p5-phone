@@ -27,7 +27,7 @@ window.P5PHONE_API_SECTIONS = [
     ],
     items: [
       { name: 'lockGestures', signature: 'lockGestures(options?)', summary: 'Disables browser gestures that interfere with mobile sketches. Default fullscreen mode blocks scroll, zoom, pull-to-refresh, context menu, and back-swipe page-wide. Use { mode: "embedded", element: canvas } for canvases inside scrollable multi-page sites.', tags: ['setup', 'mobile'] },
-      { name: 'unlockGestures', signature: 'unlockGestures()', summary: 'Removes gesture blocking listeners and restores saved handlers. Called automatically on p.remove().', tags: ['setup', 'mobile'] },
+      { name: 'unlockGestures', signature: 'unlockGestures()', summary: 'Removes gesture blocking listeners and restores saved handlers. Called automatically on p.remove() with p5.js 2.x.', tags: ['setup', 'mobile'] },
       { name: 'userSetupComplete', signature: 'function userSetupComplete() { ... }', summary: 'Optional sketch callback. p5-phone calls it after a permission request completes successfully.', tags: ['callback'] },
       { name: 'showDesktopQr', signature: "showDesktopQr({ label: 'Scan to open on your phone' })", summary: 'Floating QR code of the current page on desktop only; does nothing on phones, so it can stay in the sketch. setQrUrl(url) changes the link, hideDesktopQr() removes it. Options: url, position, size, label, closable, rememberDismiss, share.', tags: ['setup', 'mobile'] },
       { name: 'isMobile / isDesktop', signature: 'window.isMobile, window.isDesktop', summary: 'Best-effort device detection set when the library loads (user agent, touch, and coarse-pointer checks, including iPadOS). Use for desktop-only hints; gate hardware reads on the *Enabled flags.', tags: ['setup', 'status'] },

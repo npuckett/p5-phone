@@ -18,6 +18,7 @@
     "test:share": "node test-share-e2e.js",
     "test:input": "node test-input-state.js",
     "test:modes": "node test-sketch-modes.js",
+    "test:remove": "node test-remove-cleanup.js",
     "prepublishOnly": "npm run build",
     "prepare": "npm run build",
     "version": "echo \"Version bumped to $npm_package_version\"",

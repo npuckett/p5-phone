@@ -6069,11 +6069,18 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       _releaseCancelledPointers(this);
     };
 
-    lifecycles.preremove = function() {
+    // p5.js 2.x keeps only the hook names in p5.lifecycleHooks (presetup, postsetup,
+    // predraw, postdraw, remove) and drops any other name without a warning. remove()
+    // runs this after it stops draw(), aborts _removeSignal and removes the elements p5
+    // made, and before it clears a global-mode sketch's globals, p5-phone's among them.
+    lifecycles.remove = function() {
       unlockGestures();
       // Release the GPS watch so removing/reloading a sketch never leaks the
       // position subscription (fixes the old p5.geolocation shared-watch bug).
-      try { stopGeo(); } catch (e) { /* ignore */ }
+      // Only when one is running, or every removed sketch logs "GPS watch stopped".
+      if (_geoWatchId !== null) {
+        try { stopGeo(); } catch (e) { /* ignore */ }
+      }
       try { shareDisconnect(); } catch (e) { /* ignore */ }
     };
 
