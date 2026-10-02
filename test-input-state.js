@@ -120,8 +120,7 @@ const pressState = (p) => p.evaluate(() => ({
     const { p, errors, warnings } = await open(ctx, page(src, tiltSketch));
     await p.click('#tapOverlay');
     await p.waitForFunction(() => window.sensorsEnabled === true);
-    // Count from the tap. The unminified p5.js 1.x also logs "p5 had problems creating the
-    // global function …" once per p5-phone function at startup, which is not this check.
+    // Count from the tap. Warnings at startup are test-sketch-modes.js's check.
     const startup = warnings.length;
     await orient(p, {}); // an empty reading after the sketch is listening, whatever the browser sent
     await p.waitForTimeout(3000);

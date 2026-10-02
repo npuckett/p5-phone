@@ -5685,166 +5685,182 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
  * Add functions to p5.js prototype for namespace support in p5.js 1.x.
  * p5.js 2.x uses p5.registerAddon() below; registering in both places
  * creates duplicate globals during p5 2 global-mode binding.
+ *
+ * Non-enumerable, because p5.js 1.x global mode copies every enumerable
+ * p5.prototype property onto window, and these names are window globals already:
+ * the unminified p5.js would log "p5 had problems creating the global function"
+ * once per name at startup, and remove() would set them all to undefined. Instance
+ * mode still finds them through the prototype (p.lockGestures()).
  */
 if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'function') {
-  // Core permission functions
-  p5.prototype.lockGestures = lockGestures;
-  p5.prototype.unlockGestures = unlockGestures;
-  p5.prototype.showDesktopQr = showDesktopQr;
-  p5.prototype.hideDesktopQr = hideDesktopQr;
-  p5.prototype.setQrUrl = setQrUrl;
-  p5.prototype.enableGyroTap = enableGyroTap;
-  p5.prototype.enableGyroButton = enableGyroButton;
-  p5.prototype.enableSensorTap = enableGyroTap;
-  p5.prototype.enableSensorButton = enableGyroButton;
-  p5.prototype.enableMicTap = enableMicTap;
-  p5.prototype.enableMicButton = enableMicButton;
-  p5.prototype.enableSoundTap = enableSoundTap;
-  p5.prototype.enableSoundButton = enableSoundButton;
-  p5.prototype.enableSpeechTap = enableSpeechTap;
-  p5.prototype.enableSpeechButton = enableSpeechButton;
-  p5.prototype.enableVibrationTap = enableVibrationTap;
-  p5.prototype.enableVibrationButton = enableVibrationButton;
-  p5.prototype.vibrate = vibrate;
-  p5.prototype.stopVibration = stopVibration;
-  p5.prototype.enableTorchTap = enableTorchTap;
-  p5.prototype.enableTorchButton = enableTorchButton;
-  p5.prototype.enableFlashlightTap = enableFlashlightTap;
-  p5.prototype.enableFlashlightButton = enableFlashlightButton;
-  p5.prototype.setTorch = setTorch;
-  p5.prototype.torchOn = torchOn;
-  p5.prototype.torchOff = torchOff;
-  p5.prototype.toggleTorch = toggleTorch;
-  p5.prototype.stopTorch = stopTorch;
-  p5.prototype.isTorchSupported = isTorchSupported;
-  p5.prototype.setFlashlight = setFlashlight;
-  p5.prototype.flashlightOn = flashlightOn;
-  p5.prototype.flashlightOff = flashlightOff;
-  p5.prototype.toggleFlashlight = toggleFlashlight;
-  p5.prototype.stopFlashlight = stopFlashlight;
-  p5.prototype.enableNfcTap = enableNfcTap;
-  p5.prototype.enableNfcButton = enableNfcButton;
-  p5.prototype.stopNfc = stopNfc;
-  p5.prototype.setNfcTagAlias = setNfcTagAlias;
-  p5.prototype.getNfcTagAlias = getNfcTagAlias;
-  p5.prototype.isNfcTag = isNfcTag;
-  p5.prototype.enableGeoTap = enableGeoTap;
-  p5.prototype.enableGeoButton = enableGeoButton;
-  p5.prototype.stopGeo = stopGeo;
-  p5.prototype.setGeoOptions = setGeoOptions;
-  p5.prototype.getGeoPosition = getGeoPosition;
-  p5.prototype.geoDistance = geoDistance;
-  p5.prototype.geoInPolygon = geoInPolygon;
-  p5.prototype.isBleSupported = isBleSupported;
-  p5.prototype.bleSetup = bleSetup;
-  p5.prototype.bleConnect = bleConnect;
-  p5.prototype.bleDisconnect = bleDisconnect;
-  p5.prototype.bleRead = bleRead;
-  p5.prototype.bleWrite = bleWrite;
-  p5.prototype.enableBleTap = enableBleTap;
-  p5.prototype.enableBleButton = enableBleButton;
-  p5.prototype.isShareSupported = isShareSupported;
-  p5.prototype.shareSetup = shareSetup;
-  p5.prototype.shareConnect = shareConnect;
-  p5.prototype.shareDisconnect = shareDisconnect;
-  p5.prototype.shareSet = shareSet;
-  p5.prototype.shareSetMe = shareSetMe;
-  p5.prototype.shareEmit = shareEmit;
-  p5.prototype.getShareJoinUrl = getShareJoinUrl;
-  p5.prototype.enableShareTap = enableShareTap;
-  p5.prototype.enableShareButton = enableShareButton;
-  p5.prototype.enableAllTap = enableAllTap;
-  p5.prototype.enableAllButton = enableAllButton;
-  p5.prototype.enablePermissionsTap = enablePermissionsTap;
-  p5.prototype.enablePermissionsButton = enablePermissionsButton;
-  p5.prototype.enableHardwareTap = enablePermissionsTap;
-  p5.prototype.enableHardwareButton = enablePermissionsButton;
-  
-  // Canvas-first-touch style
-  p5.prototype.enableGyroCanvas = enableGyroCanvas;
-  p5.prototype.enableSensorCanvas = enableGyroCanvas;
-  p5.prototype.enableMicCanvas = enableMicCanvas;
-  p5.prototype.enableSoundCanvas = enableSoundCanvas;
-  p5.prototype.enableSpeechCanvas = enableSpeechCanvas;
-  p5.prototype.enableVibrationCanvas = enableVibrationCanvas;
-  p5.prototype.enableTorchCanvas = enableTorchCanvas;
-  p5.prototype.enableFlashlightCanvas = enableFlashlightCanvas;
-  p5.prototype.enableNfcCanvas = enableNfcCanvas;
-  p5.prototype.enableGeoCanvas = enableGeoCanvas;
-  p5.prototype.enableBleCanvas = enableBleCanvas;
-  p5.prototype.enableShareCanvas = enableShareCanvas;
-  p5.prototype.enableAllCanvas = enableAllCanvas;
-  p5.prototype.enableCameraCanvas = enableCameraCanvas;
-  p5.prototype.enablePermissionsCanvas = enablePermissionsCanvas;
-  p5.prototype.enableHardwareCanvas = enablePermissionsCanvas;
-  
-  // Banner style
-  p5.prototype.enableGyroBanner = enableGyroBanner;
-  p5.prototype.enableSensorBanner = enableGyroBanner;
-  p5.prototype.enableMicBanner = enableMicBanner;
-  p5.prototype.enableSoundBanner = enableSoundBanner;
-  p5.prototype.enableSpeechBanner = enableSpeechBanner;
-  p5.prototype.enableVibrationBanner = enableVibrationBanner;
-  p5.prototype.enableTorchBanner = enableTorchBanner;
-  p5.prototype.enableFlashlightBanner = enableFlashlightBanner;
-  p5.prototype.enableNfcBanner = enableNfcBanner;
-  p5.prototype.enableGeoBanner = enableGeoBanner;
-  p5.prototype.enableBleBanner = enableBleBanner;
-  p5.prototype.enableShareBanner = enableShareBanner;
-  p5.prototype.enableAllBanner = enableAllBanner;
-  p5.prototype.enableCameraBanner = enableCameraBanner;
-  p5.prototype.enablePermissionsBanner = enablePermissionsBanner;
-  p5.prototype.enableHardwareBanner = enablePermissionsBanner;
+  const methods = {
+    // Core permission functions
+    lockGestures,
+    unlockGestures,
+    showDesktopQr,
+    hideDesktopQr,
+    setQrUrl,
+    enableGyroTap,
+    enableGyroButton,
+    enableSensorTap: enableGyroTap,
+    enableSensorButton: enableGyroButton,
+    enableMicTap,
+    enableMicButton,
+    enableSoundTap,
+    enableSoundButton,
+    enableSpeechTap,
+    enableSpeechButton,
+    enableVibrationTap,
+    enableVibrationButton,
+    vibrate,
+    stopVibration,
+    enableTorchTap,
+    enableTorchButton,
+    enableFlashlightTap,
+    enableFlashlightButton,
+    setTorch,
+    torchOn,
+    torchOff,
+    toggleTorch,
+    stopTorch,
+    isTorchSupported,
+    setFlashlight,
+    flashlightOn,
+    flashlightOff,
+    toggleFlashlight,
+    stopFlashlight,
+    enableNfcTap,
+    enableNfcButton,
+    stopNfc,
+    setNfcTagAlias,
+    getNfcTagAlias,
+    isNfcTag,
+    enableGeoTap,
+    enableGeoButton,
+    stopGeo,
+    setGeoOptions,
+    getGeoPosition,
+    geoDistance,
+    geoInPolygon,
+    isBleSupported,
+    bleSetup,
+    bleConnect,
+    bleDisconnect,
+    bleRead,
+    bleWrite,
+    enableBleTap,
+    enableBleButton,
+    isShareSupported,
+    shareSetup,
+    shareConnect,
+    shareDisconnect,
+    shareSet,
+    shareSetMe,
+    shareEmit,
+    getShareJoinUrl,
+    enableShareTap,
+    enableShareButton,
+    enableAllTap,
+    enableAllButton,
+    enablePermissionsTap,
+    enablePermissionsButton,
+    enableHardwareTap: enablePermissionsTap,
+    enableHardwareButton: enablePermissionsButton,
 
-  // Minimal style
-  p5.prototype.enableGyroMinimal = enableGyroMinimal;
-  p5.prototype.enableSensorMinimal = enableGyroMinimal;
-  p5.prototype.enableMicMinimal = enableMicMinimal;
-  p5.prototype.enableSoundMinimal = enableSoundMinimal;
-  p5.prototype.enableSpeechMinimal = enableSpeechMinimal;
-  p5.prototype.enableVibrationMinimal = enableVibrationMinimal;
-  p5.prototype.enableTorchMinimal = enableTorchMinimal;
-  p5.prototype.enableFlashlightMinimal = enableFlashlightMinimal;
-  p5.prototype.enableNfcMinimal = enableNfcMinimal;
-  p5.prototype.enableGeoMinimal = enableGeoMinimal;
-  p5.prototype.enableBleMinimal = enableBleMinimal;
-  p5.prototype.enableShareMinimal = enableShareMinimal;
-  p5.prototype.enableAllMinimal = enableAllMinimal;
-  p5.prototype.enableCameraMinimal = enableCameraMinimal;
-  p5.prototype.enablePermissionsMinimal = enablePermissionsMinimal;
-  p5.prototype.enableHardwareMinimal = enablePermissionsMinimal;
+    // Canvas-first-touch style
+    enableGyroCanvas,
+    enableSensorCanvas: enableGyroCanvas,
+    enableMicCanvas,
+    enableSoundCanvas,
+    enableSpeechCanvas,
+    enableVibrationCanvas,
+    enableTorchCanvas,
+    enableFlashlightCanvas,
+    enableNfcCanvas,
+    enableGeoCanvas,
+    enableBleCanvas,
+    enableShareCanvas,
+    enableAllCanvas,
+    enableCameraCanvas,
+    enablePermissionsCanvas,
+    enableHardwareCanvas: enablePermissionsCanvas,
 
-  // Custom element binding
-  p5.prototype.enableGyroOn = enableGyroOn;
-  p5.prototype.enableSensorOn = enableGyroOn;
-  p5.prototype.enableMicOn = enableMicOn;
-  p5.prototype.enableSoundOn = enableSoundOn;
-  p5.prototype.enableSpeechOn = enableSpeechOn;
-  p5.prototype.enableVibrationOn = enableVibrationOn;
-  p5.prototype.enableTorchOn = enableTorchOn;
-  p5.prototype.enableFlashlightOn = enableFlashlightOn;
-  p5.prototype.enableNfcOn = enableNfcOn;
-  p5.prototype.enableGeoOn = enableGeoOn;
-  p5.prototype.enableBleOn = enableBleOn;
-  p5.prototype.enableShareOn = enableShareOn;
-  p5.prototype.enableAllOn = enableAllOn;
-  p5.prototype.enableCameraOn = enableCameraOn;
-  p5.prototype.enablePermissionsOn = enablePermissionsOn;
-  p5.prototype.enableHardwareOn = enablePermissionsOn;
-  
-  // Camera functions
-  p5.prototype.createPhoneCamera = createPhoneCamera;
-  p5.prototype.enableCameraButton = enableCameraButton;
-  p5.prototype.enableCameraTap = enableCameraTap;
-  
-  // Debug functions
-  p5.prototype.showDebug = showDebug;
-  p5.prototype.hideDebug = hideDebug;
-  p5.prototype.toggleDebug = toggleDebug;
-  p5.prototype.debug = debug;
-  p5.prototype.debugError = debugError;
-  p5.prototype.debugWarn = debugWarn;
-  
+    // Banner style
+    enableGyroBanner,
+    enableSensorBanner: enableGyroBanner,
+    enableMicBanner,
+    enableSoundBanner,
+    enableSpeechBanner,
+    enableVibrationBanner,
+    enableTorchBanner,
+    enableFlashlightBanner,
+    enableNfcBanner,
+    enableGeoBanner,
+    enableBleBanner,
+    enableShareBanner,
+    enableAllBanner,
+    enableCameraBanner,
+    enablePermissionsBanner,
+    enableHardwareBanner: enablePermissionsBanner,
+
+    // Minimal style
+    enableGyroMinimal,
+    enableSensorMinimal: enableGyroMinimal,
+    enableMicMinimal,
+    enableSoundMinimal,
+    enableSpeechMinimal,
+    enableVibrationMinimal,
+    enableTorchMinimal,
+    enableFlashlightMinimal,
+    enableNfcMinimal,
+    enableGeoMinimal,
+    enableBleMinimal,
+    enableShareMinimal,
+    enableAllMinimal,
+    enableCameraMinimal,
+    enablePermissionsMinimal,
+    enableHardwareMinimal: enablePermissionsMinimal,
+
+    // Custom element binding
+    enableGyroOn,
+    enableSensorOn: enableGyroOn,
+    enableMicOn,
+    enableSoundOn,
+    enableSpeechOn,
+    enableVibrationOn,
+    enableTorchOn,
+    enableFlashlightOn,
+    enableNfcOn,
+    enableGeoOn,
+    enableBleOn,
+    enableShareOn,
+    enableAllOn,
+    enableCameraOn,
+    enablePermissionsOn,
+    enableHardwareOn: enablePermissionsOn,
+
+    // Camera functions
+    createPhoneCamera,
+    enableCameraButton,
+    enableCameraTap,
+
+    // Debug functions
+    showDebug,
+    hideDebug,
+    toggleDebug,
+    debug,
+    debugError,
+    debugWarn
+  };
+  for (const name of Object.keys(methods)) {
+    Object.defineProperty(p5.prototype, name, {
+      configurable: true,
+      writable: true,
+      enumerable: false,
+      value: methods[name]
+    });
+  }
+
   console.log('✅ Mobile p5.js Permissions: p5.prototype functions registered');
 }
 
