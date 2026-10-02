@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.15.1] - 2026-10-02
 
 ### Added
 - Added `npm run test:input` (`test-input-state.js`), a Playwright check of the first two fixes below: the empty tilt reading under p5.js 1.x, 2.2.3 and 2.3.4 (no warnings for 3 seconds after the tap, then real readings come through), and cancelled touches under p5.js 2.2.3, with and without `lockGestures()` (real cancels from Chromium's touch emulation, a cancel at 0, 0 the way WebKit sends one, two fingers, a mouse), plus a check that p5-phone leaves the cancel to p5.js 2.3.4. `test-input-state.html` is the same check on a laptop and on real phones, with a switch to compare against 1.15.0.
