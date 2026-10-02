@@ -23,13 +23,7 @@ See [docs/web-editor/README.md](docs/web-editor/README.md) for the full Web Edit
 
 ## npm authentication
 
-Store your npm access token in `.env/keys.txt` (gitignored):
-
-```bash
-NPM_TOKEN=npm_...
-```
-
-Create the token at [npmjs.com](https://www.npmjs.com/) → Access Tokens. The `.env/` folder is ignored by git — do not commit secrets.
+Publish with `npm login`, then `npm publish`, approving each in the browser (step 3 of the [release checklist](#npm-release-checklist)). An access token in `.env/keys.txt` no longer works for publishing: npm refuses direct publishing with tokens that bypass 2FA. The `.env/` folder is ignored by git — do not commit secrets.
 
 For p5 Web Editor sync, store editor credentials in `.env/p5login.txt`:
 
@@ -90,9 +84,9 @@ After local examples or CDN pins change:
 - **Screen Wake Lock example** (`wakelock/`) — do not link to p5 Web Editor (the preview iframe lacks `allow="screen-wake-lock"`); host on HTTPS directly
 - **Multi-page indexes** (e.g. UX Compare index) — not single editable sketches
 
-### GIF assets pending
+### Phone and GIF images
 
-Four Phone and GIF Web Editor sketches need binary files uploaded manually into each project's `gifs/` folder. See **Created with assets pending** in [webeditorLinks.md](webeditorLinks.md). GIF binaries are not stored in this repo.
+The four Phone and GIF sketches upload their images from `examples/Phone and Gif/*/gifs/` with the sync, but p5-webeditor-sync 1.1.0 reads them as UTF-8 text and they arrive corrupted. See **Phone and GIF images** in [webeditorLinks.md](webeditorLinks.md).
 
 ## Pull requests
 

@@ -80,7 +80,7 @@ Record the batch in [webeditorLinks.md](../../webeditorLinks.md) and smoke-test 
 - [ ] `npm install` completed in the repo
 - [ ] `npm run serve:docs` running (port **8765**) if you will verify the homepage catalog locally
 - [ ] `npm run serve:cors` running (port **8876**) for automation or manual file reference
-- [ ] `npm publish` done if this batch depends on a new `p5-phone@VERSION` CDN pin (load auth from `.env/keys.txt`; see [CONTRIBUTING.md](../../CONTRIBUTING.md#npm-authentication))
+- [ ] `npm publish` done if this batch depends on a new `p5-phone@VERSION` CDN pin (`npm login`, then `npm publish`; see [CONTRIBUTING.md](../../CONTRIBUTING.md#npm-authentication))
 
 ## Required state
 
@@ -117,7 +117,7 @@ Work in small batches grouped by dependency shape:
 | Basic | `index.html`, `sketch.js` | Standard p5-phone CDN tags |
 | Sound / mic | + `p5.sound@0.3.0` | Confirm no stale `tracks/` or `loadSound()` unless assets will be uploaded |
 | ML5 | + `GazeDetector.js`, `functions.js`, etc. | See [Known compatibility fixes](#known-compatibility-fixes) |
-| GIF | + empty `gifs/` folder | Code-only first; assets uploaded manually in Web Editor |
+| GIF | + `gifs/` image | The export copies the image and the sync uploads it, but p5-webeditor-sync 1.1.0 corrupts binary files (see [webeditorLinks.md](../../webeditorLinks.md#phone-and-gif-images-corrupted-on-upload)) |
 | NFC | — | **Do not migrate** — iframe blocks Web NFC |
 | Multi-page index | — | Decide if a single Web Editor sketch makes sense |
 

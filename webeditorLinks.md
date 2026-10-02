@@ -6,6 +6,8 @@ Several examples link to the p5 Web Editor so users can edit starter sketches an
 
 ## Migration log
 
+**2026-10-02 (p5-phone 1.15.1):** Synced with `npm run sync:webeditor`: 37 projects updated, the three THREE.js projects skipped as unchanged, no failures, sketch IDs unchanged. `npm run verify:webeditor` verified all 37 against `p5-phone@1.15.1`; the THREE.js projects do not load p5-phone and are skipped. Spot-checked Touch Zones (`lZWVCIGVoD`) and Phone and GIF Fetch (`iFWnkkrpK`) through the editor API: both load `p5-phone@1.15.1`. Found while checking: the four Phone and GIF images on the Web Editor are corrupted. See [Phone and GIF images](#phone-and-gif-images-corrupted-on-upload).
+
 **2026-09-26 (p5-phone 1.15.0):** Synced 37 projects with `npm run sync:webeditor`, no failures; sketch IDs unchanged. `npm run verify:webeditor` verified all 37 against `p5-phone@1.15.0`; the three THREE.js projects do not load p5-phone and are skipped. Spot-checked the live Touch Zones project (`lZWVCIGVoD`) through the editor API: it loads `p5-phone@1.15.0`.
 
 **2026-09-21 (p5-phone 1.14.0):** Synced 37 projects with `npm run sync:webeditor` (`gif-fly` failed once with a network error and succeeded on `--slug gif-fly` retry). `npm run verify:webeditor` verified all 37 against `p5-phone@1.14.0`; the three THREE.js projects do not load p5-phone and are skipped. Full-preview smoke test (Pixel 7 emulation) of blank-template, combined-permissions, mic-level and ui-banner: canvas created, `p5-phone@1.14.0` loaded, no page errors. Sketch IDs unchanged.
@@ -56,11 +58,11 @@ These sketches were created under `npuckett`, loaded in public full-preview page
 | three-facemesh | THREE FaceMesh Two Points | https://editor.p5js.org/npuckett/sketches/Olii4GsA6 | https://editor.p5js.org/npuckett/full/Olii4GsA6 | New link; includes `functions.js`, Three.js, p5 2 compatibility shim, and ml5 preload-counter polyfill. Camera permission denial ignored in browser smoke test. |
 | three-handpose | THREE HandPose Two Points | https://editor.p5js.org/npuckett/sketches/El8kyGBLL | https://editor.p5js.org/npuckett/full/El8kyGBLL | New link; includes `functions.js`, Three.js, p5 2 compatibility shim, and ml5 preload-counter polyfill. Camera permission denial ignored in browser smoke test. |
 
-## Created with assets pending
+## Phone and GIF images (corrupted on upload)
 
-These sketches were created under `npuckett` with `index.html`, `sketch.js`, and an empty `gifs/` folder. The code references the filenames below; upload those files into each Web Editor project's `gifs/` folder before treating the full preview as complete. **GIF binaries are not in the git repo** — source them locally or from the original asset collection, then upload via the Web Editor file panel.
+`npm run export:webeditor` copies each image from `examples/Phone and Gif/*/gifs/` into `webeditor/projects/<id>/gifs/`, and the sync uploads it with the sketch, so no manual upload is needed. But p5-webeditor-sync 1.1.0 reads every file as UTF-8 text (`fs.readFileSync(path, "utf8")` in `lib/payload.mjs`), so every byte that is not valid UTF-8 arrives as U+FFFD. Since the 2026-09-26 sync, the live files start with `GIF89a` and then break: the full preview serves `corgiswimflip.gif` as 298,667 bytes of mostly `EF BF BD` instead of the original 160,889 bytes, and the sketches show no image. The 2026-10-02 sync re-sent the same corrupted copies. Uploading the files by hand in the Web Editor works only until the next sync replaces them. Fix p5-webeditor-sync to send binary files properly first.
 
-| Catalog id | Title | Web Editor | Full preview | Asset to upload |
+| Catalog id | Title | Web Editor | Full preview | Image |
 | --- | --- | --- | --- | --- |
 | gif-fetch | Phone and GIF Fetch | https://editor.p5js.org/npuckett/sketches/iFWnkkrpK | https://editor.p5js.org/npuckett/full/iFWnkkrpK | `gifs/corgiswimflip.gif` |
 | gif-collision | Phone and GIF Collision | https://editor.p5js.org/npuckett/sketches/hYTeGTQFO | https://editor.p5js.org/npuckett/full/hYTeGTQFO | `gifs/spaceSuit2.png` |
