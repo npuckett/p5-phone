@@ -62,6 +62,8 @@ These sketches were created under `npuckett`, loaded in public full-preview page
 
 `npm run export:webeditor` copies each image from `examples/Phone and Gif/*/gifs/` into `webeditor/projects/<id>/gifs/`, and the sync uploads it with the sketch, so no manual upload is needed. But p5-webeditor-sync 1.1.0 reads every file as UTF-8 text (`fs.readFileSync(path, "utf8")` in `lib/payload.mjs`), so every byte that is not valid UTF-8 arrives as U+FFFD. Since the 2026-09-26 sync, the live files start with `GIF89a` and then break: the full preview serves `corgiswimflip.gif` as 298,667 bytes of mostly `EF BF BD` instead of the original 160,889 bytes, and the sketches show no image. The 2026-10-02 sync re-sent the same corrupted copies. Uploading the files by hand in the Web Editor works only until the next sync replaces them. Fix p5-webeditor-sync to send binary files properly first.
 
+Sketches that load their images by full URL never go through the upload, so they are not affected. The Atelier 1 Class 4 and 5 Web Editor sketches load their GIFs and sounds from `https://digitalfuturesocadu.github.io/f26-atelier1-examples/...` (for example `class-03/gif-library/gifs/cow.gif`) and work. p5-phone's own Pages site serves these four images byte for byte, with `Access-Control-Allow-Origin: *` (checked 2026-10-02), so the same approach would work here: `https://npuckett.github.io/p5-phone/examples/Phone%20and%20Gif/fetch/gifs/corgiswimflip.gif` and likewise for the other three.
+
 | Catalog id | Title | Web Editor | Full preview | Image |
 | --- | --- | --- | --- | --- |
 | gif-fetch | Phone and GIF Fetch | https://editor.p5js.org/npuckett/sketches/iFWnkkrpK | https://editor.p5js.org/npuckett/full/iFWnkkrpK | `gifs/corgiswimflip.gif` |
