@@ -813,7 +813,7 @@ function enableVibrationTap(message = 'Tap screen to enable vibration') {
 /**
  * Enable camera torch/flashlight with a button interface.
  * Starts the rear camera stream required for torch control.
- * Note: Torch is Android Chrome-oriented and requires HTTPS.
+ * Note: Torch works on iPhone (iOS 17.4+) and Android Chrome, and requires HTTPS.
  */
 function enableTorchButton(buttonText = 'ENABLE FLASHLIGHT', statusText = 'Starting flashlight...') {
   _createPermissionButton(buttonText, statusText, async () => {

@@ -488,10 +488,11 @@ function mousePressed() {
 
 ## Torch / flashlight
 
-Android-Chrome-oriented, requires HTTPS, works through a rear-camera stream. Enable with `enableTorch*()` (or `enablePermissions*(['torch'])`), then control the light:
+Works on iPhone (iOS 17.4 or later) and Android Chrome. Requires HTTPS and works through a rear-camera stream. Enable with `enableTorch*()` (or `enablePermissions*(['torch'])`), then control the light:
 
 - `torchOn()`, `torchOff()`, `toggleTorch()`, `setTorch(enabled)` (async), `stopTorch()`, `isTorchSupported()`.
 - Flashlight aliases: `enableFlashlight*`, `flashlightOn()`, `flashlightOff()`, `toggleFlashlight()`, `setFlashlight()`, `stopFlashlight()`.
+- Runtime check: `isTorchSupported()` (or `window.torchSupported`) after enabling. It is `false` on phones with no rear flash, on iOS before 17.4, and on desktop. Use it to show a fallback, such as a bright screen.
 
 ```javascript
 function setup() {
@@ -603,7 +604,7 @@ function setup() {
 | Speech recognition | Web Speech API support varies | ✓ |
 | Camera | ✓ | ✓ |
 | Vibration | ✗ (API absent) | ✓ |
-| Torch / flashlight | ✗ | ✓ |
+| Torch / flashlight | ✓ (17.4+) | ✓ |
 | NFC | ✗ | ✓ (HTTPS) |
 | GPS / geolocation | ✓ (HTTPS, user gesture) | ✓ (HTTPS, user gesture) |
 | Bluetooth BLE | ✗ (use Bluefy app) | ✓ (HTTPS) |
@@ -616,7 +617,8 @@ All hardware requires a secure context (HTTPS or localhost).
 
 - **Permission never fires / `*Enabled` stays false** — the request must run inside a user gesture. Confirm you used an `enable*` activation UI and did not call it on load. On iOS a single gesture only grants one activation window, so combine features with one `enablePermissions*` call.
 - **ML5 throws about `_incrementPreload` / preload with p5@2.2.3** — add the preload-counter polyfill shim before loading ml5 (see Camera section).
-- **Torch or NFC does nothing** — both are Android-Chrome + HTTPS only; check `window.torchSupported` / `window.nfcStatus`.
+- **Torch does nothing** — check `isTorchSupported()` and `window.torchError`. The torch needs HTTPS and a phone with a rear flash. iPhones need iOS 17.4 or later.
+- **NFC does nothing** — NFC is Android Chrome + HTTPS only; check `window.nfcStatus`.
 - **GPS hangs on "Acquiring…" or times out** — cold start can take 5-30s, longer indoors; move outdoors, retry, and confirm OS-level Location Services is on. `window.geoStatus` tells you which state you're in.
 - **GPS denied even after tapping Allow** — the OS-level Location Services toggle (iOS Settings → Privacy & Security → Location Services; Android Settings → Location) must also be on; in-app browsers (Instagram/Facebook) usually fail — open in Safari/Chrome.
 - **BLE won't connect on iPhone** — Web Bluetooth is unavailable in iOS Safari/Chrome; use the Bluefy app.
@@ -632,7 +634,7 @@ All hardware requires a secure context (HTTPS or localhost).
 - Distinguish sensors, mic, sound-only, speech, camera, vibration, torch, NFC, GPS, BLE, and Share permissions/connections.
 - Mention HTTPS requirements for mobile hardware.
 - Mention p5.js 2 event changes when touch callbacks are involved.
-- Flag browser/device limits clearly: torch and NFC are Android-Chrome-oriented; vibration is unsupported on iOS; BLE needs Bluefy on iOS; speech recognition depends on Web Speech API support.
+- Flag browser/device limits clearly: NFC is Android Chrome only; vibration is unsupported on iOS; BLE needs Bluefy on iOS; speech recognition depends on Web Speech API support. The torch works on both iPhone (iOS 17.4+) and Android, with `isTorchSupported()` as the runtime check.
 - Point to the bundled examples under `examples/` when useful — feature folders include `movement/`, `microphone/`, `sound/`, `touch/`, `vibration/`, `camera/`, `torch/`, `nfc/`, `geo/`, `ble/`, `wakelock/`, and `combined/`, plus `ml5/`, `UIStyles/`, and `UXcompare/`.
 - When migrating examples to the p5 Web Editor, follow the web-editor batch-sync workflow in `docs/web-editor/` and record links in `webeditorLinks.md`.
 

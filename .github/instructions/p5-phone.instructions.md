@@ -67,7 +67,7 @@ Check these to know if permissions have been granted:
 - `window.bleConnected` — Bluetooth device connected; values in `window.bleValues`
 - `window.shareConnected` — joined a Share room; live objects `shared`, `me`, `guests`
 - `window.cameraEnabled` — camera startup succeeded
-- `window.torchEnabled` — torch control stream active (Android Chrome)
+- `window.torchEnabled` — torch control stream active (iOS 17.4+ and Android)
 - `window.torchActive` — flashlight currently on
 - `window.nfcEnabled` — NFC scanning active (Android only)
 - `window.lastNfcSerialNumber` — most recently read NFC tag ID
@@ -129,7 +129,7 @@ debugError('error');   // Red error
 - iOS requires a **user tap** before granting sensor/mic access — cannot auto-trigger.
 - Always serve over **HTTPS** — sensors and mic are blocked on HTTP.
 - Call `lockGestures()` in `setup()` to prevent browser default touch behaviors. Use `lockGestures({ mode: 'embedded', element: canvas })` for canvases inside scrollable multi-page sites.
-- **Torch / flashlight** is Android Chrome-oriented, requires HTTPS and camera permission, and is controlled through a rear camera stream. Use `torchOn()`, `torchOff()`, `toggleTorch()`, or `setTorch(value)` after `enableTorch*()` or `enablePermissions*(['torch'])`.
+- **Torch / flashlight** works on iPhone (iOS 17.4+) and Android Chrome. It requires HTTPS and camera permission, and is controlled through a rear camera stream. Use `torchOn()`, `torchOff()`, `toggleTorch()`, or `setTorch(value)` after `enableTorch*()` or `enablePermissions*(['torch'])`. `isTorchSupported()` is `false` on phones with no rear flash and in older browsers.
 - **NFC** is Android-only (Chrome 89+). Define `nfcRead(message, serialNumber)` in your sketch to receive tag data. Use `setNfcTagAlias(id, alias)` and `isNfcTag(aliasOrId)` for named tag workflows. Use `stopNfc()` to stop scanning.
 - **PhoneCamera + ML5**: Use `cam.mapKeypoint()` / `cam.mapKeypoints()` for landmark models and `cam.mapBox()` / `cam.mapBoxes()` for object-detection boxes. Set ML5 `flipped: false` when available because PhoneCamera handles mirroring.
 - `enableSpeech*` only activates the audio context — create your own `p5.SpeechRec` object after.
