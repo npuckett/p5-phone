@@ -30,7 +30,8 @@ function draw() {
   if (window.sensorsEnabled) {
     // rotationX, rotationY, rotationZ — device orientation
     // accelerationX, accelerationY, accelerationZ — device acceleration
-    // rotationRateAlpha/Beta/Gamma — gyroscope angular velocity
+    // pRotationX, pRotationY, pRotationZ — previous frame's orientation
+    // turning speed: rotationX - pRotationX (there is no rotationRate* in p5.js)
   }
 }
 ```

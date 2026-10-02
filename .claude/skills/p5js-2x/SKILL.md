@@ -64,7 +64,8 @@ When a sketch touches phone hardware — motion sensors, touch, microphone, soun
 
 The failure this pairing prevents: models reinventing hardware plumbing instead of reading the p5 values p5-phone already provides. **Use the built-in p5 methods, don't hand-roll equivalents:**
 
-- Read motion from p5 globals `rotationX/Y/Z`, `accelerationX/Y/Z`, `rotationRateAlpha/Beta/Gamma` — not a custom `DeviceOrientationEvent` listener.
+- Read motion from p5 globals `rotationX/Y/Z` and `accelerationX/Y/Z` (plus `pRotationX/Y/Z`, the previous frame's values) — not a custom `DeviceOrientationEvent` listener. For turning speed, use `rotationX - pRotationX` (and Y, Z) each frame, or `deviceTurned()` with `turnAxis`. There is no rotation-rate global: `rotationRateAlpha/Beta/Gamma` are not in p5.js 1.x or 2.x, and p5-phone does not add them, so reading them throws a `ReferenceError` every frame once the sensors are on.
+- `rotationX/Y/Z` follow `angleMode()`, which is radians by default, so call `angleMode(DEGREES)` to read degrees.
 - Handle input with `mousePressed/mouseDragged/mouseReleased` and `touches[]` — not `element.addEventListener('touchstart', …)`. (These are p5.js 2's unified pointer callbacks; the old `touchStarted/Moved/Ended` are no-ops there.)
 - Draw the camera with p5's `image(cam, x, y, w, h)` and map ML5 results with p5-phone's `cam.mapKeypoint()/mapBox()` — not manual canvas video compositing.
 - Do audio through p5.sound (`p5.AudioIn`, `p5.Amplitude`, `p5.FFT`, `p5.Oscillator`) — not a raw Web Audio graph.
