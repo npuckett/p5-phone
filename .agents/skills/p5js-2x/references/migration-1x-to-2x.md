@@ -148,7 +148,7 @@ if (mouseButton.center) { /* … */ }
 
 ## 5. Touch and multitouch
 
-`touchStarted()` / `touchMoved()` / `touchEnded()` still exist, but mouse and touch are unified under the browser's **pointer model**. `mousePressed/Dragged/Released` fire for touch too. For multitouch, read the global `touches` array rather than assuming separate code paths.
+Mouse and touch are unified under the browser's **pointer model**. `mousePressed/Dragged/Released` fire for touch too. For multitouch, read the global `touches` array rather than assuming separate code paths. `touchStarted()` / `touchMoved()` / `touchEnded()` are never called in 2.x, so handlers written for them silently do nothing.
 
 ```js
 // 2.x — one code path for mouse + single touch
