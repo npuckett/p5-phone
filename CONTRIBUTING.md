@@ -58,7 +58,7 @@ npx p5-webeditor-sync session
    export $(grep -v '^#' .env/keys.txt | xargs)
    npm publish --//registry.npmjs.org/:_authToken="$NPM_TOKEN"
    ```
-   Check first with `npm publish --dry-run`. Run `npm run test:press` and `npm run test:share` before a release that touches the activation UIs or Share, and `npm run test:audio` before one that touches the sound or mic taps.
+   Check first with `npm publish --dry-run`. Run `npm run test:press` and `npm run test:share` before a release that touches the activation UIs or Share, `npm run test:audio` before one that touches the sound or mic taps, and `npm run test:input` before one that touches motion sensors or touch handling.
 4. Update CDN version pins (`p5-phone@VERSION`) in:
    - Example `index.html` files (~75 files)
    - [README.md](README.md)

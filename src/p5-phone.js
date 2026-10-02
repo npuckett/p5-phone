@@ -354,6 +354,22 @@ if (typeof p5 === 'undefined') {
   console.warn('p5-phone: load p5.js before p5-phone.js for correct version detection and prototype hooks.');
 }
 
+// A computer with no tilt sensor still sends one deviceorientation event, with alpha,
+// beta and gamma all null (Chrome on a laptop does on every page load). p5 copies those
+// into rotationX/Y/Z through _fromDegrees(), which keeps null in angleMode(DEGREES), so
+// every map() or round() on rotationX logs a p5.js warning, every frame. Drop the empty
+// reading before p5 sees it: rotationX/Y/Z stay 0 until a real reading arrives. Added
+// now, in the capture phase, so it runs before p5's listener (added when the sketch starts).
+(function _ignoreEmptyOrientation() {
+  if (window._p5phoneOrientationGuarded) return;
+  window._p5phoneOrientationGuarded = true;
+  window.addEventListener('deviceorientation', function(e) {
+    if (e.alpha === null && e.beta === null && e.gamma === null) {
+      e.stopImmediatePropagation();
+    }
+  }, true);
+})();
+
 // =========================================
 // DEVICE DETECTION (mobile vs desktop)
 // =========================================
@@ -5836,6 +5852,33 @@ if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'fu
 // P5.JS 2.0 ADDON REGISTRATION
 // =========================================
 
+// p5.js 2.0 to 2.3.0 release a finger on pointerup but have no pointercancel handler. A
+// touch the phone takes back (a system swipe, more fingers than it tracks, a scroll or
+// zoom the browser takes over) stays in touches[] until the page reloads, mouseIsPressed
+// stays true until another finger lifts, and mouseReleased() never runs for it. Hand the
+// cancel to p5's own pointerup handling, so a cancelled finger counts as lifted.
+function _releaseCancelledPointers(instance) {
+  // p5.js 2.3.1 added its own _onpointercancel (it releases the touch without calling
+  // mouseReleased()). Leave the cancel to p5 there, so nothing is released twice.
+  if (typeof instance._onpointerup !== 'function' || typeof instance._onpointercancel === 'function') return;
+  window.addEventListener('pointercancel', function(e) {
+    // A mouse is only cancelled when a native drag starts, and p5 releases it on dragend
+    if (e.pointerType === 'mouse') return;
+    // Release the finger where p5 last saw it. WebKit sends the pointercancel for a touch
+    // that a scroll or zoom takes over at 0, 0, which would jump mouseX/mouseY to the corner.
+    const last = instance._activePointers && instance._activePointers.get(e.pointerId);
+    instance._onpointerup(last ? new PointerEvent('pointercancel', {
+      pointerId: e.pointerId,
+      pointerType: e.pointerType,
+      isPrimary: e.isPrimary,
+      clientX: last.clientX,
+      clientY: last.clientY,
+      screenX: last.screenX,
+      screenY: last.screenY
+    }) : e);
+  }, { signal: instance._removeSignal });
+}
+
 /**
  * Register as a p5.js 2.0 addon via p5.registerAddon().
  * This provides the modern lifecycle integration for p5.js 2.0+
@@ -6006,6 +6049,8 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
       this.debug = debug;
       this.debugError = debugError;
       this.debugWarn = debugWarn;
+
+      _releaseCancelledPointers(this);
     };
 
     lifecycles.preremove = function() {

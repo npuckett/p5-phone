@@ -4,8 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Added `npm run test:input` (`test-input-state.js`), a Playwright check of the two fixes below: the empty tilt reading under p5.js 1.x, 2.2.3 and 2.3.4 (no warnings for 3 seconds after the tap, then real readings come through), and cancelled touches under p5.js 2.2.3, with and without `lockGestures()` (real cancels from Chromium's touch emulation, a cancel at 0, 0 the way WebKit sends one, two fingers, a mouse), plus a check that p5-phone leaves the cancel to p5.js 2.3.4. `test-input-state.html` is the same check on a laptop and on real phones, with a switch to compare against 1.15.0.
+
 ### Changed
 - **Docs: the torch / flashlight works on iPhone too.** The README, SKILL.md and its copies, the Copilot instructions, the examples homepage and a source comment said it was Android Chrome only. WebKit added the `torch` camera constraint in Safari 17.4 (iOS 17.4), and it was tested on an iPhone on 2026-10-01. `isTorchSupported()` / `window.torchSupported` is still the runtime check for phones with no rear flash and older browsers. The library code did not change.
+
+### Fixed
+- **Tilt sketches flooded the console on a laptop.** A computer with no tilt sensor sends one `deviceorientation` event with every angle `null` (Chrome on a laptop does on each page load). p5.js copied it into `rotationX/Y/Z`, which stay `null` in `angleMode(DEGREES)`, so every `map()` or `round()` on them logged "Expected number at the first parameter in map()" each frame: hundreds of warnings a second, in the p5 Web Editor's console too. `window.sensorsEnabled` turns true after the tap on a laptop as well, so gating on it did not help. p5-phone now drops the empty reading before p5 sees it, and `rotationX/Y/Z` stay 0 until a real reading arrives. A reading with any angle in it still goes through. Sketches no longer need their own `deviceorientation` listener for this.
+- **Cancelled touches stayed down with p5.js 2.0 to 2.3.0.** Those versions (2.2.3 included) have no `pointercancel` handler, so a touch the phone took back (a system swipe, too many fingers, a scroll or zoom the browser took over) stayed in `touches` until the page reloaded, `mouseIsPressed` stayed `true` until another finger lifted, and `mouseReleased()` never ran for it. p5-phone now hands the cancel to p5's own release handling, with or without `lockGestures()`, at the finger's last position (WebKit sends some cancels at 0, 0). `mouseReleased(e)` gets `e.type === 'pointercancel'`, so a tone started in `mousePressed()` and faded in `mouseReleased()` stops. A mouse's `pointercancel`, sent when a native drag starts, is left to p5, which releases it on `dragend`. p5.js 2.3.1 added its own `pointercancel` handling, which releases the touch without calling `mouseReleased()`; p5-phone leaves the cancel to p5 there.
+
+### Documentation
+- README, SKILL.md (all five copies) and the Copilot instructions: `rotationX/Y/Z` follow `angleMode()`, so they are radians unless the sketch calls `angleMode(DEGREES)`. The README and skill sketches that turn tilt into pixels now call it; in radians, `rotationY * 3` moved a few pixels. The README's rotation ranges are corrected (`rotationY` runs from -90° to 90°, `rotationZ` from 0° to 360°).
+- README, SKILL.md and the Copilot instructions: `mouseIsPressed` turns false as soon as any one finger lifts, so multi-finger sketches should test `touches.length > 0`. SKILL.md has a new Touch section.
 
 ## [1.15.0] - 2026-09-26
 

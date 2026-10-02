@@ -35,6 +35,8 @@ This library simplifies access to the following p5.js mobile sensor and audio co
 **Touch/Pointer Events:**
 - [`mousePressed()`](https://p5js.org/reference/p5/mousePressed/) - Called when a press/touch begins (works for both mouse and touch in p5.js 1.x and 2.0)
 - [`mouseReleased()`](https://p5js.org/reference/p5/mouseReleased/) - Called when a press/touch ends (works for both mouse and touch in p5.js 1.x and 2.0)
+- [`mouseIsPressed`](https://p5js.org/reference/p5/mouseIsPressed/) - `true` while a press/touch is down. It turns `false` as soon as any one finger lifts, so multi-finger sketches should test `touches.length > 0` instead
+- [`touches`](https://p5js.org/reference/p5/touches/) - Every finger on the screen, each with `x`, `y` and `id`
 - [`touchStarted()`](https://p5js.org/reference/p5/touchStarted/) - Called when a touch begins (p5.js 1.x only)
 - [`touchEnded()`](https://p5js.org/reference/p5/touchEnded/) - Called when a touch ends (p5.js 1.x only)
 
@@ -49,6 +51,8 @@ This library simplifies access to the following p5.js mobile sensor and audio co
 - [`deviceMoved()`](https://p5js.org/reference/p5/deviceMoved/) - Movement detection event
 - [`setShakeThreshold()`](https://p5js.org/reference/p5/setShakeThreshold/) - Set shake detection sensitivity
 - [`setMoveThreshold()`](https://p5js.org/reference/p5/setMoveThreshold/) - Set movement detection sensitivity
+
+`rotationX/Y/Z` follow [`angleMode()`](https://p5js.org/reference/p5/angleMode/): they are radians unless the sketch calls `angleMode(DEGREES)`.
 
 **Audio Input (requires p5.sound):**
 - [`p5.AudioIn()`](https://p5js.org/reference/p5.sound/p5.AudioIn/) - Audio input object
@@ -84,6 +88,8 @@ p5-phone supports both **p5.js 1.x** and **p5.js 2.0+**.
 | `p5.registerAddon()` | ❌ | ✅ (auto-detected) |
 
 **Key change in p5.js 2.0:** Touch-specific callbacks (`touchStarted`, `touchMoved`, `touchEnded`) are no longer dispatched. The unified Pointer API routes all input (mouse + touch) through `mousePressed()`, `mouseDragged()`, and `mouseReleased()`. These mouse callbacks work in **both** p5.js 1.x and 2.0, so use them for forward-compatible code.
+
+**Cancelled touches:** p5.js 2.0 to 2.3.0 (2.2.3 included) have no `pointercancel` handler, so on their own they keep a touch the phone cancels (a system swipe, too many fingers) in `touches` until the page reloads. p5-phone releases that touch as if the finger lifted: it leaves `touches`, `mouseIsPressed` turns `false`, and `mouseReleased(e)` runs with `e.type === 'pointercancel'`. p5.js 2.3.1 and later release a cancelled touch themselves, without calling `mouseReleased()`, and p5-phone leaves it to them.
 
 p5-phone automatically detects the p5.js version and adjusts its internal touch override behavior accordingly. No configuration needed.
 
@@ -192,6 +198,9 @@ function setup() {
   // Lock mobile gestures to prevent browser interference
   lockGestures();
   
+  // Tilt in degrees (rotationX/Y/Z follow angleMode, and p5 uses radians unless told)
+  angleMode(DEGREES);
+
   // Enable motion sensors with tap-to-start
   enableGyroTap('Tap to enable motion sensors');
   
@@ -523,9 +532,9 @@ enableGyroButton('Enable Motion');
 
 | Variable | Description | Range/Units |
 |----------|-------------|-------------|
-| [`rotationX`](https://p5js.org/reference/p5/rotationX/) | Device tilt forward/backward | -180° to 180° |
-| [`rotationY`](https://p5js.org/reference/p5/rotationY/) | Device tilt left/right | -180° to 180° |
-| [`rotationZ`](https://p5js.org/reference/p5/rotationZ/) | Device rotation around screen | -180° to 180° |
+| [`rotationX`](https://p5js.org/reference/p5/rotationX/) | Device tilt forward/backward | -180° to 180° (with `angleMode(DEGREES)`) |
+| [`rotationY`](https://p5js.org/reference/p5/rotationY/) | Device tilt left/right | -90° to 90° (with `angleMode(DEGREES)`) |
+| [`rotationZ`](https://p5js.org/reference/p5/rotationZ/) | Device rotation around screen | 0° to 360° (with `angleMode(DEGREES)`) |
 | [`accelerationX`](https://p5js.org/reference/p5/accelerationX/) | Acceleration left/right | m/s² |
 | [`accelerationY`](https://p5js.org/reference/p5/accelerationY/) | Acceleration up/down | m/s² |
 | [`accelerationZ`](https://p5js.org/reference/p5/accelerationZ/) | Acceleration forward/back | m/s² |
@@ -534,8 +543,19 @@ enableGyroButton('Enable Motion');
 
 **Important:** All motion sensor variables, including `deviceShaken` and `deviceMoved`, are only available when `window.sensorsEnabled` is true. Always check this status before using any motion data.
 
+**Degrees or radians:** `rotationX/Y/Z` follow [`angleMode()`](https://p5js.org/reference/p5/angleMode/), and p5.js uses radians unless told otherwise. Call `angleMode(DEGREES)` in `setup()` for the degree ranges above; in radians, `rotationY * 3` moves a circle a few pixels.
+
+**On a laptop:** a computer with no tilt sensor still turns `window.sensorsEnabled` true after the tap, and `rotationX/Y/Z` stay 0. The browser sends one empty reading there (every angle `null`); p5-phone drops it before p5 sees it, so `map(rotationX, …)` never gets `null`.
+
 **Example:**
 ```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  angleMode(DEGREES); // rotationX/Y/Z in degrees
+  enableGyroTap('Tap to enable motion sensors');
+}
+
 function draw() {
   // CRITICAL: Always check window.sensorsEnabled first
   if (window.sensorsEnabled) {
@@ -1377,6 +1397,7 @@ function setup() {
   mic.disconnect();
   mic.connect(amplitude);
   lockGestures();
+  angleMode(DEGREES);
   
   // One tap enables both sensors and microphone
   enableAllTap('Tap to enable sensors & microphone');
@@ -1725,6 +1746,7 @@ The canvas displays a centered message until the user taps. Great for "full-scre
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
+  angleMode(DEGREES);
   enableSensorCanvas('Tap canvas to begin');
 }
 
@@ -1752,6 +1774,7 @@ A styled banner slides in from the top of the screen with an animated entrance. 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
+  angleMode(DEGREES);
   enableSensorBanner('Tap here to enable motion sensors');
 }
 
@@ -1785,6 +1808,7 @@ Bind the permission activation to any existing HTML element on the page using a 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
+  angleMode(DEGREES);
   enableAllOn('#start-btn');
 }
 
@@ -1816,6 +1840,7 @@ A bare, semi-transparent full-screen overlay with an optional pulsing circle in 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
+  angleMode(DEGREES);
   enableSensorMinimal({ color: '#1a1030', opacity: 0.4, iconColor: '#ffcc00' });
 }
 
@@ -1851,6 +1876,14 @@ iOS Safari requires a **user gesture** (tap, click) before granting access to mo
 1. Make sure you're serving over **HTTPS** — motion sensors and microphone are blocked on insecure origins.
 2. Check that you've called one of the `enable...` functions in `setup()`.
 3. On iOS, check Settings → Safari → Motion & Orientation Access is enabled.
+
+### My tilt sketch barely moves
+
+`rotationX/Y/Z` follow `angleMode()`, and p5.js uses radians unless told otherwise, so `rotationY * 3` is only a few pixels. Call `angleMode(DEGREES)` in `setup()`. See [Motion Sensor Activation](#motion-sensor-activation).
+
+### `mouseIsPressed` is false while a finger is still on the screen
+
+p5.js sets `mouseIsPressed` to `false` as soon as any one finger lifts. In a multi-finger sketch, test `touches.length > 0` for "a finger is down".
 
 ### The debug console isn't showing
 

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5-phone: tilt and touch state check</title>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; }
+  </style>
+  <!--
+    Laptop and phone check for the empty tilt reading and for cancelled touches (p5.js 2.2.3).
+    Serve over HTTPS or localhost:  npm run serve:docs  ->  /test-input-state.html
+    Query params:
+      lib = src | 1.15.0    this repo's src/p5-phone.js, or the published 1.15.0 to compare (default src)
+
+    Tilt, after the tap:
+      laptop  PASS: rotation reads 0 0 0 and "p5.js warnings" stays at 0.
+              (1.15.0: null null null, and the warnings climb by hundreds a second)
+      phone   PASS: rotation follows the tilt, in degrees.
+    Touch: hold a finger on the screen, then let the phone take it from the page: a system
+    swipe (up from the bottom edge, down from the top) or more fingers than the phone tracks.
+      PASS: once no finger is on the screen, touches reads 0, mouseIsPressed false, the
+            background is dark, and the last release reads pointercancel at the finger's
+            last position (not 0, 0).
+      FAIL: a red background with no finger on the screen is a stuck touch (as in 1.15.0).
+  -->
+  <script>
+    // Count p5.js friendly warnings ("🌸 p5.js says: …"), which p5 prints with console.log
+    window.p5Warnings = 0;
+    (function () {
+      var log = console.log;
+      console.log = function () {
+        if (typeof arguments[0] === 'string' && arguments[0].indexOf('p5.js says') !== -1) window.p5Warnings++;
+        return log.apply(console, arguments);
+      };
+    })();
+    (function () {
+      var lib = new URLSearchParams(location.search).get('lib');
+      var urls = [
+        'https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js',
+        lib === '1.15.0' ? 'https://cdn.jsdelivr.net/npm/p5-phone@1.15.0/dist/p5-phone.js' : 'src/p5-phone.js'
+      ];
+      urls.forEach(function (u) { document.write('<script src="' + u + '"><\/script>'); });
+    })();
+  </script>
+</head>
+<body>
+<script>
+const lib = new URLSearchParams(location.search).get('lib') || 'src';
+let lastRelease = '(none yet)';
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  angleMode(DEGREES);
+  enableGyroTap('Tap to start');
+}
+
+function draw() {
+  const down = touches.length > 0 || mouseIsPressed;
+  background(down ? color(150, 30, 30) : color(30, 30, 50));
+
+  // What a tilt sketch does with rotation. With rotationX null, each map() logs a warning.
+  if (window.sensorsEnabled) {
+    noStroke();
+    fill(255, 120);
+    circle(map(rotationY, -45, 45, 0, width, true), map(rotationX, -45, 45, 0, height, true), 60);
+  }
+
+  const shown = (v) => (v === null ? 'null' : Math.round(v));
+  fill(255);
+  textSize(16);
+  textAlign(LEFT, TOP);
+  text([
+    'p5-phone ' + lib + '   p5.js ' + p5.VERSION,
+    '',
+    'rotationX ' + shown(rotationX) + '   rotationY ' + shown(rotationY) + '   rotationZ ' + shown(rotationZ),
+    'p5.js warnings: ' + window.p5Warnings,
+    '',
+    'touches: ' + touches.length + '   mouseIsPressed: ' + mouseIsPressed,
+    'last release: ' + lastRelease,
+    '',
+    'Hold a finger down, then swipe up from the bottom edge or down from the top.',
+    'Red with no finger on the screen = stuck touch (FAIL).',
+  ].join('\n'), 16, 60, width - 32);
+}
+
+function mouseReleased(e) {
+  lastRelease = (e ? e.type : 'release') + ' at ' + Math.round(mouseX) + ', ' + Math.round(mouseY);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+</script>
+</body>
+</html>

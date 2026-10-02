@@ -19,6 +19,7 @@ Every mobile sketch should follow this structure:
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures(); // REQUIRED: prevents scroll, zoom, pull-to-refresh
+  angleMode(DEGREES); // rotationX/Y/Z in degrees. p5 uses radians unless told
 
   // Choose ONE permission style (Tap is simplest):
   enableSensorTap('Tap to enable sensors');
@@ -28,7 +29,7 @@ function draw() {
   background(220);
 
   if (window.sensorsEnabled) {
-    // rotationX, rotationY, rotationZ — device orientation
+    // rotationX, rotationY, rotationZ — device orientation, in the current angleMode()
     // accelerationX, accelerationY, accelerationZ — device acceleration
     // pRotationX, pRotationY, pRotationZ — previous frame's orientation
     // turning speed: rotationX - pRotationX (there is no rotationRate* in p5.js)
@@ -130,6 +131,7 @@ debugError('error');   // Red error
 - iOS requires a **user tap** before granting sensor/mic access — cannot auto-trigger.
 - Always serve over **HTTPS** — sensors and mic are blocked on HTTP.
 - Call `lockGestures()` in `setup()` to prevent browser default touch behaviors. Use `lockGestures({ mode: 'embedded', element: canvas })` for canvases inside scrollable multi-page sites.
+- `mouseIsPressed` turns false as soon as any one finger lifts. In multi-finger sketches, test `touches.length > 0` for "a finger is down".
 - **Torch / flashlight** works on iPhone (iOS 17.4+) and Android Chrome. It requires HTTPS and camera permission, and is controlled through a rear camera stream. Use `torchOn()`, `torchOff()`, `toggleTorch()`, or `setTorch(value)` after `enableTorch*()` or `enablePermissions*(['torch'])`. `isTorchSupported()` is `false` on phones with no rear flash and in older browsers.
 - **NFC** is Android-only (Chrome 89+). Define `nfcRead(message, serialNumber)` in your sketch to receive tag data. Use `setNfcTagAlias(id, alias)` and `isNfcTag(aliasOrId)` for named tag workflows. Use `stopNfc()` to stop scanning.
 - **PhoneCamera + ML5**: Use `cam.mapKeypoint()` / `cam.mapKeypoints()` for landmark models and `cam.mapBox()` / `cam.mapBoxes()` for object-detection boxes. Set ML5 `flipped: false` when available because PhoneCamera handles mirroring.

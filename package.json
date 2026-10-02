@@ -16,6 +16,7 @@
     "test:press": "node test-press-state.js",
     "test:audio": "node test-audio-unlock.js",
     "test:share": "node test-share-e2e.js",
+    "test:input": "node test-input-state.js",
     "prepublishOnly": "npm run build",
     "prepare": "npm run build",
     "version": "echo \"Version bumped to $npm_package_version\"",
