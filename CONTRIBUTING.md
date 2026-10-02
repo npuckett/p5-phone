@@ -53,12 +53,12 @@ npx p5-webeditor-sync session
    npm run release:patch   # or release:minor / release:major
    ```
    The `postversion` hook pushes commits and tags to origin.
-3. Publish to npm (the token from `.env/keys.txt` is passed explicitly; `~/.npmrc` does not read `NPM_TOKEN`):
+3. Publish to npm, approving the login and the publish in the browser (npm prints an `npmjs.com/auth/cli/…` link for each):
    ```bash
-   export $(grep -v '^#' .env/keys.txt | xargs)
-   npm publish --//registry.npmjs.org/:_authToken="$NPM_TOKEN"
+   npm login
+   npm publish
    ```
-   Check first with `npm publish --dry-run`. Run `npm run test:press` and `npm run test:share` before a release that touches the activation UIs or Share, `npm run test:audio` before one that touches the sound or mic taps, `npm run test:input` before one that touches motion sensors or touch handling, `npm run test:modes` before one that adds functions or changes how they are registered with p5, and `npm run test:remove` before one that touches the p5.js 2.x addon or what `remove()` releases.
+   The token in `.env/keys.txt` no longer works for this. It bypasses 2FA, and npm now refuses direct publishing with such tokens: on 2026-10-02, publishing 1.15.1 with it failed with `404 Not Found - PUT https://registry.npmjs.org/p5-phone`, though `npm whoami` accepted the token. See https://gh.io/npm-gat-bypass2fa-deprecation. Check first with `npm publish --dry-run`. Run `npm run test:press` and `npm run test:share` before a release that touches the activation UIs or Share, `npm run test:audio` before one that touches the sound or mic taps, `npm run test:input` before one that touches motion sensors or touch handling, `npm run test:modes` before one that adds functions or changes how they are registered with p5, and `npm run test:remove` before one that touches the p5.js 2.x addon or what `remove()` releases.
 4. Update CDN version pins (`p5-phone@VERSION`) in:
    - Example `index.html` files (~75 files)
    - [README.md](README.md)
