@@ -4413,6 +4413,8 @@ function _initializeP5TouchOverrides() {
   let attempts = 0;
   
   const tryOverride = () => {
+    // unlockGestures() (or remove()) ran first: leave the sketch's handlers alone
+    if (!_gestureLockState.locked) return;
     attempts++;
     // Check multiple signals that p5 setup has completed
     const p5Ready = (typeof p5 !== 'undefined' && p5.instance) ||
@@ -5682,184 +5684,201 @@ if (typeof p5 !== 'undefined' && p5.prototype) {
 // =========================================
 
 /**
- * Add functions to p5.js prototype for namespace support in p5.js 1.x.
- * p5.js 2.x uses p5.registerAddon() below; registering in both places
- * creates duplicate globals during p5 2 global-mode binding.
- *
- * Non-enumerable, because p5.js 1.x global mode copies every enumerable
- * p5.prototype property onto window, and these names are window globals already:
- * the unminified p5.js would log "p5 had problems creating the global function"
- * once per name at startup, and remove() would set them all to undefined. Instance
- * mode still finds them through the prototype (p.lockGestures()).
+ * Every p5-phone function a sketch can call on its p5 instance (p.lockGestures()).
+ * p5.js 1.x finds them on p5.prototype (below); p5.js 2.x on each sketch, added in
+ * the addon's presetup.
  */
-if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'function') {
-  const methods = {
-    // Core permission functions
-    lockGestures,
-    unlockGestures,
-    showDesktopQr,
-    hideDesktopQr,
-    setQrUrl,
-    enableGyroTap,
-    enableGyroButton,
-    enableSensorTap: enableGyroTap,
-    enableSensorButton: enableGyroButton,
-    enableMicTap,
-    enableMicButton,
-    enableSoundTap,
-    enableSoundButton,
-    enableSpeechTap,
-    enableSpeechButton,
-    enableVibrationTap,
-    enableVibrationButton,
-    vibrate,
-    stopVibration,
-    enableTorchTap,
-    enableTorchButton,
-    enableFlashlightTap,
-    enableFlashlightButton,
-    setTorch,
-    torchOn,
-    torchOff,
-    toggleTorch,
-    stopTorch,
-    isTorchSupported,
-    setFlashlight,
-    flashlightOn,
-    flashlightOff,
-    toggleFlashlight,
-    stopFlashlight,
-    enableNfcTap,
-    enableNfcButton,
-    stopNfc,
-    setNfcTagAlias,
-    getNfcTagAlias,
-    isNfcTag,
-    enableGeoTap,
-    enableGeoButton,
-    stopGeo,
-    setGeoOptions,
-    getGeoPosition,
-    geoDistance,
-    geoInPolygon,
-    isBleSupported,
-    bleSetup,
-    bleConnect,
-    bleDisconnect,
-    bleRead,
-    bleWrite,
-    enableBleTap,
-    enableBleButton,
-    isShareSupported,
-    shareSetup,
-    shareConnect,
-    shareDisconnect,
-    shareSet,
-    shareSetMe,
-    shareEmit,
-    getShareJoinUrl,
-    enableShareTap,
-    enableShareButton,
-    enableAllTap,
-    enableAllButton,
-    enablePermissionsTap,
-    enablePermissionsButton,
-    enableHardwareTap: enablePermissionsTap,
-    enableHardwareButton: enablePermissionsButton,
+const _p5PhoneMethods = {
+  // Core permission functions
+  lockGestures,
+  unlockGestures,
+  showDesktopQr,
+  hideDesktopQr,
+  setQrUrl,
+  enableGyroTap,
+  enableGyroButton,
+  enableSensorTap: enableGyroTap,
+  enableSensorButton: enableGyroButton,
+  enableMicTap,
+  enableMicButton,
+  enableSoundTap,
+  enableSoundButton,
+  enableSpeechTap,
+  enableSpeechButton,
+  enableVibrationTap,
+  enableVibrationButton,
+  vibrate,
+  stopVibration,
+  enableTorchTap,
+  enableTorchButton,
+  enableFlashlightTap,
+  enableFlashlightButton,
+  setTorch,
+  torchOn,
+  torchOff,
+  toggleTorch,
+  stopTorch,
+  isTorchSupported,
+  setFlashlight,
+  flashlightOn,
+  flashlightOff,
+  toggleFlashlight,
+  stopFlashlight,
+  enableNfcTap,
+  enableNfcButton,
+  stopNfc,
+  setNfcTagAlias,
+  getNfcTagAlias,
+  isNfcTag,
+  enableGeoTap,
+  enableGeoButton,
+  stopGeo,
+  setGeoOptions,
+  getGeoPosition,
+  geoDistance,
+  geoInPolygon,
+  isBleSupported,
+  bleSetup,
+  bleConnect,
+  bleDisconnect,
+  bleRead,
+  bleWrite,
+  enableBleTap,
+  enableBleButton,
+  isShareSupported,
+  shareSetup,
+  shareConnect,
+  shareDisconnect,
+  shareSet,
+  shareSetMe,
+  shareEmit,
+  getShareJoinUrl,
+  enableShareTap,
+  enableShareButton,
+  enableAllTap,
+  enableAllButton,
+  enablePermissionsTap,
+  enablePermissionsButton,
+  enableHardwareTap: enablePermissionsTap,
+  enableHardwareButton: enablePermissionsButton,
 
-    // Canvas-first-touch style
-    enableGyroCanvas,
-    enableSensorCanvas: enableGyroCanvas,
-    enableMicCanvas,
-    enableSoundCanvas,
-    enableSpeechCanvas,
-    enableVibrationCanvas,
-    enableTorchCanvas,
-    enableFlashlightCanvas,
-    enableNfcCanvas,
-    enableGeoCanvas,
-    enableBleCanvas,
-    enableShareCanvas,
-    enableAllCanvas,
-    enableCameraCanvas,
-    enablePermissionsCanvas,
-    enableHardwareCanvas: enablePermissionsCanvas,
+  // Canvas-first-touch style
+  enableGyroCanvas,
+  enableSensorCanvas: enableGyroCanvas,
+  enableMicCanvas,
+  enableSoundCanvas,
+  enableSpeechCanvas,
+  enableVibrationCanvas,
+  enableTorchCanvas,
+  enableFlashlightCanvas,
+  enableNfcCanvas,
+  enableGeoCanvas,
+  enableBleCanvas,
+  enableShareCanvas,
+  enableAllCanvas,
+  enableCameraCanvas,
+  enablePermissionsCanvas,
+  enableHardwareCanvas: enablePermissionsCanvas,
 
-    // Banner style
-    enableGyroBanner,
-    enableSensorBanner: enableGyroBanner,
-    enableMicBanner,
-    enableSoundBanner,
-    enableSpeechBanner,
-    enableVibrationBanner,
-    enableTorchBanner,
-    enableFlashlightBanner,
-    enableNfcBanner,
-    enableGeoBanner,
-    enableBleBanner,
-    enableShareBanner,
-    enableAllBanner,
-    enableCameraBanner,
-    enablePermissionsBanner,
-    enableHardwareBanner: enablePermissionsBanner,
+  // Banner style
+  enableGyroBanner,
+  enableSensorBanner: enableGyroBanner,
+  enableMicBanner,
+  enableSoundBanner,
+  enableSpeechBanner,
+  enableVibrationBanner,
+  enableTorchBanner,
+  enableFlashlightBanner,
+  enableNfcBanner,
+  enableGeoBanner,
+  enableBleBanner,
+  enableShareBanner,
+  enableAllBanner,
+  enableCameraBanner,
+  enablePermissionsBanner,
+  enableHardwareBanner: enablePermissionsBanner,
 
-    // Minimal style
-    enableGyroMinimal,
-    enableSensorMinimal: enableGyroMinimal,
-    enableMicMinimal,
-    enableSoundMinimal,
-    enableSpeechMinimal,
-    enableVibrationMinimal,
-    enableTorchMinimal,
-    enableFlashlightMinimal,
-    enableNfcMinimal,
-    enableGeoMinimal,
-    enableBleMinimal,
-    enableShareMinimal,
-    enableAllMinimal,
-    enableCameraMinimal,
-    enablePermissionsMinimal,
-    enableHardwareMinimal: enablePermissionsMinimal,
+  // Minimal style
+  enableGyroMinimal,
+  enableSensorMinimal: enableGyroMinimal,
+  enableMicMinimal,
+  enableSoundMinimal,
+  enableSpeechMinimal,
+  enableVibrationMinimal,
+  enableTorchMinimal,
+  enableFlashlightMinimal,
+  enableNfcMinimal,
+  enableGeoMinimal,
+  enableBleMinimal,
+  enableShareMinimal,
+  enableAllMinimal,
+  enableCameraMinimal,
+  enablePermissionsMinimal,
+  enableHardwareMinimal: enablePermissionsMinimal,
 
-    // Custom element binding
-    enableGyroOn,
-    enableSensorOn: enableGyroOn,
-    enableMicOn,
-    enableSoundOn,
-    enableSpeechOn,
-    enableVibrationOn,
-    enableTorchOn,
-    enableFlashlightOn,
-    enableNfcOn,
-    enableGeoOn,
-    enableBleOn,
-    enableShareOn,
-    enableAllOn,
-    enableCameraOn,
-    enablePermissionsOn,
-    enableHardwareOn: enablePermissionsOn,
+  // Custom element binding
+  enableGyroOn,
+  enableSensorOn: enableGyroOn,
+  enableMicOn,
+  enableSoundOn,
+  enableSpeechOn,
+  enableVibrationOn,
+  enableTorchOn,
+  enableFlashlightOn,
+  enableNfcOn,
+  enableGeoOn,
+  enableBleOn,
+  enableShareOn,
+  enableAllOn,
+  enableCameraOn,
+  enablePermissionsOn,
+  enableHardwareOn: enablePermissionsOn,
 
-    // Camera functions
-    createPhoneCamera,
-    enableCameraButton,
-    enableCameraTap,
+  // Camera functions
+  createPhoneCamera,
+  enableCameraButton,
+  enableCameraTap,
 
-    // Debug functions
-    showDebug,
-    hideDebug,
-    toggleDebug,
-    debug,
-    debugError,
-    debugWarn
-  };
-  for (const name of Object.keys(methods)) {
-    Object.defineProperty(p5.prototype, name, {
+  // Debug functions
+  showDebug,
+  hideDebug,
+  toggleDebug,
+  debug,
+  debugError,
+  debugWarn
+};
+
+/**
+ * Add p5-phone's functions to target, non-enumerable. p5.js global mode walks
+ * enumerable properties with for...in twice: when it binds the sketch's functions
+ * onto window, and in remove(), which deletes each of those names from window (or
+ * sets it to undefined when it can't). p5-phone's functions are window globals
+ * already, so they have to stay out of both walks:
+ * - p5.js 1.x walks p5.prototype. The unminified p5.js logged "p5 had problems
+ *   creating the global function" once per name at startup, and remove() cleared
+ *   them all from window.
+ * - p5.js 2.x's remove() walks the sketch's own properties, where presetup puts
+ *   them, and cleared them all from window.
+ * Instance mode still finds them (p.lockGestures()).
+ */
+function _addP5PhoneMethods(target) {
+  for (const name of Object.keys(_p5PhoneMethods)) {
+    Object.defineProperty(target, name, {
       configurable: true,
       writable: true,
       enumerable: false,
-      value: methods[name]
+      value: _p5PhoneMethods[name]
     });
   }
+}
+
+/**
+ * Add functions to p5.js prototype for namespace support in p5.js 1.x.
+ * p5.js 2.x uses p5.registerAddon() below; registering in both places
+ * creates duplicate globals during p5 2 global-mode binding.
+ */
+if (typeof p5 !== 'undefined' && p5.prototype && typeof p5.registerAddon !== 'function') {
+  _addP5PhoneMethods(p5.prototype);
 
   console.log('✅ Mobile p5.js Permissions: p5.prototype functions registered');
 }
@@ -5906,173 +5925,17 @@ if (typeof p5 !== 'undefined' && typeof p5.registerAddon === 'function') {
     // p5-phone's top-level function declarations already create globals such
     // as lockGestures, so adding those names to p5.prototype before binding
     // causes "Cannot redefine property" errors. Attach instance methods after
-    // global binding but before setup() instead.
+    // global binding but before setup() instead, non-enumerable so remove()
+    // leaves the globals alone (see _addP5PhoneMethods).
     lifecycles.presetup = function() {
-      // Core permission functions
-      this.lockGestures = lockGestures;
-      this.unlockGestures = unlockGestures;
-      this.showDesktopQr = showDesktopQr;
-      this.hideDesktopQr = hideDesktopQr;
-      this.setQrUrl = setQrUrl;
-      this.enableGyroTap = enableGyroTap;
-      this.enableGyroButton = enableGyroButton;
-      this.enableSensorTap = enableGyroTap;
-      this.enableSensorButton = enableGyroButton;
-      this.enableMicTap = enableMicTap;
-      this.enableMicButton = enableMicButton;
-      this.enableSoundTap = enableSoundTap;
-      this.enableSoundButton = enableSoundButton;
-      this.enableSpeechTap = enableSpeechTap;
-      this.enableSpeechButton = enableSpeechButton;
-      this.enableVibrationTap = enableVibrationTap;
-      this.enableVibrationButton = enableVibrationButton;
-      this.vibrate = vibrate;
-      this.stopVibration = stopVibration;
-      this.enableTorchTap = enableTorchTap;
-      this.enableTorchButton = enableTorchButton;
-      this.enableFlashlightTap = enableFlashlightTap;
-      this.enableFlashlightButton = enableFlashlightButton;
-      this.setTorch = setTorch;
-      this.torchOn = torchOn;
-      this.torchOff = torchOff;
-      this.toggleTorch = toggleTorch;
-      this.stopTorch = stopTorch;
-      this.isTorchSupported = isTorchSupported;
-      this.setFlashlight = setFlashlight;
-      this.flashlightOn = flashlightOn;
-      this.flashlightOff = flashlightOff;
-      this.toggleFlashlight = toggleFlashlight;
-      this.stopFlashlight = stopFlashlight;
-      this.enableNfcTap = enableNfcTap;
-      this.enableNfcButton = enableNfcButton;
-      this.stopNfc = stopNfc;
-      this.setNfcTagAlias = setNfcTagAlias;
-      this.getNfcTagAlias = getNfcTagAlias;
-      this.isNfcTag = isNfcTag;
-      this.enableGeoTap = enableGeoTap;
-      this.enableGeoButton = enableGeoButton;
-      this.stopGeo = stopGeo;
-      this.setGeoOptions = setGeoOptions;
-      this.getGeoPosition = getGeoPosition;
-      this.geoDistance = geoDistance;
-      this.geoInPolygon = geoInPolygon;
-      this.isBleSupported = isBleSupported;
-      this.bleSetup = bleSetup;
-      this.bleConnect = bleConnect;
-      this.bleDisconnect = bleDisconnect;
-      this.bleRead = bleRead;
-      this.bleWrite = bleWrite;
-      this.enableBleTap = enableBleTap;
-      this.enableBleButton = enableBleButton;
-      this.isShareSupported = isShareSupported;
-      this.shareSetup = shareSetup;
-      this.shareConnect = shareConnect;
-      this.shareDisconnect = shareDisconnect;
-      this.shareSet = shareSet;
-      this.shareSetMe = shareSetMe;
-      this.shareEmit = shareEmit;
-      this.getShareJoinUrl = getShareJoinUrl;
-      this.enableShareTap = enableShareTap;
-      this.enableShareButton = enableShareButton;
-      this.enableAllTap = enableAllTap;
-      this.enableAllButton = enableAllButton;
-      this.enablePermissionsTap = enablePermissionsTap;
-      this.enablePermissionsButton = enablePermissionsButton;
-      this.enableHardwareTap = enablePermissionsTap;
-      this.enableHardwareButton = enablePermissionsButton;
-
-      // Canvas-first-touch style
-      this.enableGyroCanvas = enableGyroCanvas;
-      this.enableSensorCanvas = enableGyroCanvas;
-      this.enableMicCanvas = enableMicCanvas;
-      this.enableSoundCanvas = enableSoundCanvas;
-      this.enableSpeechCanvas = enableSpeechCanvas;
-      this.enableVibrationCanvas = enableVibrationCanvas;
-      this.enableTorchCanvas = enableTorchCanvas;
-      this.enableFlashlightCanvas = enableFlashlightCanvas;
-      this.enableNfcCanvas = enableNfcCanvas;
-      this.enableGeoCanvas = enableGeoCanvas;
-      this.enableBleCanvas = enableBleCanvas;
-      this.enableShareCanvas = enableShareCanvas;
-      this.enableAllCanvas = enableAllCanvas;
-      this.enableCameraCanvas = enableCameraCanvas;
-      this.enablePermissionsCanvas = enablePermissionsCanvas;
-      this.enableHardwareCanvas = enablePermissionsCanvas;
-
-      // Banner style
-      this.enableGyroBanner = enableGyroBanner;
-      this.enableSensorBanner = enableGyroBanner;
-      this.enableMicBanner = enableMicBanner;
-      this.enableSoundBanner = enableSoundBanner;
-      this.enableSpeechBanner = enableSpeechBanner;
-      this.enableVibrationBanner = enableVibrationBanner;
-      this.enableTorchBanner = enableTorchBanner;
-      this.enableFlashlightBanner = enableFlashlightBanner;
-      this.enableNfcBanner = enableNfcBanner;
-      this.enableGeoBanner = enableGeoBanner;
-      this.enableBleBanner = enableBleBanner;
-      this.enableShareBanner = enableShareBanner;
-      this.enableAllBanner = enableAllBanner;
-      this.enableCameraBanner = enableCameraBanner;
-      this.enablePermissionsBanner = enablePermissionsBanner;
-      this.enableHardwareBanner = enablePermissionsBanner;
-
-      // Minimal style
-      this.enableGyroMinimal = enableGyroMinimal;
-      this.enableSensorMinimal = enableGyroMinimal;
-      this.enableMicMinimal = enableMicMinimal;
-      this.enableSoundMinimal = enableSoundMinimal;
-      this.enableSpeechMinimal = enableSpeechMinimal;
-      this.enableVibrationMinimal = enableVibrationMinimal;
-      this.enableTorchMinimal = enableTorchMinimal;
-      this.enableFlashlightMinimal = enableFlashlightMinimal;
-      this.enableNfcMinimal = enableNfcMinimal;
-      this.enableGeoMinimal = enableGeoMinimal;
-      this.enableBleMinimal = enableBleMinimal;
-      this.enableShareMinimal = enableShareMinimal;
-      this.enableAllMinimal = enableAllMinimal;
-      this.enableCameraMinimal = enableCameraMinimal;
-      this.enablePermissionsMinimal = enablePermissionsMinimal;
-      this.enableHardwareMinimal = enablePermissionsMinimal;
-
-      // Custom element binding
-      this.enableGyroOn = enableGyroOn;
-      this.enableSensorOn = enableGyroOn;
-      this.enableMicOn = enableMicOn;
-      this.enableSoundOn = enableSoundOn;
-      this.enableSpeechOn = enableSpeechOn;
-      this.enableVibrationOn = enableVibrationOn;
-      this.enableTorchOn = enableTorchOn;
-      this.enableFlashlightOn = enableFlashlightOn;
-      this.enableNfcOn = enableNfcOn;
-      this.enableGeoOn = enableGeoOn;
-      this.enableBleOn = enableBleOn;
-      this.enableShareOn = enableShareOn;
-      this.enableAllOn = enableAllOn;
-      this.enableCameraOn = enableCameraOn;
-      this.enablePermissionsOn = enablePermissionsOn;
-      this.enableHardwareOn = enablePermissionsOn;
-
-      // Camera functions
-      this.createPhoneCamera = createPhoneCamera;
-      this.enableCameraButton = enableCameraButton;
-      this.enableCameraTap = enableCameraTap;
-
-      // Debug functions
-      this.showDebug = showDebug;
-      this.hideDebug = hideDebug;
-      this.toggleDebug = toggleDebug;
-      this.debug = debug;
-      this.debugError = debugError;
-      this.debugWarn = debugWarn;
-
+      _addP5PhoneMethods(this);
       _releaseCancelledPointers(this);
     };
 
     // p5.js 2.x keeps only the hook names in p5.lifecycleHooks (presetup, postsetup,
     // predraw, postdraw, remove) and drops any other name without a warning. remove()
     // runs this after it stops draw(), aborts _removeSignal and removes the elements p5
-    // made, and before it clears a global-mode sketch's globals, p5-phone's among them.
+    // made, and before it clears a global-mode sketch's globals.
     lifecycles.remove = function() {
       unlockGestures();
       // Release the GPS watch so removing/reloading a sketch never leaks the

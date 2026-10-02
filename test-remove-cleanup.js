@@ -16,6 +16,10 @@
  *    this ran.
  * 2. With nothing started, remove() must stay quiet: no errors, no "GPS watch stopped",
  *    geoStatus and shareStatus still 'idle'.
+ * 3. remove() within 100 ms of lockGestures(), before lockGestures() wraps the sketch's mouse
+ *    handlers, must leave them unwrapped, with no errors.
+ *    Regression: the 100 ms timer ran anyway and wrapped them on the unlocked page, then
+ *    threw "debugWarn is not a function" (remove() had cleared p5-phone's globals).
  */
 
 const fs = require('fs');
@@ -64,6 +68,16 @@ function setup() {
 function draw() { background(20); }
 function mousePressed() {}
 function shareClosed() { evlog.push('shareClosed'); }`;
+
+const earlySketch = `
+function setup() {
+  createCanvas(200, 200);
+  window.ownMousePressed = mousePressed;
+  lockGestures();
+  setTimeout(() => { remove(); window.ready = true; }, 10);
+}
+function draw() { background(20); }
+function mousePressed() {}`;
 
 const quietSketch = `
 function setup() {
@@ -182,6 +196,22 @@ const state = (p) => p.evaluate(() => {
       detail: `geoStatus ${r.geoStatus}, shareStatus ${r.shareStatus}, "GPS watch stopped" ${gpsLog ? 'logged' : 'not logged'}`,
       errors: quiet.errors.length,
       ok: r.geoStatus === 'idle' && r.shareStatus === 'idle' && r.cleared === 0 && !gpsLog && !quiet.errors.length,
+    });
+    await ctx.close();
+
+    // 3. remove() before lockGestures() wraps the mouse handlers
+    ctx = await browser.newContext({ viewport: { width: 900, height: 700 } });
+    const early = await open(ctx, page(src, earlySketch));
+    await early.p.waitForTimeout(300); // past lockGestures()'s 100 ms timer
+    const e = await early.p.evaluate(() => ({
+      locked: window.gesturesLocked,
+      mousePressed: window.mousePressed === window.ownMousePressed ? 'own' : 'wrapped',
+    }));
+    rows.push({
+      check: 'remove() right after lock', p5: ver,
+      detail: `locked ${e.locked}, mousePressed ${e.mousePressed}${early.errors.length ? ', ' + early.errors[0] : ''}`,
+      errors: early.errors.length,
+      ok: e.locked === false && e.mousePressed === 'own' && !early.errors.length,
     });
     await ctx.close();
   }

@@ -12,9 +12,13 @@
  *    onto window. p5-phone's functions are globals already, so the unminified build logged
  *    "p5 had problems creating the global function …" once per function: 144 warnings.
  * 2. Instance mode: p.lockGestures() and p.enableGyroTap() must work, under both versions.
- * 3. remove() in a p5.js 1.x global-mode sketch must leave p5-phone's functions on window.
- *    Regression: remove() cleared every enumerable p5.prototype name from window, so
- *    lockGestures, unlockGestures and the rest became undefined.
+ * 3. remove() in a global-mode sketch must leave p5-phone's functions on window, under
+ *    p5.js 1.x, 2.2.3 and 2.3.4, with no errors afterwards.
+ *    Regression: p5.js 1.x's remove() cleared every enumerable p5.prototype name from
+ *    window, and p5.js 2.x's clears every enumerable own property of the sketch, where the
+ *    addon put them for instance mode. Either way lockGestures, unlockGestures and the rest
+ *    became undefined, and lockGestures()'s timer, still pending, threw "debugWarn is not a
+ *    function".
  */
 
 const fs = require('fs');
@@ -24,6 +28,7 @@ const { chromium } = require('playwright');
 const ORIGIN = 'http://localhost:9999';
 const P5_1 = '/node_modules/p5/lib/p5.js'; // unminified: p5.min.js never logged the warnings
 const P5_2 = 'https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js';
+const P5_23 = 'https://cdn.jsdelivr.net/npm/p5@2.3.4/lib/p5.js';
 
 function page(p5Src, sketch) {
   return `<!doctype html><html><head><meta charset="utf-8">
@@ -99,18 +104,20 @@ async function open(ctx, html) {
     }
   }
 
-  // 3. remove() in global mode, p5.js 1.x
-  {
+  // 3. remove() in global mode
+  for (const [ver, src] of [['1.x', P5_1], ['2.2.3', P5_2], ['2.3.4', P5_23]]) {
     const ctx = await browser.newContext({ viewport: { width: 900, height: 700 } });
-    const { p, errors } = await open(ctx, page(P5_1, globalSketch));
-    await p.evaluate(() => remove());
-    const gone = await p.evaluate(() => ['lockGestures', 'unlockGestures', 'enableGyroTap', 'enableSensorTap', 'vibrate', 'debug']
+    const { p, errors } = await open(ctx, page(src, globalSketch));
+    await p.evaluate(() => remove()); // p5.js 2.x's remove() is async: this waits for it
+    await p.waitForTimeout(300); // past lockGestures()'s 100 ms timer
+    const gone = await p.evaluate(() => ['lockGestures', 'unlockGestures', 'enableGyroTap', 'enableSensorTap', 'vibrate', 'debug', 'debugWarn']
       .filter((name) => typeof window[name] !== 'function'));
     rows.push({
-      check: 'remove(), global mode', p5: '1.x',
+      check: 'remove(), global mode', p5: ver,
       detail: gone.length ? `undefined after remove(): ${gone.join(', ')}` : 'lockGestures, enableGyroTap and the rest still on window',
       errors: errors.length, ok: !gone.length && !errors.length,
     });
+    if (errors.length) console.log(`  first error (${ver}, remove()): ${errors[0]}`);
     await ctx.close();
   }
 
