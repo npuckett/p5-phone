@@ -169,7 +169,7 @@ Use embedded mode for canvases inside scrollable multi-page sites:
 p.lockGestures({ mode: 'embedded', element: p.canvas });
 ```
 
-Bare `lockGestures()` keeps fullscreen behavior for full-viewport sketches. `beforeunload` is now opt-in via `{ warnBeforeLeave: true }`. Call `unlockGestures()` (or `p.remove()`) to clean up listeners.
+Bare `lockGestures()` keeps fullscreen behavior for full-viewport sketches. `beforeunload` is now opt-in via `{ warnBeforeLeave: true }`. Call `unlockGestures()` (or, with p5.js 2.x, `p.remove()`) to clean up listeners.
 
 ---
 

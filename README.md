@@ -505,7 +505,7 @@ function setup() {
 
 **Purpose:** Remove gesture blocking listeners and restore saved handlers.
 
-**When to use:** Call before navigating away in SPAs, or rely on automatic cleanup when calling `p.remove()`.
+**When to use:** Call before navigating away in SPAs, or, with p5.js 2.x, rely on automatic cleanup when calling `p.remove()`.
 
 ```javascript
 unlockGestures();
