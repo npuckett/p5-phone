@@ -106,7 +106,7 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   - [Microphone Activation](#microphone-activation)
   - [Sound Output Activation](#sound-output-activation)
   - [Vibration Motor (Android Only)](#vibration-motor-android-only)
-  - [Torch / Flashlight (Android Chrome)](#torch--flashlight-android-chrome)
+  - [Torch / Flashlight (iOS + Android)](#torch--flashlight-ios--android)
   - [NFC Tag Reading (Android Only)](#nfc-tag-reading-android-only)
   - [GPS / Geolocation (iOS + Android)](#gps--geolocation-ios--android)
   - [Bluetooth Low Energy (Web Bluetooth)](#bluetooth-low-energy-web-bluetooth)
@@ -283,7 +283,7 @@ enableVibrationButton(text)   // Button-based vibration activation
 vibrate(pattern)              // Trigger vibration (duration or pattern array)
 stopVibration()               // Stop any ongoing vibration
 
-// Torch / flashlight (Android Chrome over HTTPS)
+// Torch / flashlight (iPhone iOS 17.4+ and Android Chrome, HTTPS required)
 enableTorchTap(message)       // Tap anywhere to enable flashlight control
 enableTorchButton(text)       // Button-based flashlight activation
 torchOn()                     // Turn flashlight on
@@ -392,8 +392,8 @@ this.enableGyroTap('Tap to start');
 - `window.soundEnabled` - Boolean indicating if sound output is active
 - `window.speechEnabled` - Boolean indicating if speech recognition is active
 - `window.vibrationEnabled` - Boolean indicating if vibration is available (Android only)
-- `window.torchEnabled` - Boolean indicating if the torch control stream is active (Android Chrome)
-- `window.torchSupported` - Boolean indicating if the active camera track reports torch support
+- `window.torchEnabled` - Boolean indicating if the torch control stream is active (iOS + Android)
+- `window.torchSupported` - Boolean indicating if the active camera track reports torch support (`false` with no rear flash or an older browser)
 - `window.torchActive` - Boolean indicating if the flashlight is currently on
 - `window.torchError` - Last torch error message, if any
 - `window.nfcEnabled` - Boolean indicating if NFC scanning is active (Android only)
@@ -807,14 +807,15 @@ function gameOver() {
 - Don't overuse - vibration can quickly drain battery
 - Test on Android devices as iOS doesn't support vibration
 
-### Torch / Flashlight (Android Chrome)
+### Torch / Flashlight (iOS + Android)
 
 **Purpose:** Control the rear camera flashlight from a sketch. This is useful for light-based interactions, signaling, installations, and hardware feedback.
 
 **Platform Support:**
+- **iOS Safari** - Supported on iPhone with iOS 17.4 or later
 - **Android Chrome / Chromium browsers** - Supported on devices that expose camera torch constraints
-- **iOS Safari** - Not supported through the browser
-- Requires **HTTPS** and camera permission
+- Requires **HTTPS**, camera permission, and a phone with a rear flash
+- Check `isTorchSupported()` after enabling. It returns `false` on phones with no rear flash, in older browsers, and on desktop.
 
 **Important:** Browser flashlight control is provided through a rear camera `MediaStreamTrack`, not through a separate flashlight permission. `enableTorch*()` starts an internal rear camera stream and keeps it alive while you control the torch. Use `stopTorch()` when you are done to turn the flashlight off and release the camera.
 
@@ -873,7 +874,7 @@ enablePermissionsTap(['sensors', 'torch'], 'Tap to enable shake flashlight');
 - Avoid rapid strobing
 - Call `torchOff()` before pausing a light effect
 - Call `stopTorch()` when the sketch no longer needs flashlight control
-- Test on real Android devices because browser and hardware support varies
+- Test on real phones (iPhone and Android) because browser and hardware support varies
 
 ### NFC Tag Reading (Android Only)
 
@@ -997,7 +998,7 @@ NFC tags contain NDEF records. The most common types are:
 
 ### GPS / Geolocation (iOS + Android)
 
-**Purpose:** Read the device's geographic position using the browser Geolocation API (`navigator.geolocation`). Ideal for location-aware sketches, distance/wayfinding visualizations, geofencing, and any work that responds to where the phone is. Unlike NFC/torch/vibration, GPS works on **both iOS Safari and Android Chrome**.
+**Purpose:** Read the device's geographic position using the browser Geolocation API (`navigator.geolocation`). Ideal for location-aware sketches, distance/wayfinding visualizations, geofencing, and any work that responds to where the phone is. Unlike NFC and vibration, GPS works on **both iOS Safari and Android Chrome**.
 
 **✅ Platform Support:**
 - ✅ **iOS** - Safari (iOS 13+), requires HTTPS and a user gesture to prompt

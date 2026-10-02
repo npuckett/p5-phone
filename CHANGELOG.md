@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- **Docs: the torch / flashlight works on iPhone too.** The README, SKILL.md and its copies, the Copilot instructions, the examples homepage and a source comment said it was Android Chrome only. WebKit added the `torch` camera constraint in Safari 17.4 (iOS 17.4), and it was tested on an iPhone on 2026-10-01. `isTorchSupported()` / `window.torchSupported` is still the runtime check for phones with no rear flash and older browsers. The library code did not change.
+
 ## [1.15.0] - 2026-09-26
 
 ### Added
