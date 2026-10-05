@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.15.2] - 2026-10-05
 
 ### Added
 - Added `npm run test:qr` (`test-desktop-qr.js`), a Playwright check of the address `showDesktopQr()` encodes: on a normal page (GitHub Pages, localhost) it is still `location.href`, query and hash included; in a stand-in for the p5.js Web Editor (a `blob:` iframe inside preview.p5js.org with the editor's `<base href>` and `window.editorOrigin`) it is the Present link from both the editor view and a share link; an explicit `url` and `setQrUrl()` still win; an unsaved editor sketch and a `blob:` page outside the editor show no QR.
