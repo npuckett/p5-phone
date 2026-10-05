@@ -53,10 +53,13 @@ npx p5-webeditor-sync session
    npm publish
    ```
    The token in `.env/keys.txt` no longer works for this. It bypasses 2FA, and npm now refuses direct publishing with such tokens: on 2026-10-02, publishing 1.15.1 with it failed with `404 Not Found - PUT https://registry.npmjs.org/p5-phone`, though `npm whoami` accepted the token. See https://gh.io/npm-gat-bypass2fa-deprecation. Check first with `npm publish --dry-run`. Run `npm run test:press` and `npm run test:share` before a release that touches the activation UIs or Share, `npm run test:audio` before one that touches the sound or mic taps, `npm run test:input` before one that touches motion sensors or touch handling, `npm run test:modes` before one that adds functions or changes how they are registered with p5, and `npm run test:remove` before one that touches the p5.js 2.x addon or what `remove()` releases.
-4. Update CDN version pins (`p5-phone@VERSION`) in:
-   - Example `index.html` files (~75 files)
-   - [README.md](README.md)
-   - [.github/skills/p5-phone/SKILL.md](.github/skills/p5-phone/SKILL.md) and portable skill stubs
+4. After npm and jsDelivr serve the new version, update every CDN version pin (`p5-phone@VERSION`). `git grep -l "p5-phone@OLD"` lists them:
+   - Example and workshop `index.html` files (79 files in `examples/` and `doNotTouchWorkshop/`)
+   - [README.md](README.md), [SKILL.md](SKILL.md) and its four copies, and the [Copilot instructions](.github/instructions/p5-phone.instructions.md)
+   - `verify.signature` in [p5-webeditor.config.json](p5-webeditor.config.json), the [batch-sync doc](docs/web-editor/batch-sync.md), `donottouchWorkshop.md`, `workingWithCameras.html`, `cdn-test-1.6.0.html` and `prototypes/`
+   - `webeditor/projects/`: run `npm run export:webeditor` rather than editing them
+
+   Leave the dated entries in [webeditorLinks.md](webeditorLinks.md) and [CHANGELOG.md](CHANGELOG.md) as they are. Then run the [Web Editor batch sync](#web-editor-batch-sync-checklist).
 5. Push a version tag to trigger the GitHub Release workflow (optional)
 
 ## Web Editor batch sync checklist
