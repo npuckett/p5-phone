@@ -86,7 +86,7 @@ After local examples or CDN pins change:
 
 ### Phone and GIF images
 
-The four Phone and GIF sketches upload their images from `examples/Phone and Gif/*/gifs/` with the sync, but p5-webeditor-sync 1.1.0 reads them as UTF-8 text and they arrive corrupted. See **Phone and GIF images** in [webeditorLinks.md](webeditorLinks.md).
+The four Phone and GIF sketches load their images by full URL from p5-phone's GitHub Pages site, and the export leaves their `gifs/` folders out: p5-webeditor-sync 1.1.0 uploads binary files as UTF-8 text, which corrupts them. Keep the images in `examples/Phone and Gif/*/gifs/`, where Pages serves them from. A new Web Editor sketch that needs an image, sound or font should load it by full URL the same way. See **Phone and GIF images** in [webeditorLinks.md](webeditorLinks.md#phone-and-gif-images).
 
 ## Pull requests
 

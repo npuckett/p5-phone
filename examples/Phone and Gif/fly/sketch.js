@@ -17,7 +17,9 @@ let movementThreshold = 0.1; // Minimum acceleration needed to play (below this 
 async function setup()
 {
     // Load the airplane window GIF
-    airplaneGif = await loadImage('gifs/comparison.gif');
+    // Served from the p5-phone GitHub Pages site, so the sketch also runs in the
+    // p5.js Web Editor without uploading the image
+    airplaneGif = await loadImage('https://npuckett.github.io/p5-phone/examples/Phone%20and%20Gif/fly/gifs/comparison.gif');
 
     createCanvas(windowWidth, windowHeight);
     backgroundColor = color(200, 220, 255);

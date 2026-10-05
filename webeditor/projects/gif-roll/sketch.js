@@ -16,7 +16,9 @@ let minSpeedToPlay = 0.1; // Minimum speed before pausing
 async function setup()
 {
     // Load the pencil making GIF
-    pencilGif = await loadImage('gifs/how-penciles-are-made.gif');
+    // Served from the p5-phone GitHub Pages site, so the sketch also runs in the
+    // p5.js Web Editor without uploading the image
+    pencilGif = await loadImage('https://npuckett.github.io/p5-phone/examples/Phone%20and%20Gif/roll/gifs/how-penciles-are-made.gif');
 
     createCanvas(windowWidth, windowHeight);
     backgroundColor = color(200, 255, 200);

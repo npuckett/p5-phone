@@ -19,7 +19,9 @@ let backgroundColor;
 async function setup()
 {
     // Load the corgi swimming GIF
-    corgiGif = await loadImage('gifs/corgiswimflip.gif');
+    // Served from the p5-phone GitHub Pages site, so the sketch also runs in the
+    // p5.js Web Editor without uploading the image
+    corgiGif = await loadImage('https://npuckett.github.io/p5-phone/examples/Phone%20and%20Gif/fetch/gifs/corgiswimflip.gif');
 
     createCanvas(windowWidth, windowHeight);
     backgroundColor = color(200, 255, 200);

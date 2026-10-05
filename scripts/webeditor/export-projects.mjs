@@ -8,6 +8,8 @@ const projectsRoot = path.join(root, "webeditor/projects");
 const ml5LoadingSource = path.join(root, "examples/ml5/ml5-loading.js");
 
 const SKIP_FILES = new Set(["meta.json"]);
+// These sketches load their images from GitHub Pages, so their gifs/ folders stay out of
+// the export (p5-webeditor-sync 1.1.0 uploads binary files as UTF-8 text, corrupting them).
 const GIF_SLUGS = new Set(["gif-fetch", "gif-collision", "gif-fly", "gif-roll"]);
 
 function rewriteIndexHtml(html, { needsMl5Loading }) {
@@ -42,6 +44,7 @@ function exportProject({ id, title, sourcePath, editorSketchId }) {
     const destPath = path.join(projectDir, entry.name);
 
     if (entry.isDirectory()) {
+      if (GIF_SLUGS.has(id) && entry.name === "gifs") continue;
       fs.cpSync(srcPath, destPath, { recursive: true });
       continue;
     }
@@ -73,10 +76,6 @@ function exportProject({ id, title, sourcePath, editorSketchId }) {
     path.join(projectDir, "index.html"),
     rewriteIndexHtml(indexSource, { needsMl5Loading }),
   );
-
-  if (GIF_SLUGS.has(id)) {
-    fs.mkdirSync(path.join(projectDir, "gifs"), { recursive: true });
-  }
 
   fs.writeFileSync(
     path.join(projectDir, "meta.json"),

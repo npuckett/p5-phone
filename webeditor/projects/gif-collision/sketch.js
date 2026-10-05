@@ -121,7 +121,9 @@ class SpacePerson
 async function setup()
 {
     // Load the space suit image
-    spaceSuitImg = await loadImage('gifs/spaceSuit2.png');
+    // Served from the p5-phone GitHub Pages site, so the sketch also runs in the
+    // p5.js Web Editor without uploading the image
+    spaceSuitImg = await loadImage('https://npuckett.github.io/p5-phone/examples/Phone%20and%20Gif/collision/gifs/spaceSuit2.png');
 
     createCanvas(windowWidth, windowHeight);
     backgroundColor = color(20, 20, 40);

@@ -117,7 +117,7 @@ Work in small batches grouped by dependency shape:
 | Basic | `index.html`, `sketch.js` | Standard p5-phone CDN tags |
 | Sound / mic | + `p5.sound@0.3.0` | Confirm no stale `tracks/` or `loadSound()` unless assets will be uploaded |
 | ML5 | + `GazeDetector.js`, `functions.js`, etc. | See [Known compatibility fixes](#known-compatibility-fixes) |
-| GIF | + `gifs/` image | The export copies the image and the sync uploads it, but p5-webeditor-sync 1.1.0 corrupts binary files (see [webeditorLinks.md](../../webeditorLinks.md#phone-and-gif-images-corrupted-on-upload)) |
+| GIF | image loaded by full URL | The sketch loads its image from GitHub Pages and the export leaves `gifs/` out, because p5-webeditor-sync 1.1.0 corrupts binary files (see [webeditorLinks.md](../../webeditorLinks.md#phone-and-gif-images)) |
 | NFC | — | **Do not migrate** — iframe blocks Web NFC |
 | Multi-page index | — | Decide if a single Web Editor sketch makes sense |
 
@@ -139,7 +139,6 @@ Project payloads use a flat `files` array. The root folder has `children` contai
 - `sketch.js`
 - optional `style.css`
 - optional helper files such as `GazeDetector.js` or `functions.js`
-- optional empty asset folder such as `gifs`
 
 Public URLs:
 
@@ -182,7 +181,7 @@ For each preview, verify:
 - No page errors or unexpected console errors
 - No bad network responses (ignore analytics, favicon, and Cloudflare RUM noise)
 - Sound examples do not request stale `tracks/` files unless the asset is intentionally pending
-- GIF code-only examples are not listed as fully verified until assets have been uploaded
+- GIF examples: the image request to `npuckett.github.io` returns 200 and the image draws
 
 `lockGestures()` no longer installs a `beforeunload` handler by default. If you need the old "Leave site?" warning during preview testing, call `lockGestures({ warnBeforeLeave: true })`.
 
@@ -236,16 +235,14 @@ Published versions may expose `enableGyroCanvas()` and `enableGyroOn()` before `
 
 ### GIF assets
 
-The API workflow can create an empty `gifs/` folder, but binary asset upload still requires manual Web Editor work. Document the exact expected paths:
+The Phone and GIF sketches load their images by full URL from GitHub Pages instead of uploading them (p5-webeditor-sync 1.1.0 corrupts binary files), and `export-projects.mjs` leaves their `gifs/` folders out. The images stay in the repo, where Pages serves them:
 
 ```text
-gifs/corgiswimflip.gif
-gifs/spaceSuit2.png
-gifs/comparison.gif
-gifs/how-penciles-are-made.gif
+examples/Phone and Gif/fetch/gifs/corgiswimflip.gif
+examples/Phone and Gif/collision/gifs/spaceSuit2.png
+examples/Phone and Gif/fly/gifs/comparison.gif
+examples/Phone and Gif/roll/gifs/how-penciles-are-made.gif
 ```
-
-**Note:** GIF binary files are not currently in the git repo. Upload them into each Web Editor project's `gifs/` folder before marking those sketches fully verified.
 
 ## Validation checklist
 
@@ -275,7 +272,7 @@ git diff --stat
 | `Cannot read properties of undefined (reading 'bind')` in `ml5Init` | Add `_incrementPreload` / `_decrementPreload` polyfill before ml5 |
 | `p5 is not defined` in Web Editor preview | Move p5/compat/ml5 scripts into `<head>` |
 | Full preview has canvas but page errors are present | Do not mark browser verified until errors are understood |
-| GIF preview 404s an asset | Move row to **Created with assets pending** and document the missing path |
+| GIF preview 404s its image | The image moved or was renamed in `examples/Phone and Gif/*/gifs/`; fix the URL in that sketch's `sketch.js` |
 
 ## Published sketches use npm CDN
 
