@@ -77,7 +77,7 @@ Check these to know if permissions have been granted:
 
 Prefer wrapping hardware-dependent code in positive checks, such as `if (window.sensorsEnabled) { ... }` or `if (window.micOpen) { ... }`.
 
-Dev helper: `showDesktopQr()` shows a QR of the page on desktop only (no-op on phones) so the sketch can be scanned onto a phone. `window.isMobile` / `window.isDesktop` give best-effort device detection.
+Dev helper: `showDesktopQr()` shows a QR of the page on desktop only (no-op on phones) so the sketch can be scanned onto a phone. In the p5.js Web Editor it encodes the saved sketch's Present link. `window.isMobile` / `window.isDesktop` give best-effort device detection.
 
 ## Callback
 

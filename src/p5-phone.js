@@ -460,6 +460,44 @@ function _qrLazyLoadAndRender(container, text, size, onFail) {
 let _qrState = null; // { panel, options } for the active desktop QR panel
 
 /**
+ * The Present link of a sketch running in the p5.js Web Editor, or null.
+ * The editor runs a sketch from a blob: URL inside preview.p5js.org, which no
+ * phone can open. It does put the editor page's path in <base href>
+ * (https://preview.p5js.org/<user>/sketches/<id>/, or /full/<id>/ on a share
+ * link) and its own origin in window.editorOrigin, so the link can be rebuilt
+ * from those: https://editor.p5js.org/<user>/full/<id>. An unsaved sketch has
+ * no id in its path, so it gets null.
+ * @returns {string|null}
+ */
+function _webEditorShareUrl() {
+  try {
+    const base = new URL(document.baseURI);
+    const editorOrigin = typeof window.editorOrigin === 'string' &&
+      /^https?:\/\//.test(window.editorOrigin) ? window.editorOrigin.replace(/\/+$/, '') : '';
+    if (!editorOrigin && !/(^|\.)p5js\.org$/.test(base.hostname)) return null;
+    const m = base.pathname.match(/^\/(?:([^/]+)\/)?(?:sketches|full|embed)\/([^/]+)\/?$/);
+    if (!m) return null;
+    return (editorOrigin || 'https://editor.p5js.org') + '/' +
+      (m[1] ? m[1] + '/' : '') + 'full/' + m[2];
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * The address a phone should open for this page. Normally location.href,
+ * unchanged. A blob: page (the p5.js Web Editor) has no address a phone can
+ * open, so it gets the Web Editor's Present link, or null if there is none.
+ * @returns {string|null}
+ */
+function _desktopQrPageUrl() {
+  const loc = window.location;
+  if (!loc) return '';
+  if (loc.protocol !== 'blob:') return loc.href;
+  return _webEditorShareUrl();
+}
+
+/**
  * Show a floating QR code of the current page on DESKTOP ONLY.
  * On mobile this is a no-op (the QR would be useless — you're already on the
  * phone). Designed for the dev workflow of opening a sketch on desktop, then
@@ -469,8 +507,12 @@ let _qrState = null; // { panel, options } for the active desktop QR panel
  * address bar) include shareHost / room / app query params so phones join the
  * same PartyServer room without editing code. Opt out with { share: false }.
  *
+ * In the p5.js Web Editor (where the sketch runs from a blob: URL) the QR
+ * encodes the sketch's Present link, https://editor.p5js.org/<user>/full/<id>,
+ * which shows the last saved version; an unsaved sketch shows no QR.
+ *
  * @param {Object} [options]
- * @param {string} [options.url] - URL to encode (defaults to location.href, then share params may be merged)
+ * @param {string} [options.url] - URL to encode (defaults to location.href, or the Web Editor Present link; then share params may be merged)
  * @param {boolean} [options.share] - include Share join params (default: true when shareSetup() has run)
  * @param {boolean} [options.updateLocation=true] - when share params are included, replaceState the address bar so Copy Link works
  * @param {'top-right'|'top-left'|'bottom-right'|'bottom-left'} [options.position='top-right']
@@ -488,8 +530,18 @@ function showDesktopQr(options = {}) {
 
   const includeShare = options.share === true ||
     (options.share !== false && _shareProfile && _shareProfile.host);
-  let url = options.url || (window.location ? window.location.href : '');
-  if (includeShare && _shareProfile && _shareProfile.host) {
+  const pageUrl = options.url ? null : _desktopQrPageUrl();
+  if (!options.url && !pageUrl) {
+    // A blob: page that is not a saved Web Editor sketch: no address a phone can open.
+    console.log('p5-phone: showDesktopQr() has no address a phone can open. ' +
+      'In the p5.js Web Editor, save the sketch and run it again.');
+    return;
+  }
+  let url = options.url || pageUrl;
+  // The Web Editor drops query strings before the sketch sees them, so there a
+  // phone joins from the room and host set in shareSetup(), not from the link.
+  const inWebEditor = !options.url && window.location && window.location.protocol === 'blob:';
+  if (includeShare && _shareProfile && _shareProfile.host && !inWebEditor) {
     url = getShareJoinUrl(url);
     if (options.updateLocation !== false) {
       _shareUpdateLocationFromProfile();

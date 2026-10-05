@@ -1639,7 +1639,9 @@ debug({rotation: rotationX, acceleration: accelerationX});
 | `window.isMobile` | `true` on phones and tablets (user agent, touch, and coarse-pointer checks, including iPadOS reporting a Mac user agent) |
 | `window.isDesktop` | `!isMobile` |
 
-**Options** (all optional): `url` (defaults to the current page), `position` (`'top-right'` default, `'top-left'`, `'bottom-right'`, `'bottom-left'`), `size` (pixels, default `180`), `label` (caption), `closable` (default `true`), `rememberDismiss` (default `true`: stays hidden for the browser session after closing), `share` (after `shareSetup()`, the QR includes the room's join link; `false` opts out).
+**Options** (all optional): `url` (defaults to the current page, or the Present link in the Web Editor), `position` (`'top-right'` default, `'top-left'`, `'bottom-right'`, `'bottom-left'`), `size` (pixels, default `180`), `label` (caption), `closable` (default `true`), `rememberDismiss` (default `true`: stays hidden for the browser session after closing), `share` (after `shareSetup()`, the QR includes the room's join link; `false` opts out).
+
+**In the p5.js Web Editor** the sketch runs from a temporary `blob:` address that no phone can open, so the QR encodes the sketch's Present link instead (`https://editor.p5js.org/<user>/full/<id>`, the same page as Share › Present). The phone gets the last saved version, so save before scanning. An unsaved sketch has no link yet and shows no QR. On every other host (GitHub Pages, a local server) the QR is the page's own address, as before.
 
 The QR library (`qrcodejs`) is loaded from a CDN only when the panel is shown on desktop, so phones download nothing extra. If the CDN is blocked, the panel is removed with a console warning.
 

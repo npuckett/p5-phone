@@ -596,6 +596,8 @@ Most useful for camera, NFC, BLE, and permission troubleshooting. Use sparingly 
 
 `showDesktopQr(options?)` shows a floating QR code of the current page on **desktop only** and does nothing on phones, so it can stay in a sketch: open the sketch on a laptop, scan, test on the phone. `setQrUrl(url)` points it elsewhere; `hideDesktopQr()` removes it. Options: `url`, `position` (`'top-right'` default / `'top-left'` / `'bottom-right'` / `'bottom-left'`), `size` (px, default 180), `label`, `closable`, `rememberDismiss`, `share` (after `shareSetup()` the QR carries the room join link; `false` opts out). The QR library loads from a CDN only when shown on desktop.
 
+In the p5.js Web Editor the QR encodes the sketch's Present link (`https://editor.p5js.org/<user>/full/<id>`), so the phone gets the last *saved* version: save before scanning. An unsaved sketch shows no QR. Don't guard the call with `location.protocol === 'https:'` or `window.self === window.top`: both are false in the Web Editor and hide the QR there.
+
 `window.isMobile` / `window.isDesktop` are booleans set when the library loads (user agent + touch + coarse-pointer checks, including iPadOS with a Mac user agent). Use them for desktop-only hints; gate hardware reads on the `*Enabled` flags, not on `isMobile`.
 
 ```javascript

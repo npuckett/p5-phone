@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Added `npm run test:qr` (`test-desktop-qr.js`), a Playwright check of the address `showDesktopQr()` encodes: on a normal page (GitHub Pages, localhost) it is still `location.href`, query and hash included; in a stand-in for the p5.js Web Editor (a `blob:` iframe inside preview.p5js.org with the editor's `<base href>` and `window.editorOrigin`) it is the Present link from both the editor view and a share link; an explicit `url` and `setQrUrl()` still win; an unsaved editor sketch and a `blob:` page outside the editor show no QR.
+
+### Fixed
+- **`showDesktopQr()` encoded an address no phone can open in the p5.js Web Editor.** The editor runs a sketch from `blob:https://preview.p5js.org/<uuid>` in an iframe, and that was the QR. The QR is now the sketch's Present link, `https://editor.p5js.org/<user>/full/<id>`, rebuilt from the `<base href>` the editor adds (`https://preview.p5js.org/<user>/sketches/<id>/`) and `window.editorOrigin`. The phone gets the last saved version. An unsaved sketch, and any other `blob:` page, shows no QR (a console line says why) rather than a dead one. Pages served from a real address are unchanged. Share join parameters are left off in the editor, which drops query strings before the sketch sees them; phones join from the room and host set in `shareSetup()`.
+
 ## [1.15.1] - 2026-10-02
 
 ### Added
