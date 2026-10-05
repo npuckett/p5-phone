@@ -6,7 +6,7 @@ argument-hint: "Describe the p5-phone example or API question"
 
 # p5-phone: Mobile Hardware for p5.js
 
-p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, Bluetooth LE, and multi-user Share rooms — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.15.1**.
+p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, Bluetooth LE, and multi-user Share rooms — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.15.2**.
 
 It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public function is attached to `window` (global mode) and mirrored on `p5.prototype` (instance mode), so you call them as bare globals like `lockGestures()` and `enableSensorTap()`.
 
@@ -34,7 +34,7 @@ HTML baseline (p5.js 2-compatible):
   </style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.1/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.2/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>

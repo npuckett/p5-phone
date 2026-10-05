@@ -135,10 +135,10 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
 
 ```html
 <!-- Minified version (recommended) -->
-<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.1/dist/p5-phone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.2/dist/p5-phone.min.js"></script>
 
 <!-- Development version (larger, with comments) -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.1/dist/p5-phone.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.2/dist/p5-phone.js"></script> -->
 ```
 
 ### Basic Setup
@@ -167,7 +167,7 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
   
   <!-- Load p5-phone library -->
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.1/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.2/dist/p5-phone.min.js"></script>
   
 </head>
 <body>
