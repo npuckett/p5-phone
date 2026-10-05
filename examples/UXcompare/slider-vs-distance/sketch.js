@@ -322,36 +322,38 @@ function updateSliderValueFromTouch(x) {
   console.log('Slider value:', sliderValue.toFixed(3));
 }
 
-// Handle touch interaction for mobile
+// Handle slider interaction for touch (mobile) and mouse (desktop)
+// p5.js 2 calls the mouse functions for fingers too, with mouseX and mouseY
+// at the finger that just pressed, moved or lifted
 function mousePressed() {
   // Handle slider interaction only for touches in top section
-  if (touches && touches.length >= 1) {
-    for (let touch of touches) {
-      if (touch && touch.y < dividerY && isSliderPressed(touch.x, touch.y)) {
-        isDraggingSlider = true;
-        updateSliderValueFromTouch(touch.x);
-        break;
-      }
-    }
+  if (isSliderPressed(mouseX, mouseY)) {
+    isDraggingSlider = true;
+    updateSliderValueFromTouch(mouseX);
   }
   return false; // Always prevent default
 }
 
 function mouseDragged() {
-  // Update slider if dragging and touch is in top section
-  if (isDraggingSlider && touches && touches.length >= 1) {
-    for (let touch of touches) {
-      if (touch && touch.y < dividerY) {
-        updateSliderValueFromTouch(touch.x);
-        break;
-      }
-    }
+  // Update slider if dragging and touch is in top section,
+  // so fingers in the bottom section never move it
+  if (isDraggingSlider && mouseY < dividerY) {
+    updateSliderValueFromTouch(mouseX);
   }
   return false; // Always prevent default
 }
 
+// p5.js 2 stops calling mouseDragged() when any finger lifts, so a finger
+// still on the slider keeps moving it from here
+function mouseMoved() {
+  if (isDraggingSlider) {
+    return mouseDragged();
+  }
+}
+
 function mouseReleased() {
   // Check if any touches remain in slider area
+  // (touches no longer holds the finger that lifted, and is empty for a mouse)
   if (isDraggingSlider) {
     let sliderTouchExists = false;
     if (touches && touches.length > 0) {
@@ -367,26 +369,6 @@ function mouseReleased() {
     }
   }
   return false; // Always prevent default
-}
-
-// Handle mouse interaction for desktop testing
-function mousePressed() {
-  if (isSliderPressed(mouseX, mouseY)) {
-    isDraggingSlider = true;
-    updateSliderValueFromTouch(mouseX);
-    return false;
-  }
-}
-
-function mouseDragged() {
-  if (isDraggingSlider) {
-    updateSliderValueFromTouch(mouseX);
-    return false;
-  }
-}
-
-function mouseReleased() {
-  isDraggingSlider = false;
 }
 
 function updateLayout() {
