@@ -106,8 +106,6 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
 - [API Reference](#api-reference)
   - [Core Functions](#core-functions)
   - [Status Variables](#status-variables)
-  - [lockGestures()](#lockgestures)
-  - [unlockGestures()](#unlockgestures)
   - [Motion Sensor Activation](#motion-sensor-activation)
   - [Microphone Activation](#microphone-activation)
   - [Sound Output Activation](#sound-output-activation)
@@ -120,8 +118,11 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   - [Speech Recognition Activation](#speech-recognition-activation)
   - [Combined Activation](#combined-activation)
   - [PhoneCamera (ML5 Integration)](#phonecamera-ml5-integration)
-  - [Debug System](#debug-system)
+- [Utilities](#utilities)
+  - [lockGestures()](#lockgestures)
+  - [unlockGestures()](#unlockgestures)
   - [Desktop QR Helper and Device Detection](#desktop-qr-helper-and-device-detection)
+  - [Debug System](#debug-system)
   - [Screen Wake Lock (Keep the Screen On)](#screen-wake-lock-keep-the-screen-on)
 - [Permission UI Styles](#permission-ui-styles)
   - [Canvas Style](#canvas-style)
@@ -458,57 +459,6 @@ function draw() {
     debug("Motion sensors not yet enabled");
   }
 }
-```
-
-### lockGestures()
-
-**Purpose:** Prevents unwanted mobile browser gestures that can interfere with your p5.js app.
-
-**When to use:** Call once in your `setup()` function after creating the canvas.
-
-**Modes:**
-- **fullscreen** (default) — page-wide gesture blocking for full-viewport sketches
-- **embedded** — canvas-scoped blocking for sketches inside scrollable multi-page sites
-
-**Options:**
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `mode` | `'fullscreen'` | `'fullscreen'` or `'embedded'` |
-| `element` | canvas element | Target element for embedded mode |
-| `warnBeforeLeave` | `false` | Show browser "Leave site?" dialog on navigation |
-| `trapHistory` | `true` in fullscreen | Block back-swipe via history manipulation |
-
-**What it blocks:**
-- **Pinch-to-zoom** - Prevents users from accidentally zooming the page
-- **Pull-to-refresh** - Stops the browser refresh gesture when pulling down
-- **Swipe navigation** - Disables back/forward swipe gestures (fullscreen mode)
-- **Long-press context menus** - Prevents copy/paste menus from appearing
-- **Text selection** - Stops accidental text highlighting on touch and hold
-- **Double-tap zoom** - Eliminates double-tap to zoom behavior
-
-```javascript
-// Full-screen mobile sketch (default)
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  lockGestures();
-}
-
-// Embedded canvas in a scrollable tutorial page
-function setup() {
-  createCanvas(560, 400);
-  lockGestures({ mode: 'embedded', element: canvas });
-}
-```
-
-### unlockGestures()
-
-**Purpose:** Remove gesture blocking listeners and restore saved handlers.
-
-**When to use:** Call before navigating away in SPAs, or, with p5.js 2.x, rely on automatic cleanup when calling `p.remove()`.
-
-```javascript
-unlockGestures();
 ```
 
 ### Motion Sensor Activation
@@ -1573,6 +1523,98 @@ objectDetector.detectStart(cam.videoElement, gotDetections);
 - Check `cam.ready` before using video or drawing keypoints
 - Call `enableCameraTap()` to handle camera permissions automatically
 
+---
+
+## Utilities
+
+Helpers that aren't tied to one piece of hardware: keep the browser from scrolling or zooming, get a sketch from your laptop onto your phone, see errors on the phone itself, and keep the screen on.
+
+### lockGestures()
+
+**Purpose:** Prevents unwanted mobile browser gestures that can interfere with your p5.js app.
+
+**When to use:** Call once in your `setup()` function after creating the canvas.
+
+**Modes:**
+- **fullscreen** (default) — page-wide gesture blocking for full-viewport sketches
+- **embedded** — canvas-scoped blocking for sketches inside scrollable multi-page sites
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `mode` | `'fullscreen'` | `'fullscreen'` or `'embedded'` |
+| `element` | canvas element | Target element for embedded mode |
+| `warnBeforeLeave` | `false` | Show browser "Leave site?" dialog on navigation |
+| `trapHistory` | `true` in fullscreen | Block back-swipe via history manipulation |
+
+**What it blocks:**
+- **Pinch-to-zoom** - Prevents users from accidentally zooming the page
+- **Pull-to-refresh** - Stops the browser refresh gesture when pulling down
+- **Swipe navigation** - Disables back/forward swipe gestures (fullscreen mode)
+- **Long-press context menus** - Prevents copy/paste menus from appearing
+- **Text selection** - Stops accidental text highlighting on touch and hold
+- **Double-tap zoom** - Eliminates double-tap to zoom behavior
+
+```javascript
+// Full-screen mobile sketch (default)
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+}
+
+// Embedded canvas in a scrollable tutorial page
+function setup() {
+  createCanvas(560, 400);
+  lockGestures({ mode: 'embedded', element: canvas });
+}
+```
+
+### unlockGestures()
+
+**Purpose:** Remove gesture blocking listeners and restore saved handlers.
+
+**When to use:** Call before navigating away in SPAs, or, with p5.js 2.x, rely on automatic cleanup when calling `p.remove()`.
+
+```javascript
+unlockGestures();
+```
+
+### Desktop QR Helper and Device Detection
+
+**Purpose:** Get a sketch from your laptop onto your phone without typing a URL. `showDesktopQr()` shows a small floating QR code of the current page **on desktop only**; on a phone it does nothing, so you can leave it in the sketch.
+
+**Commands:**
+
+| Function / variable | Purpose |
+|---------------------|---------|
+| `showDesktopQr(options?)` | Show the QR panel on desktop (no-op on phones) |
+| `setQrUrl(url)` | Point the QR at a different URL |
+| `hideDesktopQr()` | Remove the QR panel |
+| `window.isMobile` | `true` on phones and tablets (user agent, touch, and coarse-pointer checks, including iPadOS reporting a Mac user agent) |
+| `window.isDesktop` | `!isMobile` |
+
+**Options** (all optional): `url` (defaults to the current page, or the Present link in the Web Editor), `position` (`'top-right'` default, `'top-left'`, `'bottom-right'`, `'bottom-left'`), `size` (pixels, default `180`), `label` (caption), `closable` (default `true`), `rememberDismiss` (default `true`: stays hidden for the browser session after closing), `share` (after `shareSetup()`, the QR includes the room's join link; `false` opts out).
+
+**In the p5.js Web Editor** the sketch runs from a temporary `blob:` address that no phone can open, so the QR encodes the sketch's Present link instead (`https://editor.p5js.org/<user>/full/<id>`, the same page as Share › Present). The phone gets the last saved version, so save before scanning. An unsaved sketch has no link yet and shows no QR. On every other host (GitHub Pages, a local server) the QR is the page's own address, as before.
+
+The QR library (`qrcodejs`) is loaded from a CDN only when the panel is shown on desktop, so phones download nothing extra. If the CDN is blocked, the panel is removed with a console warning.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  enableMicTap('Tap to start');
+  showDesktopQr({ label: 'Scan to open on your phone' });
+}
+
+function draw() {
+  background(20);
+  if (window.isDesktop) {
+    text('Open this sketch on your phone', 20, 30);
+  }
+}
+```
+
 ### Debug System
 
 **Purpose:** Essential on-screen debugging system for mobile development where traditional browser dev tools aren't accessible. Provides automatic error catching, timestamped logging, and color-coded messages.
@@ -1623,41 +1665,6 @@ debugWarn("Frame rate dropping:", frameRate());
 // Objects and arrays
 debug("Touch points:", touches);
 debug({rotation: rotationX, acceleration: accelerationX});
-```
-
-### Desktop QR Helper and Device Detection
-
-**Purpose:** Get a sketch from your laptop onto your phone without typing a URL. `showDesktopQr()` shows a small floating QR code of the current page **on desktop only**; on a phone it does nothing, so you can leave it in the sketch.
-
-**Commands:**
-
-| Function / variable | Purpose |
-|---------------------|---------|
-| `showDesktopQr(options?)` | Show the QR panel on desktop (no-op on phones) |
-| `setQrUrl(url)` | Point the QR at a different URL |
-| `hideDesktopQr()` | Remove the QR panel |
-| `window.isMobile` | `true` on phones and tablets (user agent, touch, and coarse-pointer checks, including iPadOS reporting a Mac user agent) |
-| `window.isDesktop` | `!isMobile` |
-
-**Options** (all optional): `url` (defaults to the current page, or the Present link in the Web Editor), `position` (`'top-right'` default, `'top-left'`, `'bottom-right'`, `'bottom-left'`), `size` (pixels, default `180`), `label` (caption), `closable` (default `true`), `rememberDismiss` (default `true`: stays hidden for the browser session after closing), `share` (after `shareSetup()`, the QR includes the room's join link; `false` opts out).
-
-**In the p5.js Web Editor** the sketch runs from a temporary `blob:` address that no phone can open, so the QR encodes the sketch's Present link instead (`https://editor.p5js.org/<user>/full/<id>`, the same page as Share › Present). The phone gets the last saved version, so save before scanning. An unsaved sketch has no link yet and shows no QR. On every other host (GitHub Pages, a local server) the QR is the page's own address, as before.
-
-The QR library (`qrcodejs`) is loaded from a CDN only when the panel is shown on desktop, so phones download nothing extra. If the CDN is blocked, the panel is removed with a console warning.
-
-```javascript
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  enableMicTap('Tap to start');
-  showDesktopQr({ label: 'Scan to open on your phone' });
-}
-
-function draw() {
-  background(20);
-  if (window.isDesktop) {
-    text('Open this sketch on your phone', 20, 30);
-  }
-}
 ```
 
 ### Screen Wake Lock (Keep the Screen On)
