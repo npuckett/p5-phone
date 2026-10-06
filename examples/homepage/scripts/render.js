@@ -27,9 +27,9 @@
   }
 
   const API_REFERENCE_RULES = [
-    { tags: ['setup'], group: 'p5-phone', label: 'lockGestures()', href: '#api-core' },
-    { tags: ['lockGestures'], group: 'p5-phone', label: 'lockGestures()', href: '#api-core' },
-    { tags: ['combined permissions'], group: 'p5-phone', label: 'enablePermissionsTap()', href: '#api-core' },
+    { tags: ['setup'], group: 'p5-phone', label: 'lockGestures()', href: '#api-gestures' },
+    { tags: ['lockGestures'], group: 'p5-phone', label: 'lockGestures()', href: '#api-gestures' },
+    { tags: ['combined permissions'], group: 'p5-phone', label: 'enablePermissionsTap()', href: '#api-audio' },
     { tags: ['motion'], group: 'p5-phone', label: 'enableSensorTap()', href: '#api-motion' },
     { tags: ['orientation'], group: 'External', label: 'rotationX / rotationY / rotationZ', href: 'https://p5js.org/reference/p5/rotationX/' },
     { tags: ['gyroscope'], group: 'External', label: 'p5 rotation rates', href: 'https://p5js.org/reference/p5/rotationX/' },
@@ -154,19 +154,32 @@
     `;
   }
 
+  function renderApiCards(items) {
+    return (items || []).map(item => `
+      <article class="api-card">
+        <h4>${escapeHtml(item.name)}</h4>
+        <div class="api-signature"><code>${escapeHtml(item.signature)}</code></div>
+        <p>${escapeHtml(item.summary)}</p>
+        <div class="tag-list">${(item.tags || []).map(tag => '<span class="tag">' + escapeHtml(tag) + '</span>').join('')}</div>
+      </article>
+    `).join('');
+  }
+
   function renderApi() {
     const sections = window.P5PHONE_API_SECTIONS || [];
     const target = document.getElementById('api-sections');
     if (!target) return;
 
     target.innerHTML = sections.map(section => {
-      const cards = section.items.map(item => `
-        <article class="api-card">
-          <h4>${escapeHtml(item.name)}</h4>
-          <div class="api-signature"><code>${escapeHtml(item.signature)}</code></div>
-          <p>${escapeHtml(item.summary)}</p>
-          <div class="tag-list">${(item.tags || []).map(tag => '<span class="tag">' + escapeHtml(tag) + '</span>').join('')}</div>
-        </article>
+      // A section can split its cards into titled groups (Utilities does).
+      // Each group gets its own api-<id> anchor for the sidebar.
+      const groups = (section.groups || []).map(group => `
+        <section class="api-subgroup" id="api-${escapeHtml(group.id)}">
+          <h4>${escapeHtml(group.title)}</h4>
+          ${group.description ? '<p>' + escapeHtml(group.description) + '</p>' : ''}
+          ${renderRelatedApis(group.relatedApis, group.relatedApisTitle)}
+          <div class="api-grid">${renderApiCards(group.items)}</div>
+        </section>
       `).join('');
 
       return `
@@ -176,7 +189,8 @@
             <p>${escapeHtml(section.description)}</p>
           </div>
           ${renderRelatedApis(section.relatedApis, section.relatedApisTitle)}
-          <div class="api-grid">${cards}</div>
+          ${section.items ? '<div class="api-grid">' + renderApiCards(section.items) + '</div>' : ''}
+          ${groups}
         </section>
       `;
     }).join('');

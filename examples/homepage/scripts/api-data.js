@@ -18,7 +18,7 @@ window.P5PHONE_API_SECTIONS = [
   {
     id: 'core',
     title: 'Core Setup',
-    description: 'Functions that most sketches use before enabling hardware access.',
+    description: 'The callback and naming conventions shared by every enable* helper. Gesture locking, the desktop QR code, the debug console, and screen wake lock are under Utilities.',
     relatedApis: [
       { label: 'mousePressed()', href: 'https://beta.p5js.org/reference/p5/mousePressed/', summary: 'p5.js 2.x press callback for mouse, touch, and pointer input.' },
       { label: 'mouseDragged()', href: 'https://beta.p5js.org/reference/p5/mouseDragged/', summary: 'p5.js 2.x drag callback for mouse, touch, and pointer input.' },
@@ -26,11 +26,7 @@ window.P5PHONE_API_SECTIONS = [
       { label: 'touches', href: 'https://beta.p5js.org/reference/p5/touches/', summary: 'Array of current touch points for multi-touch sketches.' }
     ],
     items: [
-      { name: 'lockGestures', signature: 'lockGestures(options?)', summary: 'Disables browser gestures that interfere with mobile sketches. Default fullscreen mode blocks scroll, zoom, pull-to-refresh, context menu, and back-swipe page-wide. Use { mode: "embedded", element: canvas } for canvases inside scrollable multi-page sites.', tags: ['setup', 'mobile'] },
-      { name: 'unlockGestures', signature: 'unlockGestures()', summary: 'Removes gesture blocking listeners and restores saved handlers. Called automatically on p.remove() with p5.js 2.x.', tags: ['setup', 'mobile'] },
       { name: 'userSetupComplete', signature: 'function userSetupComplete() { ... }', summary: 'Optional sketch callback. p5-phone calls it after a permission request completes successfully.', tags: ['callback'] },
-      { name: 'showDesktopQr', signature: "showDesktopQr({ label: 'Scan to open on your phone' })", summary: 'Floating QR code of the current page on desktop only; does nothing on phones, so it can stay in the sketch. In the p5.js Web Editor it encodes the sketch\'s Present link, so save before scanning. setQrUrl(url) changes the link, hideDesktopQr() removes it. Options: url, position, size, label, closable, rememberDismiss, share.', tags: ['setup', 'mobile'] },
-      { name: 'isMobile / isDesktop', signature: 'window.isMobile, window.isDesktop', summary: 'Best-effort device detection set when the library loads (user agent, touch, and coarse-pointer checks, including iPadOS). Use for desktop-only hints; gate hardware reads on the *Enabled flags.', tags: ['setup', 'status'] },
       { name: 'alias families', signature: 'enableSensor* = enableGyro*, enableHardware* = enablePermissions*, enableFlashlight* = enableTorch*', summary: 'Alternate names for the same helpers. Each alias family exists in all six styles: Tap, Button, Canvas, Banner, Minimal, and On.', tags: ['setup', 'alias'] }
     ]
   },
@@ -181,33 +177,59 @@ window.P5PHONE_API_SECTIONS = [
     ]
   },
   {
-    id: 'wakelock',
-    title: 'Screen Wake Lock',
-    description: 'Keep the screen from dimming and locking while a sketch runs. Only touches reset the phone\'s auto-lock timer, so motion, sound, GPS, and BLE sketches need this. It is the browser\'s own Screen Wake Lock API, used directly: p5-phone does not wrap it.',
-    relatedApisTitle: 'Browser APIs',
-    relatedApis: [
-      { label: 'Screen Wake Lock API', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API', summary: 'MDN guide and browser support.' },
-      { label: 'WakeLockSentinel', href: 'https://developer.mozilla.org/en-US/docs/Web/API/WakeLockSentinel', summary: 'The object request() returns: release(), released, and the release event.' },
-      { label: 'visibilitychange', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event', summary: 'Fires when the page is hidden or shown. Use it to ask for the lock again.' }
-    ],
-    items: [
-      { name: 'navigator.wakeLock.request', signature: "wakeLock = await navigator.wakeLock.request('screen')", summary: 'Keeps the screen on while the page is visible and returns a WakeLockSentinel. Ask from mouseReleased(): iOS Safari refuses the first request without a tap, and a touch only counts once the finger lifts. Wrap it in try/catch, because power saving or a low battery can refuse it.', tags: ['wake lock', 'tap'] },
-      { name: 'wakeLock.release', signature: 'await wakeLock.release()', summary: 'Lets the screen sleep again. A released sentinel cannot be reused; request a new one.', tags: ['wake lock'] },
-      { name: 'wakeLock.released', signature: 'wakeLock !== null && !wakeLock.released', summary: 'released is true once the lock is gone, whether the sketch released it or the browser did. Check it in draw(), or listen for the release event.', tags: ['wake lock', 'status'] },
-      { name: 'ask again on visibilitychange', signature: "document.addEventListener('visibilitychange', ...)", summary: 'The browser drops the lock whenever the page is hidden (another app, another tab, the side button). Request it again when document.visibilityState is visible. On iOS only the first request needs a tap.', tags: ['wake lock', 'callback'] },
-      { name: 'support', signature: "'wakeLock' in navigator", summary: 'False without HTTPS or in older browsers. Chrome and Edge, Safari on iOS 16.4+ (Home Screen web apps from 18.4), Firefox 126+. Blocked in the p5.js Web Editor preview, whose iframe lacks allow="screen-wake-lock".', tags: ['wake lock', 'status'] }
-    ]
-  },
-  {
-    id: 'debug',
-    title: 'Debug Console',
-    description: 'On-screen logging helpers for testing on phones where developer tools are awkward.',
-    items: [
-      { name: 'showDebug', signature: 'showDebug()', summary: 'Displays the mobile debug panel and captures warnings and errors.', tags: ['debug'] },
-      { name: 'debug', signature: 'debug(...args)', summary: 'Writes a normal message to the on-screen debug panel.', tags: ['debug'] },
-      { name: 'debugWarn', signature: 'debugWarn(...args)', summary: 'Writes a warning message to the debug panel.', tags: ['debug'] },
-      { name: 'debugError', signature: 'debugError(...args)', summary: 'Writes an error message to the debug panel.', tags: ['debug'] },
-      { name: 'hideDebug / toggleDebug', signature: 'hideDebug(); toggleDebug()', summary: 'Hide the debug panel, or switch it on and off.', tags: ['debug'] }
+    id: 'utilities',
+    title: 'Utilities',
+    description: 'Helpers that are not tied to one piece of hardware: keep the browser from scrolling or zooming, get a sketch from your laptop onto your phone, see errors on the phone itself, and keep the screen on.',
+    groups: [
+      {
+        id: 'gestures',
+        title: 'Gestures',
+        items: [
+          { name: 'lockGestures', signature: 'lockGestures(options?)', summary: 'Disables browser gestures that interfere with mobile sketches. Default fullscreen mode blocks scroll, zoom, pull-to-refresh, context menu, and back-swipe page-wide. Use { mode: "embedded", element: canvas } for canvases inside scrollable multi-page sites. Call it in setup().', tags: ['setup', 'mobile'] },
+          { name: 'unlockGestures', signature: 'unlockGestures()', summary: 'Removes gesture blocking listeners and restores saved handlers. Called automatically on p.remove() with p5.js 2.x.', tags: ['setup', 'mobile'] },
+          { name: 'gesturesLocked', signature: 'window.gesturesLocked', summary: 'True after lockGestures() has installed the gesture prevention handlers.', tags: ['status'] }
+        ]
+      },
+      {
+        id: 'qr',
+        title: 'Desktop QR Code',
+        items: [
+          { name: 'showDesktopQr', signature: "showDesktopQr({ label: 'Scan to open on your phone' })", summary: 'Floating QR code of the current page on desktop only; does nothing on phones, so it can stay in the sketch. In the p5.js Web Editor it encodes the sketch\'s Present link, so save before scanning. After shareSetup() the QR carries the room\'s join link. Options: url, position, size, label, closable, rememberDismiss, share.', tags: ['qr', 'desktop'] },
+          { name: 'setQrUrl', signature: 'setQrUrl(url)', summary: 'Points the QR panel at a different URL, showing the panel if it is not already up. Does nothing on phones.', tags: ['qr', 'desktop'] },
+          { name: 'hideDesktopQr', signature: 'hideDesktopQr()', summary: 'Removes the QR panel.', tags: ['qr', 'desktop'] },
+          { name: 'isMobile / isDesktop', signature: 'window.isMobile, window.isDesktop', summary: 'Best-effort device detection set when the library loads (user agent, touch, and coarse-pointer checks, including iPadOS). Use for desktop-only hints; gate hardware reads on the *Enabled flags.', tags: ['desktop', 'status'] }
+        ]
+      },
+      {
+        id: 'debug',
+        title: 'Debug Console',
+        description: 'On-screen logging for testing on phones, where developer tools are awkward.',
+        items: [
+          { name: 'showDebug', signature: 'showDebug()', summary: 'Displays the mobile debug panel and captures warnings and errors.', tags: ['debug'] },
+          { name: 'debug', signature: 'debug(...args)', summary: 'Writes a normal message to the on-screen debug panel.', tags: ['debug'] },
+          { name: 'debugWarn', signature: 'debugWarn(...args)', summary: 'Writes a warning message to the debug panel.', tags: ['debug'] },
+          { name: 'debugError', signature: 'debugError(...args)', summary: 'Writes an error message to the debug panel.', tags: ['debug'] },
+          { name: 'hideDebug / toggleDebug', signature: 'hideDebug(); toggleDebug()', summary: 'Hide the debug panel, or switch it on and off.', tags: ['debug'] }
+        ]
+      },
+      {
+        id: 'wakelock',
+        title: 'Screen Wake Lock',
+        description: 'Keep the screen from dimming and locking while a sketch runs. Only touches reset the phone\'s auto-lock timer, so motion, sound, GPS, and BLE sketches need this. It is the browser\'s own Screen Wake Lock API, used directly: p5-phone does not wrap it.',
+        relatedApisTitle: 'Browser APIs',
+        relatedApis: [
+          { label: 'Screen Wake Lock API', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API', summary: 'MDN guide and browser support.' },
+          { label: 'WakeLockSentinel', href: 'https://developer.mozilla.org/en-US/docs/Web/API/WakeLockSentinel', summary: 'The object request() returns: release(), released, and the release event.' },
+          { label: 'visibilitychange', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event', summary: 'Fires when the page is hidden or shown. Use it to ask for the lock again.' }
+        ],
+        items: [
+          { name: 'navigator.wakeLock.request', signature: "wakeLock = await navigator.wakeLock.request('screen')", summary: 'Keeps the screen on while the page is visible and returns a WakeLockSentinel. Ask from mouseReleased(): iOS Safari refuses the first request without a tap, and a touch only counts once the finger lifts. Wrap it in try/catch, because power saving or a low battery can refuse it.', tags: ['wake lock', 'tap'] },
+          { name: 'wakeLock.release', signature: 'await wakeLock.release()', summary: 'Lets the screen sleep again. A released sentinel cannot be reused; request a new one.', tags: ['wake lock'] },
+          { name: 'wakeLock.released', signature: 'wakeLock !== null && !wakeLock.released', summary: 'released is true once the lock is gone, whether the sketch released it or the browser did. Check it in draw(), or listen for the release event.', tags: ['wake lock', 'status'] },
+          { name: 'ask again on visibilitychange', signature: "document.addEventListener('visibilitychange', ...)", summary: 'The browser drops the lock whenever the page is hidden (another app, another tab, the side button). Request it again when document.visibilityState is visible. On iOS only the first request needs a tap.', tags: ['wake lock', 'callback'] },
+          { name: 'support', signature: "'wakeLock' in navigator", summary: 'False without HTTPS or in older browsers. Chrome and Edge, Safari on iOS 16.4+ (Home Screen web apps from 18.4), Firefox 126+. Blocked in the p5.js Web Editor preview, whose iframe lacks allow="screen-wake-lock".', tags: ['wake lock', 'status'] }
+        ]
+      }
     ]
   },
   {
@@ -215,13 +237,12 @@ window.P5PHONE_API_SECTIONS = [
     title: 'Status Variables',
     description: 'Global flags and last-read values that sketches can check in draw().',
     items: [
-      { name: 'permission flags', signature: 'window.sensorsEnabled, micEnabled, soundEnabled, speechEnabled, vibrationEnabled, nfcEnabled, geoEnabled', summary: 'Boolean flags for the currently enabled hardware paths.', tags: ['status'] },
+      { name: 'permission flags', signature: 'window.sensorsEnabled, micEnabled, soundEnabled, speechEnabled, cameraEnabled, vibrationEnabled, torchEnabled, nfcEnabled, geoEnabled', summary: 'Boolean flags for the currently enabled hardware paths.', tags: ['status'] },
       { name: 'micOpen', signature: 'window.micOpen', summary: 'True only while the microphone stream is live. micEnabled only means the request ran: it is also true when the person denies the microphone.', tags: ['audio', 'status'] },
       { name: 'NFC state', signature: 'window.nfcStatus, nfcError, lastNfcMessage, lastNfcSerialNumber, lastNfcAlias, nfcTagAliases', summary: 'NFC diagnostic and tag alias state for sketches and debug screens.', tags: ['nfc', 'status'] },
       { name: 'GPS state', signature: 'window.geoStatus, geoError, lastGeoPosition', summary: 'GPS status string, latest error message, and most recent normalized position for sketches and debug screens.', tags: ['geo', 'status'] },
       { name: 'BLE state', signature: 'window.bleSupported, bleConnected, bleStatus, bleError, bleDeviceName, bleValues', summary: 'Web Bluetooth connection state and latest decoded characteristic values.', tags: ['ble', 'status'] },
-      { name: 'Share state', signature: 'window.shareSupported, shareConnected, shareStatus, shareError, shareRoom, shareClientId, shareIsHost, shared, me, guests', summary: 'PartyServer multi-user connection state and live shared objects.', tags: ['share', 'status'] },
-      { name: 'gesture state', signature: 'window.gesturesLocked', summary: 'True after lockGestures() has installed the mobile gesture prevention handlers.', tags: ['status'] }
+      { name: 'Share state', signature: 'window.shareSupported, shareConnected, shareStatus, shareError, shareRoom, shareClientId, shareIsHost, shared, me, guests', summary: 'PartyServer multi-user connection state and live shared objects.', tags: ['share', 'status'] }
     ]
   }
 ];
