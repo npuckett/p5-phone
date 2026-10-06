@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Added `npm run test:focus` (`test-iframe-focus.js`), a Playwright check of the fix below. It uses a stand-in for the p5.js Web Editor's frames: an editor.p5js.org page, a preview.p5js.org iframe, and the sketch in a `blob:` iframe. With `lockGestures()` and `enableSensorTap()`, it checks that the tap to start moves focus to the sketch's canvas with no focus ring. It also checks that a tap on the canvas brings focus back after a tap on the editor page took it away. It runs under p5.js 1.x and 2.2.3, and with `lockGestures({ mode: 'embedded' })`. On a top-level page the canvas is left alone. Chrome does not suspend emulated sensors, so the test checks focus rather than readings.
+
+### Fixed
+- **Motion did nothing in the p5.js Web Editor on Android.** Since Chrome 153 (stable 2026-09-08), Chrome suspends a frame's motion sensors unless that frame, or one of the same origin, has focus. It resumes them only when an element in the newly focused frame takes focus. The Web Editor runs the sketch in a preview.p5js.org iframe inside editor.p5js.org, and the tap to start never moved focus there: the tap overlay cancels its `touchend`, and `lockGestures()` makes p5 cancel every press. So `deviceShaken()`, `rotationX` and `accelerationX` never changed, while the same sketch on GitHub Pages worked. Now the tap focuses the sketch's canvas: the motion permission request does it, and with `lockGestures()` on, so does a later tap on the sketch. The canvas gets `tabindex="-1"` and is focused with `focusVisible: false`, so no focus ring is drawn. A top-level page (GitHub Pages, localhost) is unchanged. An element the sketch focused itself, such as an input, keeps its focus.
+
 ## [1.15.2] - 2026-10-05
 
 ### Added

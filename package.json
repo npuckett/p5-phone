@@ -20,6 +20,7 @@
     "test:modes": "node test-sketch-modes.js",
     "test:remove": "node test-remove-cleanup.js",
     "test:qr": "node test-desktop-qr.js",
+    "test:focus": "node test-iframe-focus.js",
     "prepublishOnly": "npm run build",
     "prepare": "npm run build",
     "version": "echo \"Version bumped to $npm_package_version\"",

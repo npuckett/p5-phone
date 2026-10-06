@@ -245,6 +245,35 @@ function _unlockAudioInGesture() {
   }
 }
 
+// Since Chrome 153, Chrome suspends a frame's motion sensors unless that frame (or one of
+// the same origin) is the focused frame, and resumes them only when an element in the
+// newly focused frame takes focus. The p5.js Web Editor runs the sketch in a cross-origin
+// iframe, and a tap never moves focus there: the tap overlay cancels its touchend, and
+// lockGestures() makes p5 cancel every press. So focus the canvas from the tap instead.
+// A top-level page (GitHub Pages) always has focus and is left alone, and so is an element
+// the sketch focused itself (an input). Synchronous on purpose, like _unlockAudioInGesture().
+function _focusSketchFrame() {
+  let inFrame;
+  try {
+    inFrame = window.top !== window.self;
+  } catch (error) {
+    inFrame = true;
+  }
+  if (!inFrame) return;
+  const active = document.activeElement;
+  if (document.hasFocus() && active && active !== document.body) return;
+  const canvas = document.querySelector('canvas');
+  try {
+    if (!canvas) {
+      window.focus();
+      return;
+    }
+    // tabindex -1: focusable from script, still out of the Tab order
+    if (!canvas.hasAttribute('tabindex')) canvas.setAttribute('tabindex', '-1');
+    canvas.focus({ preventScroll: true, focusVisible: false });
+  } catch (error) { /* focus is best effort */ }
+}
+
 // Speech is left out: recognition does not use Web Audio, and in p5.sound 0.3.x the
 // unlock would create an audio context that runs alongside the recognizer.
 function _isAudioPermission(permission) {
@@ -1925,6 +1954,7 @@ function isNfcTag(aliasOrSerialNumber, serialNumber = window.lastNfcSerialNumber
 
 // Core permission logic (without notification) — used by combo functions
 async function _requestMotionPermissionsCore() {
+  _focusSketchFrame(); // before the first await, while the tap is still running
   try {
     // Request motion sensor permissions (iOS 13+)
     if (typeof DeviceOrientationEvent !== 'undefined' &&
@@ -3625,6 +3655,9 @@ async function _requestPermissionsCore(permissions) {
   if (normalized.some(_isAudioPermission)) {
     _unlockAudioInGesture();
   }
+  if (normalized.includes('sensors')) {
+    _focusSketchFrame(); // an earlier permission's await would otherwise end the tap first
+  }
 
   for (const permission of normalized) {
     if (permission === 'sensors') {
@@ -4334,6 +4367,7 @@ function _lockGesturesEmbedded(target) {
   const touchEndHandler = function(e) {
     if (!touchStartedOnTarget || !target.contains(e.target)) return;
     if (_isPermissionUIElement(e.target)) return;
+    _focusSketchFrame(); // p5 cancels the press, so the tap cannot move focus here itself
 
     const now = Date.now();
     if (now - lastTouchEnd <= 300) {
@@ -4442,6 +4476,7 @@ function _lockGesturesFullscreen(options) {
   let lastTouchEnd = 0;
   const touchEndHandler = function(e) {
     if (_isPermissionUIElement(e.target)) return;
+    _focusSketchFrame(); // p5 cancels the press, so the tap cannot move focus here itself
 
     const now = Date.now();
     if (now - lastTouchEnd <= 300) {
