@@ -1878,7 +1878,11 @@ function draw() {
 
 ### Why do I have to tap before sensors work?
 
-iOS Safari requires a **user gesture** (tap, click) before granting access to motion sensors and the microphone. This is a browser security requirement — it cannot be bypassed. Android does not have this restriction, but the tap/button still works on Android (it's a no-op).
+iOS Safari requires a **user gesture** (tap, click) before granting access to motion sensors and the microphone. This is a browser security requirement — it cannot be bypassed. Android asks for nothing, but keep the tap there too: in the p5.js Web Editor it is what lets Chrome send motion to the sketch (see the next question).
+
+### Motion works on GitHub Pages but not in the p5.js Web Editor (Android)
+
+Since Chrome 153, Chrome pauses the motion sensors in an iframe until the sketch inside it has focus. The Web Editor runs every sketch in an iframe, so tilt and shake did nothing there on Android, while the same sketch on its own page worked. From p5-phone 1.15.3 the tap to start (`enableGyroTap()`, `enablePermissionsTap(['sensors', …])` and the other motion taps) gives the sketch focus. With `lockGestures()` on, a later tap on the sketch does too. Load `p5-phone@1.15.3` or later, and start motion sketches with a p5-phone tap even though Android needs no permission.
 
 ### My sketch works on desktop but not on my phone
 

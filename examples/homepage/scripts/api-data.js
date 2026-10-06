@@ -48,7 +48,7 @@ window.P5PHONE_API_SECTIONS = [
       { label: 'setShakeThreshold()', href: 'https://beta.p5js.org/reference/p5/setShakeThreshold/', summary: 'Sets shake callback sensitivity.' }
     ],
     items: [
-      { name: 'enableGyroTap', signature: 'enableGyroTap(message)', summary: 'Shows a full-screen tap overlay to request motion sensor permission.', tags: ['tap', 'sensors'] },
+      { name: 'enableGyroTap', signature: 'enableGyroTap(message)', summary: 'Shows a full-screen tap overlay to request motion sensor permission. In the p5.js Web Editor the tap also gives the sketch focus, which Android Chrome 153+ needs before it sends motion.', tags: ['tap', 'sensors'] },
       { name: 'enableGyroButton', signature: 'enableGyroButton(buttonText, statusText)', summary: 'Adds a generated button for requesting motion sensors.', tags: ['button', 'sensors'] },
       { name: 'window.sensorsEnabled', signature: 'window.sensorsEnabled', summary: 'Boolean status flag. True after motion sensors are active or after the Android no-op path succeeds.', tags: ['status'] }
     ]

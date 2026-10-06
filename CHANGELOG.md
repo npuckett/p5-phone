@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- **Docs: the motion tap matters on Android in the p5.js Web Editor.** The README FAQ said the tap is a no-op on Android. It is still needed there, because it is what gives the sketch focus (1.15.3). The FAQ now has a "works on GitHub Pages but not in the Web Editor" entry. SKILL.md and its four copies, the Copilot instructions, the homepage's `enableGyroTap` entry and the Web Editor troubleshooting table say to start motion sketches with a p5-phone tap and to load 1.15.3 or later. CONTRIBUTING lists `npm run test:focus`.
+- **`examples/SKILL.zip` holds the current skill.** It still had the short June entry-point file, which pinned `p5-phone@1.10.0`. It now has the full SKILL.md, the same file as the four copies. The workshop page links to it as the skill download.
+
 ## [1.15.3] - 2026-10-06
 
 ### Added
