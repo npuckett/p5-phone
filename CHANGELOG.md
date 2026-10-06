@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.15.3] - 2026-10-06
 
 ### Added
 - Added `npm run test:focus` (`test-iframe-focus.js`), a Playwright check of the fix below. It uses a stand-in for the p5.js Web Editor's frames: an editor.p5js.org page, a preview.p5js.org iframe, and the sketch in a `blob:` iframe. With `lockGestures()` and `enableSensorTap()`, it checks that the tap to start moves focus to the sketch's canvas with no focus ring. It also checks that a tap on the canvas brings focus back after a tap on the editor page took it away. It runs under p5.js 1.x and 2.2.3, and with `lockGestures({ mode: 'embedded' })`. On a top-level page the canvas is left alone. Chrome does not suspend emulated sensors, so the test checks focus rather than readings.
