@@ -258,7 +258,7 @@ function mouseReleased() {
 // Essential mobile setup
 lockGestures()  // Prevent browser gestures (call in setup())
 
-// Motion sensor activation (enableSensor* is the same; enableGyro* is the older name)
+// Motion sensor activation (enableSensor* is another name for the same functions)
 enableGyroTap(message)    // Tap anywhere to enable sensors
 enableGyroButton(text)    // Button-based sensor activation
 

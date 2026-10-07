@@ -1,5 +1,5 @@
 ---
-description: "Use when writing p5.js sketches that use mobile phone sensors, microphone, camera, speech recognition, vibration, torch/flashlight, NFC, or the p5-phone library. Use when: enableSensorTap, enableMicTap, enableAllTap, enablePermissionsTap, enableTorchTap, enableNfcTap, lockGestures, PhoneCamera, mobile permissions, device orientation, accelerometer, gyroscope, flashlight, NFC tag reading."
+description: "Use when writing p5.js sketches that use mobile phone sensors, microphone, camera, speech recognition, vibration, torch/flashlight, NFC, or the p5-phone library. Use when: enableGyroTap, enableSensorTap, enableMicTap, enableAllTap, enablePermissionsTap, enableTorchTap, enableNfcTap, lockGestures, PhoneCamera, mobile permissions, device orientation, accelerometer, gyroscope, flashlight, NFC tag reading."
 applyTo: "**/sketch.js"
 ---
 
@@ -22,7 +22,7 @@ function setup() {
   angleMode(DEGREES); // rotationX/Y/Z in degrees. p5 uses radians unless told
 
   // Choose ONE permission style (Tap is simplest):
-  enableSensorTap('Tap to enable sensors');
+  enableGyroTap('Tap to enable sensors');
 }
 
 function draw() {
@@ -43,18 +43,18 @@ Each permission type has 6 UI styles — pick the one that fits your design:
 
 | Style | Sensor | Microphone | Speech | Both | Camera | Torch | NFC |
 |-------|--------|------------|--------|------|--------|-------|-----|
-| **Tap** (overlay) | `enableSensorTap(msg)` | `enableMicTap(msg)` | `enableSpeechTap(msg)` | `enableAllTap(msg)` | `enableCameraTap(msg)` | `enableTorchTap(msg)` | `enableNfcTap(msg)` |
-| **Button** | `enableSensorButton(txt)` | `enableMicButton(txt)` | `enableSpeechButton(txt)` | `enableAllButton(txt)` | `enableCameraButton(txt)` | `enableTorchButton(txt)` | `enableNfcButton(txt)` |
-| **Canvas** | `enableSensorCanvas(msg)` | `enableMicCanvas(msg)` | `enableSpeechCanvas(msg)` | `enableAllCanvas(msg)` | `enableCameraCanvas(msg)` | `enableTorchCanvas(msg)` | `enableNfcCanvas(msg)` |
-| **Banner** | `enableSensorBanner(msg)` | `enableMicBanner(msg)` | `enableSpeechBanner(msg)` | `enableAllBanner(msg)` | `enableCameraBanner(msg)` | `enableTorchBanner(msg)` | `enableNfcBanner(msg)` |
-| **Minimal** (v1.14.0) | `enableSensorMinimal(msg?)` | `enableMicMinimal(msg?)` | `enableSpeechMinimal(msg?)` | `enableAllMinimal(msg?)` | `enableCameraMinimal(msg?)` | `enableTorchMinimal(msg?)` | `enableNfcMinimal(msg?)` |
-| **Custom** | `enableSensorOn(sel)` | `enableMicOn(sel)` | `enableSpeechOn(sel)` | `enableAllOn(sel)` | `enableCameraOn(sel)` | `enableTorchOn(sel)` | `enableNfcOn(sel)` |
+| **Tap** (overlay) | `enableGyroTap(msg)` | `enableMicTap(msg)` | `enableSpeechTap(msg)` | `enableAllTap(msg)` | `enableCameraTap(msg)` | `enableTorchTap(msg)` | `enableNfcTap(msg)` |
+| **Button** | `enableGyroButton(txt)` | `enableMicButton(txt)` | `enableSpeechButton(txt)` | `enableAllButton(txt)` | `enableCameraButton(txt)` | `enableTorchButton(txt)` | `enableNfcButton(txt)` |
+| **Canvas** | `enableGyroCanvas(msg)` | `enableMicCanvas(msg)` | `enableSpeechCanvas(msg)` | `enableAllCanvas(msg)` | `enableCameraCanvas(msg)` | `enableTorchCanvas(msg)` | `enableNfcCanvas(msg)` |
+| **Banner** | `enableGyroBanner(msg)` | `enableMicBanner(msg)` | `enableSpeechBanner(msg)` | `enableAllBanner(msg)` | `enableCameraBanner(msg)` | `enableTorchBanner(msg)` | `enableNfcBanner(msg)` |
+| **Minimal** (v1.14.0) | `enableGyroMinimal(msg?)` | `enableMicMinimal(msg?)` | `enableSpeechMinimal(msg?)` | `enableAllMinimal(msg?)` | `enableCameraMinimal(msg?)` | `enableTorchMinimal(msg?)` | `enableNfcMinimal(msg?)` |
+| **Custom** | `enableGyroOn(sel)` | `enableMicOn(sel)` | `enableSpeechOn(sel)` | `enableAllOn(sel)` | `enableCameraOn(sel)` | `enableTorchOn(sel)` | `enableNfcOn(sel)` |
 
 Sound, vibration, GPS (`Geo`), Bluetooth (`Ble`, options object) and Share (`Share`, label or options object) have the same six styles, e.g. `enableGeoTap(msg)`, `enableBleButton({ label })`. Minimal also takes options: `enableMicMinimal({ color, opacity, icon, iconColor, iconSize, message })`. A custom element (`enable…On(sel)`) stays on the page after activation; hide it yourself.
 
 For arbitrary combinations, use `enablePermissionsTap(['sensors', 'torch'])`, `enablePermissionsButton([...])`, `enablePermissionsCanvas([...])`, `enablePermissionsBanner([...])`, `enablePermissionsMinimal([...])`, or `enablePermissionsOn(selector, [...])`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo`, and `camera`. `enableHardware*` aliases also work.
 
-Legacy aliases: `enableGyroTap`, `enableGyroButton` also work (same as `enableSensor*`).
+Aliases: `enableSensorTap`, `enableSensorButton` and the other `enableSensor*` styles are the same functions as `enableGyro*`. Write `enableGyro*`.
 
 ## Status Variables
 

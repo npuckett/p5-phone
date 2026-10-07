@@ -8,7 +8,7 @@ argument-hint: "Describe the p5-phone example or API question"
 
 p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, Bluetooth LE, and multi-user Share rooms — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.15.2**.
 
-It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public function is attached to `window` (global mode) and mirrored on `p5.prototype` (instance mode), so you call them as bare globals like `lockGestures()` and `enableSensorTap()`.
+It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public function is attached to `window` (global mode) and mirrored on `p5.prototype` (instance mode), so you call them as bare globals like `lockGestures()` and `enableGyroTap()`.
 
 **Pair this with the `p5js-2x` skill.** p5-phone only unlocks the hardware and hands you *p5's own* globals and objects; the p5.js 2.x language patterns around them (async asset loading, the unified pointer/touch model, renamed APIs) live in the `p5js-2x` skill. Load both when writing phone sketches — and read the next section before writing any hardware code.
 
@@ -55,20 +55,20 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
   angleMode(DEGREES); // rotationX/Y/Z in degrees. p5 uses radians unless told
-  enableSensorTap('Tap to enable motion sensors');
+  enableGyroTap('Tap to enable motion sensors');
 }
 
 function draw() {
   background(20);
-  if (!window.sensorsEnabled) {
+  if (window.sensorsEnabled) {
+    // rotationX / rotationY / rotationZ are p5.js built-ins, live once sensorsEnabled is true.
+    fill(0, 180, 255);
+    circle(width / 2 + rotationY * 4, height / 2 + rotationX * 4, 80);
+  } else {
     fill(255);
     textAlign(CENTER, CENTER);
     text('Waiting for sensors', width / 2, height / 2);
-    return;
   }
-  // rotationX / rotationY / rotationZ are p5.js built-ins, live once sensorsEnabled is true.
-  fill(0, 180, 255);
-  circle(width / 2 + rotationY * 4, height / 2 + rotationX * 4, 80);
 }
 
 function mousePressed() {
@@ -80,7 +80,7 @@ function mousePressed() {
 
 1. **Call `lockGestures()` in every mobile sketch `setup()`.** It blocks pull-to-refresh, swipe-back, pinch-zoom, double-tap zoom, long-press menus, and overscroll so the canvas behaves like an app.
 2. **Request every permission from a user gesture.** iOS grants sensitive APIs only during *transient user activation* (a tap/click). Never auto-request on page load — use an `enable*` activation UI.
-3. **Gate all hardware reads behind the matching `window.*Enabled` flag** (`sensorsEnabled`, `micEnabled`, `bleConnected`, etc.). Reading before permission returns stale/undefined data.
+3. **Gate all hardware reads behind the matching `window.*Enabled` flag** (`sensorsEnabled`, `micEnabled`, `bleConnected`, etc.). Reading before permission returns stale/undefined data. Write the gate as a positive `if (window.sensorsEnabled) { … }` around the code that reads the hardware, not a flipped early return (`if (!window.sensorsEnabled) return;`).
 4. **Use `mousePressed` / `mouseDragged` / `mouseReleased`, not p5 1.x `touchStarted` / `touchMoved` / `touchEnded`.** The mouse callbacks fire for both mouse and touch in p5.js 1.x and 2.x; the touch callbacks are removed/no-ops in p5.js 2.
 5. **Serve over HTTPS** (or `localhost`). Sensors, mic, camera, NFC, BLE, GPS, and torch all require a secure context on mobile.
 6. **Need several hardware features from one tap? Use a single combined call** — `enablePermissionsTap(['sensors', 'torch'])` — not several single-permission binds on the same gesture. One call keeps iOS transient activation intact and fires `userSetupComplete()` once.
@@ -124,7 +124,7 @@ Full matrix:
 
 | Feature | Tap | Button | Canvas | Banner | Minimal | On (selector) |
 | --- | --- | --- | --- | --- | --- | --- |
-| Motion sensors | `enableSensorTap(msg)` | `enableSensorButton(text)` | `enableSensorCanvas(msg)` | `enableSensorBanner(msg)` | `enableSensorMinimal(msg/opts?)` | `enableSensorOn(sel)` |
+| Motion sensors | `enableGyroTap(msg)` | `enableGyroButton(text)` | `enableGyroCanvas(msg)` | `enableGyroBanner(msg)` | `enableGyroMinimal(msg/opts?)` | `enableGyroOn(sel)` |
 | Microphone | `enableMicTap(msg)` | `enableMicButton(text)` | `enableMicCanvas(msg)` | `enableMicBanner(msg)` | `enableMicMinimal(msg/opts?)` | `enableMicOn(sel)` |
 | Sound output | `enableSoundTap(msg)` | `enableSoundButton(text)` | `enableSoundCanvas(msg)` | `enableSoundBanner(msg)` | `enableSoundMinimal(msg/opts?)` | `enableSoundOn(sel)` |
 | Speech | `enableSpeechTap(msg)` | `enableSpeechButton(text)` | `enableSpeechCanvas(msg)` | `enableSpeechBanner(msg)` | `enableSpeechMinimal(msg/opts?)` | `enableSpeechOn(sel)` |
@@ -142,7 +142,7 @@ Notes:
 
 - `enableBle*` take an **options object** (`{ label, message, statusText, position }`), unlike the other families which take positional `(message, position)` / `(buttonText, statusText)`.
 - `enableShare*` take a label string or an **options object** (same shape as `enableBle*`). Call `shareSetup({ host, room })` first; deploy [companion/P5PhoneShare](companion/P5PhoneShare/).
-- `enableGyro*` is a **legacy alias** for `enableSensor*`. Prefer `enableSensor*` for new examples; use `enableGyro*` only to match older published sketches.
+- `enableSensor*` is an **alias** for `enableGyro*`: the same six functions under a second name. Write `enableGyro*`, the name in the source, the README and the examples homepage. Sketches that call `enableSensor*` still work.
 - `enableAll*` is shorthand for sensors + mic. For any other mix, use `enablePermissions*`.
 - `enableHardware*` is an exact alias of `enablePermissions*` (all six styles). `enableFlashlight*` is an alias of `enableTorch*`.
 
@@ -162,8 +162,9 @@ function setup() {
 }
 
 function draw() {
-  if (!window.sensorsEnabled || !window.micEnabled) return;
-  // Use motion values and microphone input here.
+  if (window.sensorsEnabled && window.micEnabled) {
+    // Use motion values and microphone input here.
+  }
 }
 ```
 
@@ -247,9 +248,11 @@ function setup() {
 
 function draw() {
   background(0);
-  if (!window.micOpen) return; // false while prompting, if denied, or with no input device
-  const level = amplitude.getLevel();
-  circle(width / 2, height / 2, 40 + level * 600);
+  // micOpen is false while prompting, if denied, or with no input device
+  if (window.micOpen) {
+    const level = amplitude.getLevel();
+    circle(width / 2, height / 2, 40 + level * 600);
+  }
 }
 ```
 

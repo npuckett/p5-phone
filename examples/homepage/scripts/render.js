@@ -30,7 +30,7 @@
     { tags: ['setup'], group: 'p5-phone', label: 'lockGestures()', href: '#api-gestures' },
     { tags: ['lockGestures'], group: 'p5-phone', label: 'lockGestures()', href: '#api-gestures' },
     { tags: ['combined permissions'], group: 'p5-phone', label: 'enablePermissionsTap()', href: '#api-audio' },
-    { tags: ['motion'], group: 'p5-phone', label: 'enableSensorTap()', href: '#api-motion' },
+    { tags: ['motion'], group: 'p5-phone', label: 'enableGyroTap()', href: '#api-motion' },
     { tags: ['orientation'], group: 'External', label: 'rotationX / rotationY / rotationZ', href: 'https://p5js.org/reference/p5/rotationX/' },
     { tags: ['gyroscope'], group: 'External', label: 'p5 rotation rates', href: 'https://p5js.org/reference/p5/rotationX/' },
     { tags: ['accelerometer'], group: 'External', label: 'p5 acceleration values', href: 'https://p5js.org/reference/p5/accelerationX/' },
