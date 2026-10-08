@@ -247,9 +247,10 @@ function _unlockAudioInGesture() {
 
 // Since Chrome 153, Chrome suspends a frame's motion sensors unless that frame (or one of
 // the same origin) is the focused frame, and resumes them only when an element in the
-// newly focused frame takes focus. The p5.js Web Editor runs the sketch in a cross-origin
-// iframe, and a tap never moves focus there: the tap overlay cancels its touchend, and
-// lockGestures() makes p5 cancel every press. So focus the canvas from the tap instead.
+// newly focused frame takes focus. Keyboard events also only reach the focused frame.
+// The p5.js Web Editor runs the sketch in a cross-origin iframe, and a press never moves
+// focus there: the permission UIs cancel their touchend and pointerup, and lockGestures()
+// makes p5 cancel every press. So focus the canvas from the press instead.
 // A top-level page (GitHub Pages) always has focus and is left alone, and so is an element
 // the sketch focused itself (an input). Synchronous on purpose, like _unlockAudioInGesture().
 function _focusSketchFrame() {
@@ -272,6 +273,54 @@ function _focusSketchFrame() {
     if (!canvas.hasAttribute('tabindex')) canvas.setAttribute('tabindex', '-1');
     canvas.focus({ preventScroll: true, focusVisible: false });
   } catch (error) { /* focus is best effort */ }
+}
+
+// In an iframe, every tap or click on the sketch focuses it: the permission taps, and any
+// later press after focus moved out (to the editor's code, say). Capture phase, so it runs
+// before handlers that cancel the press. A press on an input the sketch made still focuses
+// the input: on a touch, the browser moves focus there after this; with a mouse it already has.
+(function _focusSketchOnPress() {
+  let inFrame;
+  try {
+    inFrame = window.top !== window.self;
+  } catch (error) {
+    inFrame = true;
+  }
+  if (!inFrame || window._p5phoneFocusOnPress) return;
+  window._p5phoneFocusOnPress = true;
+  window.addEventListener('pointerup', function() { _focusSketchFrame(); }, { capture: true, passive: true });
+})();
+
+// The site a camera or microphone permission belongs to. In an iframe the browser asks
+// for, and remembers, the top page's permission: in the p5.js Web Editor that is
+// editor.p5js.org, shared by every sketch there.
+function _permissionSite() {
+  try {
+    const ancestors = window.location.ancestorOrigins;
+    const origin = ancestors && ancestors.length ? ancestors[ancestors.length - 1] : window.location.origin;
+    return new URL(origin).host;
+  } catch (error) {
+    return '';
+  }
+}
+
+// A refused camera or microphone request, as something a person can act on. Chrome
+// gives "Permission denied" when the site is blocked or under embargo (after 3 dismissed
+// or 4 unanswered prompts, for 7 days), and then it does not ask at all.
+function _mediaPermissionMessage(device, error) {
+  const raw = error && error.message ? error.message : String(error);
+  if (!error || error.name !== 'NotAllowedError') return raw;
+  if (/by system/i.test(raw)) {
+    return `The phone does not let the browser use the ${device} (${raw}). Allow the ${device} for the browser in the phone's settings, then reload.`;
+  }
+  if (/dismissed/i.test(raw)) {
+    return `The ${device} prompt was closed without an answer (${raw}). Reload, tap to start, and choose Allow.`;
+  }
+  const site = _permissionSite() || 'this site';
+  const editor = /(^|\.)p5js\.org$/.test(site) ? ' That one setting covers every sketch in the p5.js Web Editor.' : '';
+  return `The ${device} is blocked for ${site} (${raw}). If no prompt appeared, the browser is blocking it: ` +
+    `open the site settings next to the address (Android Chrome: the icon left of the address, then Permissions; ` +
+    `iPhone Safari: aA, then Website Settings), allow the ${device} or reset permissions, then reload.${editor}`;
 }
 
 // Speech is left out: recognition does not use Web Audio, and in p5.sound 0.3.x the
@@ -2135,7 +2184,7 @@ async function _requestTorchPermissionCore() {
     console.log('✅ Torch camera stream ready');
     return window.torchEnabled;
   } catch (error) {
-    window.torchError = error && error.message ? error.message : String(error);
+    window.torchError = _mediaPermissionMessage('camera', error);
     console.error('Torch permission error:', error);
     if (_debugVisible) {
       debugError('Torch permission error:', error);
@@ -2207,6 +2256,25 @@ async function _requestNfcPermissionCore() {
       window.nfcError = window.isSecureContext === false
         ? 'NFC requires HTTPS. Serve this sketch from an HTTPS URL, not plain HTTP.'
         : 'Web NFC is not supported in this browser. Use Android Chrome 89+ over HTTPS.';
+      return false;
+    }
+
+    // Web NFC only works in a top-level page. In an iframe (the p5.js Web Editor) scan()
+    // fails with InvalidStateError, which reads as a generic error. Say what to do instead.
+    let inFrame;
+    try {
+      inFrame = window.top !== window.self;
+    } catch (frameError) {
+      inFrame = true;
+    }
+    if (inFrame) {
+      console.warn('⚠️ Web NFC only works when the sketch is the whole page, not inside an iframe (the p5.js Web Editor)');
+      if (_debugVisible) {
+        debugWarn('Web NFC does not work inside an iframe');
+      }
+      window.nfcEnabled = false;
+      window.nfcStatus = 'unsupported';
+      window.nfcError = 'NFC only works when the sketch is the whole page. It does not work in the p5.js Web Editor or another iframe: open the sketch on its own page, such as GitHub Pages.';
       return false;
     }
 
@@ -3655,9 +3723,7 @@ async function _requestPermissionsCore(permissions) {
   if (normalized.some(_isAudioPermission)) {
     _unlockAudioInGesture();
   }
-  if (normalized.includes('sensors')) {
-    _focusSketchFrame(); // an earlier permission's await would otherwise end the tap first
-  }
+  _focusSketchFrame(); // any permission: the sketch should have focus once the tap is done
 
   for (const permission of normalized) {
     if (permission === 'sensors') {
@@ -4367,7 +4433,6 @@ function _lockGesturesEmbedded(target) {
   const touchEndHandler = function(e) {
     if (!touchStartedOnTarget || !target.contains(e.target)) return;
     if (_isPermissionUIElement(e.target)) return;
-    _focusSketchFrame(); // p5 cancels the press, so the tap cannot move focus here itself
 
     const now = Date.now();
     if (now - lastTouchEnd <= 300) {
@@ -4476,7 +4541,6 @@ function _lockGesturesFullscreen(options) {
   let lastTouchEnd = 0;
   const touchEndHandler = function(e) {
     if (_isPermissionUIElement(e.target)) return;
-    _focusSketchFrame(); // p5 cancels the press, so the tap cannot move focus here itself
 
     const now = Date.now();
     if (now - lastTouchEnd <= 300) {
