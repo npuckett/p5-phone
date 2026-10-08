@@ -340,7 +340,7 @@ function draw() {
 }
 ```
 
-Helpers: `setNfcTagAlias(serialNumber, alias)`, `getNfcTagAlias(serialNumber?)` (defaults to `window.lastNfcSerialNumber`), `isNfcTag(aliasOrSerialNumber)`, `stopNfc()`. Track state via `window.nfcStatus` (`idle`/`starting`/`requesting-permission`/`scanning`/`tag-read`/`permission-denied`/`unsupported`/`secure-context-required`/`error`/`stopped`) and `window.nfcError`.
+Helpers: `setNfcTagAlias(serialNumber, alias)`, `getNfcTagAlias(serialNumber?)` (defaults to `window.lastNfcSerialNumber`), `isNfcTag(aliasOrSerialNumber)`, `stopNfc()`. Track state via `window.nfcStatus` (`idle`/`starting`/`requesting-permission`/`scanning`/`tag-read`/`permission-denied`/`unsupported`/`secure-context-required`/`error`/`stopped`) and `window.nfcError`. Inside an iframe (the p5.js Web Editor) Web NFC cannot run: the status is `unsupported` and `nfcError` says to open the sketch on its own page.
 
 ## GPS / geolocation
 
@@ -633,7 +633,8 @@ All hardware requires a secure context (HTTPS or localhost).
 ## Troubleshooting
 
 - **Permission never fires / `*Enabled` stays false** — the request must run inside a user gesture. Confirm you used an `enable*` activation UI and did not call it on load. On iOS a single gesture only grants one activation window, so combine features with one `enablePermissions*` call.
-- **Motion works on GitHub Pages but not in the p5.js Web Editor on Android** — since Chrome 153, Chrome pauses motion in an iframe until the sketch has focus. p5-phone 1.15.3+ gives it focus on the motion tap (and, with `lockGestures()`, on any later tap on the sketch). Load `p5-phone@1.15.3` or later and start every motion sketch with a p5-phone tap, even though Android shows no prompt.
+- **Motion works on GitHub Pages but not in the p5.js Web Editor on Android** — since Chrome 153, Chrome pauses motion in an iframe until the sketch has focus. p5-phone 1.15.3 gives it focus on the motion tap; 1.15.4+ on any p5-phone tap and any later tap or click on the sketch. Load `p5-phone@1.15.4` or later and start every motion sketch with a p5-phone tap, even though Android shows no prompt.
+- **In the p5.js Web Editor (an iframe)** — motion, mic, sound, speech, camera, torch, GPS, Bluetooth, Share and vibration work after the p5-phone tap. `keyPressed()` works after a tap or click on the sketch (with `lockGestures()`, p5-phone 1.15.4+). NFC and the screen wake lock never work there: host those sketches on their own page (GitHub Pages).
 - **ML5 throws about `_incrementPreload` / preload with p5@2.2.3** — add the preload-counter polyfill shim before loading ml5 (see Camera section).
 - **Torch does nothing** — check `isTorchSupported()` and `window.torchError`. The torch needs HTTPS and a phone with a rear flash. iPhones need iOS 17.4 or later.
 - **NFC does nothing** — NFC is Android Chrome + HTTPS only; check `window.nfcStatus`.

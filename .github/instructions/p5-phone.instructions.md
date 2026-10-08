@@ -129,7 +129,8 @@ debugError('error');   // Red error
 ## Key Constraints
 
 - iOS requires a **user tap** before granting sensor/mic access — cannot auto-trigger.
-- Start motion sketches with a p5-phone tap on Android too. Android shows no prompt, but in the p5.js Web Editor (an iframe) Chrome 153+ sends no motion until the sketch has focus, and p5-phone 1.15.3+ gives it focus on that tap.
+- Start motion sketches with a p5-phone tap on Android too. Android shows no prompt, but in the p5.js Web Editor (an iframe) Chrome 153+ sends no motion until the sketch has focus, and p5-phone gives it focus on that tap (any tap or click from 1.15.4).
+- In the p5.js Web Editor everything works after the p5-phone tap except NFC and the screen wake lock, which need the sketch to be the whole page (GitHub Pages).
 - Always serve over **HTTPS** — sensors and mic are blocked on HTTP.
 - Call `lockGestures()` in `setup()` to prevent browser default touch behaviors. Use `lockGestures({ mode: 'embedded', element: canvas })` for canvases inside scrollable multi-page sites.
 - `mouseIsPressed` turns false as soon as any one finger lifts. In multi-finger sketches, test `touches.length > 0` for "a finger is down".

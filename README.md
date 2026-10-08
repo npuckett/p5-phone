@@ -853,6 +853,7 @@ enablePermissionsTap(['sensors', 'torch'], 'Tap to enable shake flashlight');
 **⚠️ Platform Support:**
 - ✅ **Android** - Chrome 89+ and Samsung Internet 15+
 - ❌ **iOS** - Not supported (Web NFC API not available on iOS)
+- ❌ **Inside an iframe** (the p5.js Web Editor, embeds) - Web NFC only works when the sketch is the whole page. There `window.nfcStatus` is `'unsupported'` and `window.nfcError` says to open the sketch on its own page, such as GitHub Pages.
 - Requires **HTTPS** — NFC is blocked on insecure origins
 
 **Important:** The Web NFC API requires user activation (a tap or click) before scanning can begin — the same pattern used by all other p5-phone permission functions. On unsupported devices/browsers, `window.nfcEnabled` will be `false` and calls will be safely ignored with console warnings. Compatible with widely available NFC Type 2 tags — including **NTAG213**, **NTAG215**, and **NTAG216** — as well as any NDEF-formatted tag.
@@ -1882,7 +1883,22 @@ iOS Safari requires a **user gesture** (tap, click) before granting access to mo
 
 ### Motion works on GitHub Pages but not in the p5.js Web Editor (Android)
 
-Since Chrome 153, Chrome pauses the motion sensors in an iframe until the sketch inside it has focus. The Web Editor runs every sketch in an iframe, so tilt and shake did nothing there on Android, while the same sketch on its own page worked. From p5-phone 1.15.3 the tap to start (`enableGyroTap()`, `enablePermissionsTap(['sensors', …])` and the other motion taps) gives the sketch focus. With `lockGestures()` on, a later tap on the sketch does too. Load `p5-phone@1.15.3` or later, and start motion sketches with a p5-phone tap even though Android needs no permission.
+Since Chrome 153, Chrome pauses the motion sensors in an iframe until the sketch inside it has focus. The Web Editor runs every sketch in an iframe, so tilt and shake did nothing there on Android, while the same sketch on its own page worked. From p5-phone 1.15.3 the motion tap to start (`enableGyroTap()`, `enablePermissionsTap(['sensors', …])` and the others) gives the sketch focus. From 1.15.4 any p5-phone tap does, and so does any later tap or click on the sketch. Load `p5-phone@1.15.4` or later, and start motion sketches with a p5-phone tap even though Android needs no permission.
+
+### What works in the p5.js Web Editor?
+
+The Web Editor runs every sketch inside an iframe. Almost all of p5-phone works there, once the sketch has had its p5-phone tap to start. That tap gives the sketch focus and the user gesture these features need inside the sketch's own frame.
+
+| Feature | In the Web Editor |
+| --- | --- |
+| Motion (tilt, shake, `deviceShaken()`) | ✓ after the tap, with p5-phone 1.15.3 or later (see above) |
+| Microphone, sound, speech, camera, torch, GPS, Bluetooth, Share | ✓ after the tap |
+| Vibration | ✓ on Android after the tap (iPhones have no vibration anywhere) |
+| Keyboard (`keyPressed()`) | ✓ after a tap or click on the sketch. With `lockGestures()` on, that needs p5-phone 1.15.4 or later |
+| NFC | ✗ only works when the sketch is the whole page. `window.nfcError` says so |
+| Screen wake lock | ✗ the editor's iframe does not allow it (see [Screen Wake Lock](#screen-wake-lock-keep-the-screen-on)) |
+
+For NFC and the wake lock, open the sketch on its own page, such as GitHub Pages. Other sites that embed sketches in an iframe behave the same way, as long as the iframe's `allow` attribute lists the feature (for example `allow="accelerometer; gyroscope; camera; microphone; geolocation; bluetooth"`).
 
 ### My sketch works on desktop but not on my phone
 

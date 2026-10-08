@@ -273,6 +273,7 @@ git diff --stat
 | `p5 is not defined` in Web Editor preview | Move p5/compat/ml5 scripts into `<head>` |
 | Full preview has canvas but page errors are present | Do not mark browser verified until errors are understood |
 | Tilt or shake does nothing on Android in the Web Editor, but works on GitHub Pages | The sketch loads p5-phone older than 1.15.3. Chrome 153+ pauses motion in an iframe until the sketch has focus, and 1.15.3's motion tap gives it focus. Update the pin |
+| `keyPressed()` never runs in the Web Editor on a laptop, with `lockGestures()` on | The sketch loads p5-phone older than 1.15.4, where a click on the sketch never gave it focus. Update the pin |
 | GIF preview 404s its image | The image moved or was renamed in `examples/Phone and Gif/*/gifs/`; fix the URL in that sketch's `sketch.js` |
 
 ## Published sketches use npm CDN
