@@ -83,7 +83,7 @@ function mousePressed() {
 3. **Gate all hardware reads behind the matching `window.*Enabled` flag** (`sensorsEnabled`, `micEnabled`, `bleConnected`, etc.). Reading before permission returns stale/undefined data. Write the gate as a positive `if (window.sensorsEnabled) { … }` around the code that reads the hardware, not a flipped early return (`if (!window.sensorsEnabled) return;`).
 4. **Use `mousePressed` / `mouseDragged` / `mouseReleased`, not p5 1.x `touchStarted` / `touchMoved` / `touchEnded`.** The mouse callbacks fire for both mouse and touch in p5.js 1.x and 2.x; the touch callbacks are removed/no-ops in p5.js 2.
 5. **Serve over HTTPS** (or `localhost`). Sensors, mic, camera, NFC, BLE, GPS, and torch all require a secure context on mobile.
-6. **Need several hardware features from one tap? Use a single combined call** — `enablePermissionsTap(['sensors', 'torch'])` — not several single-permission binds on the same gesture. One call keeps iOS transient activation intact and fires `userSetupComplete()` once.
+6. **Need several hardware features from one tap? Use a single combined call** — `enablePermissionsTap(['gyro', 'torch'])` — not several single-permission binds on the same gesture. One call keeps iOS transient activation intact and fires `userSetupComplete()` once.
 7. **Use exactly one activation style per permission need** unless the user explicitly asks to compare styles.
 8. **One `enable*` call at a time.** Each `enable*` call removes the button, overlay or banner of any earlier one, so `enableGyroTap()` followed by `enableBleButton()` leaves only the BLE button and motion never starts. Combine permissions in one `enablePermissions*` call. BLE and Share are not tokens there: start them from `userSetupComplete()` (see [Combining features](#combining-features)).
 
@@ -151,15 +151,15 @@ Notes:
 
 `enablePermissions*` (a.k.a. `enableHardware*`) takes a list plus a message. The list can be an array or a space/comma string.
 
-**Canonical tokens:** `sensors`, `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo`, `camera`.
+**Names for the list:** `gyro` (motion and orientation, like `enableGyroTap()`; it sets `window.sensorsEnabled`), `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo`, `camera`. Write `gyro` for motion in generated code, not the more generic `sensors`.
 
-**Aliases** (all normalized to the canonical tokens): `sensor`, `motion`, `orientation`, `gyro`, `gyroscope`, `accelerometer` → `sensors`; `microphone`, `audioin` → `mic`; `audio`, `audiooutput`, `output` → `sound`; `voice`, `recognition` → `speech`; `vibrate`, `haptic`, `haptics` → `vibration`; `flashlight`, `flash`, `light` → `torch`; `tag`, `tags` → `nfc`; `gps`, `location`, `geolocation` → `geo`; `video`, `webcam` → `camera`; `all` → `sensors` + `mic`.
+**Other names that work** (each means the same as one above): `motion`, `sensors`, `sensor`, `orientation`, `gyroscope`, `accelerometer` → `gyro`; `microphone`, `audioin` → `mic`; `audio`, `audiooutput`, `output` → `sound`; `voice`, `recognition` → `speech`; `vibrate`, `haptic`, `haptics` → `vibration`; `flashlight`, `flash`, `light` → `torch`; `tag`, `tags` → `nfc`; `gps`, `location`, `geolocation` → `geo`; `video`, `webcam` → `camera`; `all` → `gyro` + `mic`.
 
 ```javascript
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
-  enablePermissionsTap(['sensors', 'mic'], 'Tap to enable motion + microphone');
+  enablePermissionsTap(['gyro', 'mic'], 'Tap to enable motion + microphone');
 }
 
 function draw() {
@@ -543,7 +543,7 @@ Works on iPhone (iOS 17.4 or later) and Android Chrome. Requires HTTPS and works
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
-  enablePermissionsTap(['sensors', 'torch'], 'Tap to enable shake flashlight');
+  enablePermissionsTap(['gyro', 'torch'], 'Tap to enable shake flashlight');
 }
 
 async function deviceShaken() {

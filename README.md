@@ -211,7 +211,7 @@ function setup() {
 
   // One tap asks for motion, the microphone and sound output together.
   // Use a single enable* call: a second one would replace this tap screen.
-  enablePermissionsTap(['sensors', 'mic', 'sound'], 'Tap to start');
+  enablePermissionsTap(['gyro', 'mic', 'sound'], 'Tap to start');
 
   // For one feature on its own, the single versions work the same way:
   // enableGyroTap('Tap to enable motion sensors');
@@ -253,37 +253,39 @@ function mouseReleased() {
 
 #### Several inputs and outputs from one tap
 
-Most sketches need more than one thing: motion and sound, the microphone and the flashlight. List them all in one `enablePermissionsTap()` call, and one tap asks for everything. Don't call two `enable*` functions in a row: each one removes the tap screen of the one before, so only the last one would ask.
+Most sketches need more than one thing, like motion and the microphone. List them all in one `enablePermissionsTap()` call, and one tap asks for everything. Don't call two `enable*` functions in a row: each one removes the tap screen of the one before, so only the last one would ask.
 
 ```javascript
+let mic;
+let amplitude;
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
   angleMode(DEGREES);
-  // one tap asks for all three
-  enablePermissionsTap(['sensors', 'torch', 'vibration'], 'Tap to start');
+  mic = new p5.AudioIn(); // the microphone needs p5.sound
+  amplitude = new p5.Amplitude();
+  mic.disconnect(); // keep the mic out of the speakers
+  mic.connect(amplitude);
+
+  // one tap asks for both
+  enablePermissionsTap(['gyro', 'mic'], 'Tap to start');
 }
 
 function draw() {
   background(20);
-  // check each one on its own: an iPhone has no vibration, the rest still works
+
+  // check each one on its own
   if (window.sensorsEnabled) {
     circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
   }
-}
-
-function mousePressed() {
-  if (window.torchEnabled) {
-    toggleTorch(); // a tap switches the flashlight
+  if (window.micOpen) {
+    rect(0, height - 20, amplitude.getLevel() * width, 20);
   }
-  if (window.vibrationEnabled) {
-    vibrate(50); // and buzzes (Android)
-  }
-  return false;
 }
 ```
 
-The list can hold any of `sensors` (or `motion`), `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo` and `camera`, in any order. Each feature then sets its own flag, such as `window.micOpen` or `window.torchEnabled`. Every style takes the same list. Bluetooth and Share start after the first tap. See [Multiple Inputs and Outputs](#multiple-inputs-and-outputs) for all of it.
+The list can hold any of `gyro` (motion), `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo` and `camera`. Each one sets its own flag: `gyro` sets `window.sensorsEnabled`, `mic` sets `window.micOpen`, `torch` sets `window.torchEnabled`, and so on. See [Multiple Inputs and Outputs](#multiple-inputs-and-outputs) for the full list, the other styles, and adding Bluetooth or Share.
 
 ## API Reference
 
@@ -314,10 +316,10 @@ enableAllTap(message)     // Tap anywhere to enable both
 enableAllButton(text)     // Button-based combined activation
 
 // Any combination of hardware permissions
-enablePermissionsTap(['sensors', 'mic', 'camera'], message)
+enablePermissionsTap(['gyro', 'mic', 'camera'], message)
 enablePermissionsButton(['torch', 'vibration'], text, statusText)
 enablePermissionsCanvas(['camera', 'mic'], message)
-enablePermissionsBanner(['sensors', 'nfc'], message, position)
+enablePermissionsBanner(['gyro', 'nfc'], message, position)
 enablePermissionsOn('#start-button', ['camera', 'mic'])
 // Also: enablePermissionsMinimal(list, message | options)
 // Also available as enableHardwareTap/Button/Canvas/Banner/Minimal/On
@@ -510,7 +512,7 @@ enableGyroTap('Tap for motion');
 enableMicTap('Tap for the microphone');
 
 // ✓ one tap asks for both
-enablePermissionsTap(['sensors', 'mic'], 'Tap to start');
+enablePermissionsTap(['gyro', 'mic'], 'Tap to start');
 ```
 
 **Commands** (every style takes the same list):
@@ -521,13 +523,13 @@ enablePermissionsTap(['sensors', 'mic'], 'Tap to start');
 - `enablePermissionsMinimal(list, message | options)` - a bare overlay with a pulsing icon
 - `enablePermissionsOn(selector, list)` - your own HTML element. The selector comes first here.
 - `enableHardwareTap(list, message)` and the rest of `enableHardware*` - the same six functions under another name
-- `enableAllTap(message)` and the rest of `enableAll*` - shorthand for `['sensors', 'mic']`
+- `enableAllTap(message)` and the rest of `enableAll*` - shorthand for `['gyro', 'mic']`
 
 **The list** is an array, or a space- or comma-separated string, in any order:
 
 | In the list | Turns on | Check this flag | Other names that work |
 | --- | --- | --- | --- |
-| `sensors` | motion and orientation | `window.sensorsEnabled` | `motion`, `sensor`, `orientation`, `gyro`, `gyroscope`, `accelerometer` |
+| `gyro` | motion and orientation | `window.sensorsEnabled` | `motion`, `sensors`, `sensor`, `orientation`, `gyroscope`, `accelerometer` |
 | `mic` | microphone | `window.micOpen` | `microphone`, `audioin` |
 | `sound` | sound output | `window.soundEnabled` | `audio`, `audiooutput`, `output` |
 | `speech` | speech recognition | `window.speechEnabled` | `voice`, `recognition` |
@@ -539,45 +541,7 @@ enablePermissionsTap(['sensors', 'mic'], 'Tap to start');
 
 `userSetupComplete()` runs once, after every request in the tap has finished.
 
-**Usage:**
-```javascript
-let mic;
-let amplitude;
-
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  mic = new p5.AudioIn();
-  amplitude = new p5.Amplitude();
-  mic.disconnect();
-  mic.connect(amplitude);
-  lockGestures();
-  angleMode(DEGREES);
-
-  // one tap asks for motion, the microphone and the flashlight
-  enablePermissionsTap(['sensors', 'mic', 'torch'], 'Tap to start');
-}
-
-function draw() {
-  background(220);
-
-  // one check per feature, so each part works on its own
-  if (window.sensorsEnabled) {
-    circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 50);
-  }
-
-  if (window.micOpen) {
-    let level = amplitude.getLevel();
-    rect(10, 10, level * 200, 20);
-  }
-}
-
-function mousePressed() {
-  if (window.torchEnabled) {
-    toggleTorch();
-  }
-  return false;
-}
-```
+A complete sketch is in the Quick Start: [Several inputs and outputs from one tap](#several-inputs-and-outputs-from-one-tap).
 
 **Bluetooth and Share as well.** They are not in the list, and a second `enable*` call in `setup()` would remove the first one's tap screen. Start them once the first tap has worked. The Bluetooth chooser needs a tap of its own, so show its button from `userSetupComplete()`:
 
@@ -586,7 +550,7 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
   bleSetup({ characteristics: [{ name: 'brightness', type: 'uint8', write: true }] });
-  enablePermissionsTap(['sensors', 'sound'], 'Tap to start');
+  enablePermissionsTap(['gyro', 'sound'], 'Tap to start');
 }
 
 function userSetupComplete() {
@@ -965,7 +929,7 @@ async function mousePressed() {
 enablePermissionsTap(['torch', 'vibration'], 'Tap to enable disco hardware');
 
 // Motion sensors plus flashlight
-enablePermissionsTap(['sensors', 'torch'], 'Tap to enable shake flashlight');
+enablePermissionsTap(['gyro', 'torch'], 'Tap to enable shake flashlight');
 ```
 
 **Status Variables:**
@@ -1979,7 +1943,7 @@ iOS Safari requires a **user gesture** (tap, click) before granting access to mo
 
 ### Motion works on GitHub Pages but not in the p5.js Web Editor (Android)
 
-Since Chrome 153, Chrome pauses the motion sensors in an iframe until the sketch inside it has focus. The Web Editor runs every sketch in an iframe, so tilt and shake did nothing there on Android, while the same sketch on its own page worked. From p5-phone 1.15.3 the motion tap to start (`enableGyroTap()`, `enablePermissionsTap(['sensors', …])` and the others) gives the sketch focus. From 1.15.4 any p5-phone tap does, and so does any later tap or click on the sketch. Load `p5-phone@1.15.4` or later, and start motion sketches with a p5-phone tap even though Android needs no permission.
+Since Chrome 153, Chrome pauses the motion sensors in an iframe until the sketch inside it has focus. The Web Editor runs every sketch in an iframe, so tilt and shake did nothing there on Android, while the same sketch on its own page worked. From p5-phone 1.15.3 the motion tap to start (`enableGyroTap()`, `enablePermissionsTap(['gyro', …])` and the others) gives the sketch focus. From 1.15.4 any p5-phone tap does, and so does any later tap or click on the sketch. Load `p5-phone@1.15.4` or later, and start motion sketches with a p5-phone tap even though Android needs no permission.
 
 ### What works in the p5.js Web Editor?
 

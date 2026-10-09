@@ -52,7 +52,7 @@ Each permission type has 6 UI styles — pick the one that fits your design:
 
 Sound, vibration, GPS (`Geo`), Bluetooth (`Ble`, options object) and Share (`Share`, label or options object) have the same six styles, e.g. `enableGeoTap(msg)`, `enableBleButton({ label })`. Minimal also takes options: `enableMicMinimal({ color, opacity, icon, iconColor, iconSize, message })`. A custom element (`enable…On(sel)`) stays on the page after activation; hide it yourself.
 
-For arbitrary combinations, use `enablePermissionsTap(['sensors', 'torch'])`, `enablePermissionsButton([...])`, `enablePermissionsCanvas([...])`, `enablePermissionsBanner([...])`, `enablePermissionsMinimal([...])`, or `enablePermissionsOn(selector, [...])`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo`, and `camera`. `enableHardware*` aliases also work.
+For arbitrary combinations, use `enablePermissionsTap(['gyro', 'torch'])`, `enablePermissionsButton([...])`, `enablePermissionsCanvas([...])`, `enablePermissionsBanner([...])`, `enablePermissionsMinimal([...])`, or `enablePermissionsOn(selector, [...])`. Valid names include `sensors`, `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo`, and `camera`. `enableHardware*` aliases also work.
 
 Aliases: `enableSensorTap`, `enableSensorButton` and the other `enableSensor*` styles are the same functions as `enableGyro*`. Write `enableGyro*`.
 

@@ -226,7 +226,7 @@ function bleReceive(name, value) {
 
         <article class="starter-card">
           <h3>Multiple Types</h3>
-          <pre><code>enablePermissionsTap(['sensors', 'mic'], 'Tap to start');
+          <pre><code>enablePermissionsTap(['gyro', 'mic'], 'Tap to start');
 
 // in draw(): one check per feature
 if (window.sensorsEnabled) {
@@ -241,33 +241,35 @@ if (window.micOpen) {
 
       <div class="quickstart-multiple" id="quick-start-multiple">
         <h3>Several inputs and outputs from one tap</h3>
-        <p>Most sketches need more than one thing: motion and sound, the microphone and the flashlight. List them all in one <code>enablePermissionsTap()</code> call, and one tap asks for everything. Don't call two <code>enable*</code> functions in a row: each one removes the tap screen of the one before, so only the last one would ask.</p>
-        <pre><code>function setup() {
+        <p>Most sketches need more than one thing, like motion and the microphone. List them all in one <code>enablePermissionsTap()</code> call, and one tap asks for everything. Don't call two <code>enable*</code> functions in a row: each one removes the tap screen of the one before, so only the last one would ask.</p>
+        <pre><code>let mic;
+let amplitude;
+
+function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
   angleMode(DEGREES);
-  // one tap asks for all three
-  enablePermissionsTap(['sensors', 'torch', 'vibration'], 'Tap to start');
+  mic = new p5.AudioIn(); // the microphone needs p5.sound
+  amplitude = new p5.Amplitude();
+  mic.disconnect(); // keep the mic out of the speakers
+  mic.connect(amplitude);
+
+  // one tap asks for both
+  enablePermissionsTap(['gyro', 'mic'], 'Tap to start');
 }
 
 function draw() {
   background(20);
-  // check each one on its own: an iPhone has no vibration, the rest still works
+
+  // check each one on its own
   if (window.sensorsEnabled) {
     circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
   }
-}
-
-function mousePressed() {
-  if (window.torchEnabled) {
-    toggleTorch(); // a tap switches the flashlight
+  if (window.micOpen) {
+    rect(0, height - 20, amplitude.getLevel() * width, 20);
   }
-  if (window.vibrationEnabled) {
-    vibrate(50); // and buzzes (Android)
-  }
-  return false;
 }</code></pre>
-        <p>The list can hold any of <code>sensors</code> (or <code>motion</code>), <code>mic</code>, <code>sound</code>, <code>speech</code>, <code>vibration</code>, <code>torch</code>, <code>nfc</code>, <code>geo</code> and <code>camera</code>, in any order. Each feature then sets its own flag, such as <code>window.micOpen</code> or <code>window.torchEnabled</code>. Every style takes the same list: <code>enablePermissionsButton()</code>, <code>enablePermissionsCanvas()</code>, <code>enablePermissionsBanner()</code>, <code>enablePermissionsMinimal()</code> and <code>enablePermissionsOn(selector, list)</code>. Bluetooth and Share start after the first tap: see <a href="#api-multiple">Multiple Inputs &amp; Outputs</a> in the API.</p>
+        <p>The list can hold any of <code>gyro</code> (motion), <code>mic</code>, <code>sound</code>, <code>speech</code>, <code>vibration</code>, <code>torch</code>, <code>nfc</code>, <code>geo</code> and <code>camera</code>. Each one sets its own flag: <code>gyro</code> sets <code>window.sensorsEnabled</code>, <code>mic</code> sets <code>window.micOpen</code>, <code>torch</code> sets <code>window.torchEnabled</code>, and so on. See <a href="#api-multiple">Multiple Inputs &amp; Outputs</a> in the API for the full list, the other styles, and adding Bluetooth or Share.</p>
       </div>
 
       <div class="note-band">

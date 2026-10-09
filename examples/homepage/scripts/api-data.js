@@ -11,7 +11,7 @@ window.P5PHONE_PERMISSION_MATRIX = [
   { capability: 'Share (multi-user)', status: 'window.shareConnected', tap: 'enableShareTap(options?)', button: 'enableShareButton(options?)', canvas: 'enableShareCanvas(options?)', banner: 'enableShareBanner(options?)', minimal: 'enableShareMinimal(options?)', custom: 'enableShareOn(selector)', notes: 'Call shareSetup({ host, room }) first. Deploy companion/P5PhoneShare (PartyServer). Mutate shared / me; read guests.' },
   { capability: 'Camera', status: 'window.cameraEnabled || cam.ready', tap: 'enableCameraTap(message)', button: 'enableCameraButton(text)', canvas: 'enableCameraCanvas(message)', banner: 'enableCameraBanner(message, position)', minimal: 'enableCameraMinimal(message|opts)', custom: 'enableCameraOn(selector)', notes: 'Pair with createPhoneCamera() for ML5-friendly mapping.' },
   { capability: 'Motion + microphone', status: 'window.sensorsEnabled && window.micEnabled', tap: 'enableAllTap(message)', button: 'enableAllButton(text)', canvas: 'enableAllCanvas(message)', banner: 'enableAllBanner(message, position)', minimal: 'enableAllMinimal(message|opts)', custom: 'enableAllOn(selector)', notes: 'Convenience flow for sketches that need both sensors and mic.' },
-  { capability: 'Any combination', status: 'depends on selected permissions', tap: "enablePermissionsTap(['sensors', 'torch'])", button: "enablePermissionsButton(['torch', 'vibration'], text)", canvas: "enablePermissionsCanvas(['camera', 'mic'])", banner: "enablePermissionsBanner(['sensors', 'nfc'], msg)", minimal: "enablePermissionsMinimal(['sensors', 'mic'], msg|opts)", custom: "enablePermissionsOn(selector, ['camera', 'mic'])", notes: 'Use sensors, mic, sound, speech, vibration, torch, nfc, geo, and camera in any combination. enableHardware* aliases are also available.' }
+  { capability: 'Any combination', status: 'depends on selected permissions', tap: "enablePermissionsTap(['gyro', 'torch'])", button: "enablePermissionsButton(['torch', 'vibration'], text)", canvas: "enablePermissionsCanvas(['camera', 'mic'])", banner: "enablePermissionsBanner(['gyro', 'nfc'], msg)", minimal: "enablePermissionsMinimal(['gyro', 'mic'], msg|opts)", custom: "enablePermissionsOn(selector, ['camera', 'mic'])", notes: 'Use sensors, mic, sound, speech, vibration, torch, nfc, geo, and camera in any combination. enableHardware* aliases are also available.' }
 ];
 
 window.P5PHONE_API_SECTIONS = [
@@ -35,25 +35,25 @@ window.P5PHONE_API_SECTIONS = [
     title: 'Multiple Inputs and Outputs',
     description: 'Most sketches need more than one thing: motion and sound, the microphone and the flashlight. Ask for all of them from one tap with a single enablePermissions* call and a list. Then check each feature\'s own flag, because a phone can grant one and not another. Call only one enable* function: each one removes the tap screen or button of the one before, so only the last one would ask.',
     example: `// one call: one tap asks for everything in the list
-enablePermissionsTap(['sensors', 'mic', 'torch'], 'Tap to start');
+enablePermissionsTap(['gyro', 'mic', 'torch'], 'Tap to start');
 
 // not two calls: the second removes the first one's tap screen,
 // so only the microphone would ask
 enableGyroTap('Tap for motion');
 enableMicTap('Tap for the microphone');`,
     items: [
-      { name: 'enablePermissionsTap', signature: 'enablePermissionsTap(list, message)', summary: "A full-screen tap that asks for every feature in the list. The usual choice: enablePermissionsTap(['sensors', 'mic'], 'Tap to start').", tags: ['combined', 'tap'] },
+      { name: 'enablePermissionsTap', signature: 'enablePermissionsTap(list, message)', summary: "A full-screen tap that asks for every feature in the list. The usual choice: enablePermissionsTap(['gyro', 'mic'], 'Tap to start').", tags: ['combined', 'tap'] },
       { name: 'enablePermissionsButton', signature: 'enablePermissionsButton(list, buttonText, statusText)', summary: 'A generated button that asks for every feature in the list.', tags: ['combined', 'button'] },
       { name: 'enablePermissionsCanvas', signature: 'enablePermissionsCanvas(list, message)', summary: 'Asks for the list on the first touch on the canvas, with no overlay.', tags: ['combined', 'canvas'] },
       { name: 'enablePermissionsBanner', signature: 'enablePermissionsBanner(list, message, position)', summary: "A slide-in banner that asks for the list. position is 'top' or 'bottom'.", tags: ['combined', 'banner'] },
       { name: 'enablePermissionsMinimal', signature: 'enablePermissionsMinimal(list, message | options)', summary: 'A bare overlay with a pulsing icon that asks for the list.', tags: ['combined', 'minimal'] },
       { name: 'enablePermissionsOn', signature: 'enablePermissionsOn(selector, list)', summary: 'Your own HTML element asks for the list when it is tapped. The selector comes first here, then the list.', tags: ['combined', 'custom'] },
-      { name: 'the list', signature: "'sensors' 'mic' 'sound' 'speech' 'vibration' 'torch' 'nfc' 'geo' 'camera'", summary: 'Any of these, in any order, as an array or a space- or comma-separated string. Friendlier names work too: motion, microphone, audio, flashlight, gps, location, webcam and more.', tags: ['combined', 'list'] },
-      { name: 'one flag per feature', signature: 'window.sensorsEnabled, micOpen, soundEnabled, torchEnabled, vibrationEnabled, geoEnabled, cameraEnabled', summary: 'Each feature sets its own flag. Check them one by one, so the sketch keeps working when the phone grants one feature and not another.', tags: ['combined', 'status'] },
+      { name: 'the list', signature: "'gyro' 'mic' 'sound' 'speech' 'vibration' 'torch' 'nfc' 'geo' 'camera'", summary: 'Any of these, in any order, as an array or a space- or comma-separated string. gyro is motion, like enableGyroTap(). Other names work too: motion, microphone, audio, flashlight, gps, location, webcam and more.', tags: ['combined', 'list'] },
+      { name: 'one flag per feature', signature: 'window.sensorsEnabled, micOpen, soundEnabled, torchEnabled, vibrationEnabled, geoEnabled, cameraEnabled', summary: 'Each feature sets its own flag (gyro sets window.sensorsEnabled). Check them one by one, so the sketch keeps working when the phone grants one feature and not another.', tags: ['combined', 'status'] },
       { name: 'userSetupComplete', signature: 'function userSetupComplete() { ... }', summary: "Runs once, after every request in the tap has finished. The place to start Bluetooth or Share.", tags: ['combined', 'callback'] },
       { name: 'one enable* call', signature: 'enableGyroTap(); enableMicTap(); // only the mic asks', summary: 'Each enable* function removes the tap screen, button, banner or overlay of the one before, so two calls in a row leave only the last. Put everything in one list instead.', tags: ['combined', 'rule'] },
       { name: 'Bluetooth and Share', signature: 'function userSetupComplete() { enableBleButton(); }', summary: 'Bluetooth and Share are not on the list. Start them after the first tap: show enableBleButton() from userSetupComplete() (the Bluetooth chooser needs a tap of its own), or call shareConnect() there.', tags: ['combined', 'ble', 'share'] },
-      { name: 'enableAllTap', signature: 'enableAllTap(message)', summary: "Shorthand for enablePermissionsTap(['sensors', 'mic']). Also enableAllButton, enableAllCanvas, enableAllBanner, enableAllMinimal and enableAllOn.", tags: ['combined', 'shorthand'] },
+      { name: 'enableAllTap', signature: 'enableAllTap(message)', summary: "Shorthand for enablePermissionsTap(['gyro', 'mic']). Also enableAllButton, enableAllCanvas, enableAllBanner, enableAllMinimal and enableAllOn.", tags: ['combined', 'shorthand'] },
       { name: 'enableHardwareTap', signature: 'enableHardwareTap(list, message)', summary: 'The same functions under another name, in all six styles.', tags: ['combined', 'alias'] }
     ]
   },
@@ -98,7 +98,7 @@ enableMicTap('Tap for the microphone');`,
       { name: 'enableMicTap', signature: 'enableMicTap(message)', summary: 'Requests microphone access from a tap. Use with p5.sound and p5.AudioIn.', tags: ['microphone', 'tap'] },
       { name: 'enableSoundTap', signature: 'enableSoundTap(message)', summary: 'Unlocks browser audio output so sound files or oscillators can play. Also starts Tone.js and any AudioContext the sketch makes.', tags: ['sound', 'tap'] },
       { name: 'enableSpeechTap', signature: 'enableSpeechTap(message)', summary: 'Activates the audio context for Web Speech API use without creating a p5.AudioIn instance.', tags: ['speech', 'tap'] },
-      { name: 'with other features', signature: "enablePermissionsTap(['mic', 'sensors'], message)", summary: 'To ask for the microphone or sound together with motion, the camera or anything else from one tap, see Multiple Inputs and Outputs.', tags: ['combined'] }
+      { name: 'with other features', signature: "enablePermissionsTap(['mic', 'gyro'], message)", summary: 'To ask for the microphone or sound together with motion, the camera or anything else from one tap, see Multiple Inputs and Outputs.', tags: ['combined'] }
     ]
   },
   {
