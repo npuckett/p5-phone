@@ -85,6 +85,7 @@ function mousePressed() {
 5. **Serve over HTTPS** (or `localhost`). Sensors, mic, camera, NFC, BLE, GPS, and torch all require a secure context on mobile.
 6. **Need several hardware features from one tap? Use a single combined call** — `enablePermissionsTap(['sensors', 'torch'])` — not several single-permission binds on the same gesture. One call keeps iOS transient activation intact and fires `userSetupComplete()` once.
 7. **Use exactly one activation style per permission need** unless the user explicitly asks to compare styles.
+8. **One `enable*` call at a time.** Each `enable*` call removes the button, overlay or banner of any earlier one, so `enableGyroTap()` followed by `enableBleButton()` leaves only the BLE button and motion never starts. Combine permissions in one `enablePermissions*` call. BLE and Share are not tokens there: start them from `userSetupComplete()` (see [Combining features](#combining-features)).
 
 ## Use p5.js built-ins — do not reimplement them
 
@@ -167,6 +168,24 @@ function draw() {
   }
 }
 ```
+
+**BLE or Share as well.** `ble` and `share` are not tokens, and a second `enable*` call in `setup()` would remove the first one's UI. Start them once the first tap has worked:
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  bleSetup({ characteristics: [{ name: 'brightness', type: 'uint8', write: true }] });
+  enableGyroTap('Tap to start');
+}
+
+function userSetupComplete() {
+  // Runs after the motion tap. The Bluetooth chooser needs a tap of its own.
+  enableBleButton({ label: 'Connect the lamp' });
+}
+```
+
+For Share, call `shareSetup()` in `setup()` and `shareConnect()` in `userSetupComplete()`. Share needs no second tap.
 
 ## Status variables and callbacks
 
@@ -275,6 +294,7 @@ The sound tap (and any tap that asks for `sound` or `mic`) also starts other eng
 ```javascript
 let cam;
 let model;
+let hands = [];
 
 function setup() {
   createCanvas(405, 720);
@@ -282,12 +302,22 @@ function setup() {
   cam = createPhoneCamera('user', true, 'fitHeight');
   enableCameraTap('Tap screen to enable camera');
 
-  cam.onReady(async () => {
-    model = await ml5.handPose({ maxHands: 1, runtime: 'mediapipe', flipped: false });
-    model.detectStart(cam.videoElement, gotResults);
+  cam.onReady(() => {
+    // Use ml5's ready callback, not await: in a running p5 sketch, ml5.handPose()
+    // returns before the model has loaded, and detectStart() then fails.
+    model = ml5.handPose({ maxHands: 1, runtime: 'mediapipe', flipped: false }, () => {
+      model.detectStart(cam.videoElement, gotResults);
+    });
   });
 }
+
+function gotResults(results) {
+  hands = results;
+}
 ```
+
+- **In a p5 sketch, start detection in ml5's ready callback.** `await ml5.handPose(...)` waits only when no p5 sketch is running (a three.js page, even one that loads p5 for the Web Editor). Once a p5 sketch is running, it hands back a model that is still loading, and `detectStart()` throws `Cannot read properties of null (reading 'estimateHands')`. The same goes for `ml5.faceMesh()` and `ml5.bodyPose()`.
+- **Use `runtime: 'mediapipe'`.** It loads the hand and face models from jsdelivr in a second or two. ml5's default runtime fetches its models through Kaggle, which can be slow or fail.
 
 `PhoneCamera` properties: `ready`, `video` (p5 element), `videoElement` (native `<video>` for ML5), `width`, `height`, `active`, `mirror`, `mode`, `fixedWidth`, `fixedHeight`.
 
@@ -302,7 +332,7 @@ Coordinate-mapping methods (video space → display space, mirror-aware):
 
 Set ML5 `flipped: false` when available — `PhoneCamera` already handles mirroring and coordinate mapping, so pass raw ML5 results through the `map*` helpers.
 
-For `ml5@1` with `p5@2.2.3`, add the preload-counter polyfill before loading ml5:
+For ml5 1.x with p5.js 2 (2.2.3, 2.3.2), add the preload-counter polyfill before loading ml5, and pin the ml5 version:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
@@ -311,7 +341,7 @@ For `ml5@1` with `p5@2.2.3`, add the preload-counter polyfill before loading ml5
   p5.prototype._incrementPreload ||= function() {};
   p5.prototype._decrementPreload ||= function() {};
 </script>
-<script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ml5@1.4.0/dist/ml5.min.js"></script>
 ```
 
 For Three.js pages that use ML5 but are not p5 sketches, put p5, the compatibility shim, the preload-counter polyfill, and ml5 in the document `<head>` so p5 Web Editor preview injection does not run before p5 exists.
@@ -635,7 +665,9 @@ All hardware requires a secure context (HTTPS or localhost).
 - **Permission never fires / `*Enabled` stays false** — the request must run inside a user gesture. Confirm you used an `enable*` activation UI and did not call it on load. On iOS a single gesture only grants one activation window, so combine features with one `enablePermissions*` call.
 - **Motion works on GitHub Pages but not in the p5.js Web Editor on Android** — since Chrome 153, Chrome pauses motion in an iframe until the sketch has focus. p5-phone 1.15.3 gives it focus on the motion tap; 1.15.4+ on any p5-phone tap and any later tap or click on the sketch. Load `p5-phone@1.15.4` or later and start every motion sketch with a p5-phone tap, even though Android shows no prompt.
 - **In the p5.js Web Editor (an iframe)** — motion, mic, sound, speech, camera, torch, GPS, Bluetooth, Share and vibration work after the p5-phone tap. `keyPressed()` works after a tap or click on the sketch (with `lockGestures()`, p5-phone 1.15.4+). NFC and the screen wake lock never work there: host those sketches on their own page (GitHub Pages).
-- **ML5 throws about `_incrementPreload` / preload with p5@2.2.3** — add the preload-counter polyfill shim before loading ml5 (see Camera section).
+- **ML5 throws about `_incrementPreload` / preload with p5.js 2** — add the preload-counter polyfill shim before loading ml5 (see Camera section).
+- **ML5: `Cannot read properties of null (reading 'estimateHands')`** — `detectStart()` ran before the model loaded. In a p5 sketch, call it in ml5's ready callback, not after `await` (see Camera section).
+- **Motion (or the mic) never starts after adding a BLE or Share button** — a second `enable*` call removed the first one's UI. Start BLE and Share from `userSetupComplete()` (see Combining features).
 - **Torch does nothing** — check `isTorchSupported()` and `window.torchError`. The torch needs HTTPS and a phone with a rear flash. iPhones need iOS 17.4 or later.
 - **NFC does nothing** — NFC is Android Chrome + HTTPS only; check `window.nfcStatus`.
 - **GPS hangs on "Acquiring…" or times out** — cold start can take 5-30s, longer indoors; move outdoors, retry, and confirm OS-level Location Services is on. `window.geoStatus` tells you which state you're in.
