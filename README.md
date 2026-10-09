@@ -103,9 +103,11 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
 - [Basic Setup](#basic-setup)
   - [Index HTML](#index-html)
   - [p5.js](#p5js)
+  - [Several inputs and outputs from one tap](#several-inputs-and-outputs-from-one-tap)
 - [API Reference](#api-reference)
   - [Core Functions](#core-functions)
   - [Status Variables](#status-variables)
+  - [Multiple Inputs and Outputs](#multiple-inputs-and-outputs)
   - [Motion Sensor Activation](#motion-sensor-activation)
   - [Microphone Activation](#microphone-activation)
   - [Sound Output Activation](#sound-output-activation)
@@ -116,7 +118,6 @@ p5-phone automatically detects the p5.js version and adjusts its internal touch 
   - [Bluetooth Low Energy (Web Bluetooth)](#bluetooth-low-energy-web-bluetooth)
   - [Share (multi-user shared state)](#share-multi-user-shared-state)
   - [Speech Recognition Activation](#speech-recognition-activation)
-  - [Combined Activation](#combined-activation)
   - [PhoneCamera (ML5 Integration)](#phonecamera-ml5-integration)
 - [Utilities](#utilities)
   - [lockGestures()](#lockgestures)
@@ -202,18 +203,18 @@ function setup() {
   // Tilt in degrees (rotationX/Y/Z follow angleMode, and p5 uses radians unless told)
   angleMode(DEGREES);
 
-  // Enable motion sensors with tap-to-start
-  enableGyroTap('Tap to enable motion sensors');
-  
-  // Enable microphone with tap-to-start (also enables sound output)
+  // Set up the microphone before the tap
   mic = new p5.AudioIn();
   amplitude = new p5.Amplitude();
   mic.disconnect();        // keep the live mic out of the speakers
   mic.connect(amplitude);  // read the level with amplitude.getLevel()
-  enableMicTap('Tap to enable microphone');
-  
-  // OR enable sound output only (no microphone input)
-  // enableSoundTap('Tap to enable sound');
+
+  // One tap asks for motion, the microphone and sound output together.
+  // Use a single enable* call: a second one would replace this tap screen.
+  enablePermissionsTap(['sensors', 'mic', 'sound'], 'Tap to start');
+
+  // For one feature on its own, the single versions work the same way:
+  // enableGyroTap('Tap to enable motion sensors');
 }
 
 function draw() {
@@ -249,6 +250,40 @@ function mouseReleased() {
   return false;
 }
 ```
+
+#### Several inputs and outputs from one tap
+
+Most sketches need more than one thing: motion and sound, the microphone and the flashlight. List them all in one `enablePermissionsTap()` call, and one tap asks for everything. Don't call two `enable*` functions in a row: each one removes the tap screen of the one before, so only the last one would ask.
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  angleMode(DEGREES);
+  // one tap asks for all three
+  enablePermissionsTap(['sensors', 'torch', 'vibration'], 'Tap to start');
+}
+
+function draw() {
+  background(20);
+  // check each one on its own: an iPhone has no vibration, the rest still works
+  if (window.sensorsEnabled) {
+    circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
+  }
+}
+
+function mousePressed() {
+  if (window.torchEnabled) {
+    toggleTorch(); // a tap switches the flashlight
+  }
+  if (window.vibrationEnabled) {
+    vibrate(50); // and buzzes (Android)
+  }
+  return false;
+}
+```
+
+The list can hold any of `sensors` (or `motion`), `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo` and `camera`, in any order. Each feature then sets its own flag, such as `window.micOpen` or `window.torchEnabled`. Every style takes the same list. Bluetooth and Share start after the first tap. See [Multiple Inputs and Outputs](#multiple-inputs-and-outputs) for all of it.
 
 ## API Reference
 
@@ -460,6 +495,107 @@ function draw() {
   }
 }
 ```
+
+### Multiple Inputs and Outputs
+
+**Purpose:** Ask for several features from one tap: motion and sound, the microphone and the flashlight, or any other mix.
+
+**The idea:** Browsers grant most phone hardware only from a tap, and one tap can ask for several things. Put everything the sketch needs in one list and pass it to a single `enablePermissions*` call. Each feature then sets its own status flag, so check them one by one. A phone can grant one feature and not another (an iPhone has no vibration or NFC), and the rest of the sketch keeps working.
+
+**Use one `enable*` call.** Each `enable*` function removes the tap screen, button, banner or overlay of the one before, so two calls in a row leave only the last one, and only that one asks:
+
+```javascript
+// ✗ only the microphone asks: enableMicTap() removed the motion tap screen
+enableGyroTap('Tap for motion');
+enableMicTap('Tap for the microphone');
+
+// ✓ one tap asks for both
+enablePermissionsTap(['sensors', 'mic'], 'Tap to start');
+```
+
+**Commands** (every style takes the same list):
+- `enablePermissionsTap(list, message)` - a full-screen tap. The usual choice.
+- `enablePermissionsButton(list, buttonText, statusText)` - a generated button
+- `enablePermissionsCanvas(list, message)` - the first touch on the canvas, with no overlay
+- `enablePermissionsBanner(list, message, position)` - a slide-in banner, `'top'` or `'bottom'`
+- `enablePermissionsMinimal(list, message | options)` - a bare overlay with a pulsing icon
+- `enablePermissionsOn(selector, list)` - your own HTML element. The selector comes first here.
+- `enableHardwareTap(list, message)` and the rest of `enableHardware*` - the same six functions under another name
+- `enableAllTap(message)` and the rest of `enableAll*` - shorthand for `['sensors', 'mic']`
+
+**The list** is an array, or a space- or comma-separated string, in any order:
+
+| In the list | Turns on | Check this flag | Other names that work |
+| --- | --- | --- | --- |
+| `sensors` | motion and orientation | `window.sensorsEnabled` | `motion`, `sensor`, `orientation`, `gyro`, `gyroscope`, `accelerometer` |
+| `mic` | microphone | `window.micOpen` | `microphone`, `audioin` |
+| `sound` | sound output | `window.soundEnabled` | `audio`, `audiooutput`, `output` |
+| `speech` | speech recognition | `window.speechEnabled` | `voice`, `recognition` |
+| `vibration` | vibration (Android) | `window.vibrationEnabled` | `vibrate`, `haptic`, `haptics` |
+| `torch` | flashlight | `window.torchEnabled` | `flashlight`, `flash`, `light` |
+| `nfc` | NFC tags (Android) | `window.nfcEnabled` | `tag`, `tags` |
+| `geo` | GPS / location | `window.geoEnabled` | `gps`, `location`, `geolocation` |
+| `camera` | `PhoneCamera` | `window.cameraEnabled` | `video`, `webcam` |
+
+`userSetupComplete()` runs once, after every request in the tap has finished.
+
+**Usage:**
+```javascript
+let mic;
+let amplitude;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  mic = new p5.AudioIn();
+  amplitude = new p5.Amplitude();
+  mic.disconnect();
+  mic.connect(amplitude);
+  lockGestures();
+  angleMode(DEGREES);
+
+  // one tap asks for motion, the microphone and the flashlight
+  enablePermissionsTap(['sensors', 'mic', 'torch'], 'Tap to start');
+}
+
+function draw() {
+  background(220);
+
+  // one check per feature, so each part works on its own
+  if (window.sensorsEnabled) {
+    circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 50);
+  }
+
+  if (window.micOpen) {
+    let level = amplitude.getLevel();
+    rect(10, 10, level * 200, 20);
+  }
+}
+
+function mousePressed() {
+  if (window.torchEnabled) {
+    toggleTorch();
+  }
+  return false;
+}
+```
+
+**Bluetooth and Share as well.** They are not in the list, and a second `enable*` call in `setup()` would remove the first one's tap screen. Start them once the first tap has worked. The Bluetooth chooser needs a tap of its own, so show its button from `userSetupComplete()`:
+
+```javascript
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  bleSetup({ characteristics: [{ name: 'brightness', type: 'uint8', write: true }] });
+  enablePermissionsTap(['sensors', 'sound'], 'Tap to start');
+}
+
+function userSetupComplete() {
+  // runs after the first tap. the Bluetooth chooser needs a tap of its own
+  enableBleButton({ label: 'Connect the lamp' });
+}
+```
+
+For Share, call `shareSetup()` in `setup()` and `shareConnect()` in `userSetupComplete()`. Share needs no second tap.
 
 ### Motion Sensor Activation
 
@@ -1324,46 +1460,6 @@ function userSetupComplete() {
 function gotSpeech() {
   if (speechRec.resultValue) {
     debug('You said:', speechRec.resultString);
-  }
-}
-```
-
-### Combined Activation
-
-**Purpose:** Enable both motion sensors and microphone with a single permission prompt, reducing the number of taps required.
-
-**Commands:**
-- `enableAllTap(message)` - Tap anywhere to enable motion sensors + microphone
-- `enableAllButton(text)` - Button-based combined activation
-
-**Usage:**
-```javascript
-let mic;
-let amplitude;
-
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  mic = new p5.AudioIn();
-  amplitude = new p5.Amplitude();
-  mic.disconnect();
-  mic.connect(amplitude);
-  lockGestures();
-  angleMode(DEGREES);
-  
-  // One tap enables both sensors and microphone
-  enableAllTap('Tap to enable sensors & microphone');
-}
-
-function draw() {
-  background(220);
-  
-  if (window.sensorsEnabled) {
-    circle(width/2 + rotationY * 3, height/2 + rotationX * 3, 50);
-  }
-  
-  if (window.micOpen) {
-    let level = amplitude.getLevel();
-    rect(10, 10, level * 200, 20);
   }
 }
 ```

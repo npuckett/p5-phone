@@ -188,6 +188,7 @@
             <h3>${escapeHtml(section.title)}</h3>
             <p>${escapeHtml(section.description)}</p>
           </div>
+          ${section.example ? '<pre><code>' + escapeHtml(section.example) + '</code></pre>' : ''}
           ${renderRelatedApis(section.relatedApis, section.relatedApisTitle)}
           ${section.items ? '<div class="api-grid">' + renderApiCards(section.items) + '</div>' : ''}
           ${groups}

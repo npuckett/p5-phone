@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>p5-phone</title>
-  <link rel="stylesheet" href="styles/main.css?v=quickstart-multiple-types-20260609">
+  <link rel="stylesheet" href="styles/main.css?v=multiple-20261009">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="scripts/api-data.js" defer></script>
+  <script src="scripts/api-data.js?v=multiple-20261009" defer></script>
   <script src="scripts/examples-data.js?v=filter-sync-20260606" defer></script>
   <script src="scripts/catalog-filters.js?v=filter-sync-20260606" defer></script>
-  <script src="scripts/render.js?v=filter-sync-20260606" defer></script>
+  <script src="scripts/render.js?v=multiple-20261009" defer></script>
   <script src="scripts/card-expand.js" defer></script>
   <script src="scripts/navigation.js" defer></script>
 </head>
@@ -32,13 +32,19 @@
       <p class="sidebar-summary sidebar-companion">Companion to <a href="https://npuckett.github.io/three-phone/examples/homepage/">three-phone</a>.</p>
       <nav class="sidebar-nav" aria-label="Docs sections">
         <a href="#start">Start</a>
-        <a href="#quick-start">Quick Start</a>
+        <div class="nav-group">
+          <a href="#quick-start">Quick Start</a>
+          <div class="nav-subheads" aria-label="Quick Start subsections">
+            <a href="#quick-start-multiple">Several From One Tap</a>
+          </div>
+        </div>
         <a href="#agent-skills">Agent Skills</a>
         <a href="#activation-styles">Activation Styles</a>
         <div class="nav-group">
           <a href="#api">API</a>
           <div class="nav-subheads" aria-label="API subsections">
             <a href="#api-core">Core Setup</a>
+            <a href="#api-multiple">Multiple Inputs &amp; Outputs</a>
             <a href="#api-motion">Motion Sensors</a>
             <a href="#api-audio">Audio</a>
             <a href="#api-camera">Camera</a>
@@ -220,16 +226,48 @@ function bleReceive(name, value) {
 
         <article class="starter-card">
           <h3>Multiple Types</h3>
-          <pre><code>enablePermissionsTap(['sensors', 'mic'], 'Tap to enable motion + microphone');
+          <pre><code>enablePermissionsTap(['sensors', 'mic'], 'Tap to start');
 
-if (window.sensorsEnabled && window.micEnabled) {
-  circle(
-    width / 2 + rotationY * 3,
-    height / 2 + rotationX * 3,
-    80 + amplitude.getLevel() * 400
-  );
+// in draw(): one check per feature
+if (window.sensorsEnabled) {
+  // motion
+}
+if (window.micOpen) {
+  // microphone
 }</code></pre>
+          <p><a href="#quick-start-multiple">Several from one tap, below ↓</a></p>
         </article>
+      </div>
+
+      <div class="quickstart-multiple" id="quick-start-multiple">
+        <h3>Several inputs and outputs from one tap</h3>
+        <p>Most sketches need more than one thing: motion and sound, the microphone and the flashlight. List them all in one <code>enablePermissionsTap()</code> call, and one tap asks for everything. Don't call two <code>enable*</code> functions in a row: each one removes the tap screen of the one before, so only the last one would ask.</p>
+        <pre><code>function setup() {
+  createCanvas(windowWidth, windowHeight);
+  lockGestures();
+  angleMode(DEGREES);
+  // one tap asks for all three
+  enablePermissionsTap(['sensors', 'torch', 'vibration'], 'Tap to start');
+}
+
+function draw() {
+  background(20);
+  // check each one on its own: an iPhone has no vibration, the rest still works
+  if (window.sensorsEnabled) {
+    circle(width / 2 + rotationY * 3, height / 2 + rotationX * 3, 60);
+  }
+}
+
+function mousePressed() {
+  if (window.torchEnabled) {
+    toggleTorch(); // a tap switches the flashlight
+  }
+  if (window.vibrationEnabled) {
+    vibrate(50); // and buzzes (Android)
+  }
+  return false;
+}</code></pre>
+        <p>The list can hold any of <code>sensors</code> (or <code>motion</code>), <code>mic</code>, <code>sound</code>, <code>speech</code>, <code>vibration</code>, <code>torch</code>, <code>nfc</code>, <code>geo</code> and <code>camera</code>, in any order. Each feature then sets its own flag, such as <code>window.micOpen</code> or <code>window.torchEnabled</code>. Every style takes the same list: <code>enablePermissionsButton()</code>, <code>enablePermissionsCanvas()</code>, <code>enablePermissionsBanner()</code>, <code>enablePermissionsMinimal()</code> and <code>enablePermissionsOn(selector, list)</code>. Bluetooth and Share start after the first tap: see <a href="#api-multiple">Multiple Inputs &amp; Outputs</a> in the API.</p>
       </div>
 
       <div class="note-band">

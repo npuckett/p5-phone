@@ -71,6 +71,8 @@ h3 { font-size: 1.2rem; margin-bottom: 12px; }
 .quickstart-snippets { display: grid; grid-template-columns: 1fr; gap: 18px; margin: 34px 0 18px; }
 .quickstart-snippets article { min-width: 0; }
 .starter-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 18px 0; }
+.quickstart-multiple { margin: 28px 0 18px; }
+.quickstart-multiple p { max-width: 760px; }
 .starter-card { display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); gap: 16px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
 .starter-card pre { margin-bottom: 0; }
 /* Activation-style cards stack heading + description + code vertically. */

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- **Docs: enabling several inputs and outputs from one tap has its own section.** It was hard to find. `enablePermissions*` appeared on the examples homepage only as one row of the permission table and as cards under Audio and under Torch. The README covered just `enableAll*` (motion plus microphone), under "Combined Activation". Both now have a "Multiple Inputs and Outputs" section in the API, second after Core Setup on the homepage and after Status Variables in the README. It explains the idea and covers all six styles and the list of names, with the status flag each one sets. It also gives the one-call rule and how to add Bluetooth or Share from `userSetupComplete()`. Each Quick Start has a new subheading, "Several inputs and outputs from one tap", with a complete sketch, and the homepage sidebar links both.
+- **The README Quick Start no longer leaves motion off.** It called `enableGyroTap()` and then `enableMicTap()`. The second call removes the first one's tap screen, so only the microphone asked. Its comment also claimed the mic tap turns on sound output, but only a `sound` request sets `window.soundEnabled`. It now calls `enablePermissionsTap(['sensors', 'mic', 'sound'], 'Tap to start')`.
+
 ## [1.15.4] - 2026-10-08
 
 ### Fixed
