@@ -8,9 +8,11 @@ const projectsRoot = path.join(root, "webeditor/projects");
 const ml5LoadingSource = path.join(root, "examples/ml5/ml5-loading.js");
 
 const SKIP_FILES = new Set(["meta.json"]);
-// These sketches load their images from GitHub Pages, so their gifs/ folders stay out of
-// the export (p5-webeditor-sync 1.1.0 uploads binary files as UTF-8 text, corrupting them).
+// These sketches load their images from GitHub Pages by full URL, so their gifs/ folders
+// stay out of the export.
 const GIF_SLUGS = new Set(["gif-fetch", "gif-collision", "gif-fly", "gif-roll"]);
+// These sketches make their sound with p5.Oscillator and never load tracks/*.mp3.
+const UNUSED_TRACKS_SLUGS = new Set(["sound-basic", "volume-touches"]);
 
 function rewriteIndexHtml(html, { needsMl5Loading }) {
   let next = html;
@@ -45,6 +47,7 @@ function exportProject({ id, title, sourcePath, editorSketchId }) {
 
     if (entry.isDirectory()) {
       if (GIF_SLUGS.has(id) && entry.name === "gifs") continue;
+      if (UNUSED_TRACKS_SLUGS.has(id) && entry.name === "tracks") continue;
       fs.cpSync(srcPath, destPath, { recursive: true });
       continue;
     }
