@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5-phone: camera and form controls check</title>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; background: #101318; }
+    input, select { font: 16px system-ui, sans-serif; }
+  </style>
+  <!--
+    Laptop and phone check for image(cam) under p5.js 2.2.3 and for text fields with
+    lockGestures(). Serve over HTTPS or localhost:  npm run serve:docs  ->  /test-camera-forms.html
+    Query params:
+      lib  = src | 1.15.4              this repo's src/p5-phone.js, or the published 1.15.4 to compare (default src)
+      mode = fullscreen | embedded     lockGestures() mode (default fullscreen)
+
+    Tap to enable the camera, then:
+      PASS: the camera fills the screen and "p5.js warnings" stays at 0.
+            (1.15.4: it climbs by one a frame, "Expected Image or Element ... in image()")
+            Where the camera is blocked, p5's "Access to the camera was denied" counts as 1.
+      PASS: a tap on the text field brings up the keyboard, "focused" reads INPUT and what
+            you type appears in the field and on "field". The select opens, and the checkbox
+            toggles on every tap, two quick taps included.
+            (1.15.4: "focused" stays BODY and no keyboard comes up)
+      The page itself must still not scroll, zoom or pull to refresh when you drag the camera.
+  -->
+  <script>
+    // Count p5.js friendly warnings ("🌸 p5.js says: …"), which p5 prints with console.log
+    window.p5Warnings = 0;
+    (function () {
+      var log = console.log;
+      console.log = function () {
+        if (typeof arguments[0] === 'string' && arguments[0].indexOf('p5.js says') !== -1) window.p5Warnings++;
+        return log.apply(console, arguments);
+      };
+    })();
+    (function () {
+      var lib = new URLSearchParams(location.search).get('lib');
+      var urls = [
+        'https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js',
+        lib === '1.15.4' ? 'https://cdn.jsdelivr.net/npm/p5-phone@1.15.4/dist/p5-phone.js' : 'src/p5-phone.js'
+      ];
+      urls.forEach(function (u) { document.write('<script src="' + u + '"><\/script>'); });
+    })();
+  </script>
+</head>
+<body>
+<script>
+const params = new URLSearchParams(location.search);
+const lib = params.get('lib') || 'src';
+const mode = params.get('mode') === 'embedded' ? 'embedded' : 'fullscreen';
+let cam;
+let field;
+let menu;
+let box;
+let toggles = 0;
+
+function setup() {
+  const canvas = createCanvas(windowWidth, windowHeight);
+  if (mode === 'embedded') {
+    lockGestures({ mode: 'embedded', element: canvas.elt });
+  } else {
+    lockGestures();
+  }
+
+  cam = createPhoneCamera('user', true, 'cover');
+  enableCameraTap('Tap to enable camera');
+
+  field = createInput('');
+  field.attribute('placeholder', 'Type here');
+  menu = createSelect();
+  menu.option('one');
+  menu.option('two');
+  menu.option('three');
+  box = createCheckbox(' checkbox', false);
+  box.style('color', '#fff');
+  box.style('font', '16px system-ui, sans-serif');
+  box.changed(() => toggles++);
+  placeControls();
+}
+
+function draw() {
+  background(16, 19, 24);
+  if (cam.ready) image(cam, 0, 0, width, height);
+
+  const active = document.activeElement;
+  noStroke();
+  fill(0, 170);
+  rect(0, 0, width, 190);
+  fill(255);
+  textSize(16);
+  textAlign(LEFT, TOP);
+  text([
+    'p5-phone ' + lib + '   p5.js ' + p5.VERSION + '   lockGestures ' + mode,
+    '',
+    'camera: ' + (cam.ready ? 'on' : 'off') + '   p5.js warnings: ' + window.p5Warnings,
+    'focused: ' + (active ? active.tagName : 'none'),
+    'field: "' + field.value() + '"   select: ' + menu.value(),
+    'checkbox: ' + (box.checked() ? 'on' : 'off') + ', toggled ' + toggles + ' times',
+  ].join('\n'), 16, 16, width - 32);
+}
+
+// Like the camera examples: the sketch's own press handler cancels the press
+function mousePressed() {
+  return false;
+}
+
+function placeControls() {
+  const y = height - 150;
+  field.position(16, y);
+  field.size(Math.min(320, width - 32), 32);
+  menu.position(16, y + 48);
+  box.position(130, y + 52);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  placeControls();
+}
+</script>
+</body>
+</html>

@@ -419,6 +419,16 @@ function _isPermissionUIElement(target) {
   return false;
 }
 
+// A text field, select, checkbox, slider or contenteditable element on the page (p5's
+// createInput(), createSelect(), createCheckbox(), createSlider() ...), or a label for one.
+// lockGestures() leaves presses on these alone: cancelling one keeps it from taking focus,
+// so typing did nothing, and on a phone a checkbox or select did not respond.
+function _isFormControl(target) {
+  if (!target || typeof target.closest !== 'function') return false;
+  return target.isContentEditable === true ||
+    target.closest('input, textarea, select, label') !== null;
+}
+
 // p5.js version detection (1.x vs 2.x) — evaluated at call time, not script load
 function _getP5MajorVersion() {
   return (typeof p5 !== 'undefined' && p5.VERSION)
@@ -4432,7 +4442,7 @@ function _lockGesturesEmbedded(target) {
   let lastTouchEnd = 0;
   const touchEndHandler = function(e) {
     if (!touchStartedOnTarget || !target.contains(e.target)) return;
-    if (_isPermissionUIElement(e.target)) return;
+    if (_isPermissionUIElement(e.target) || _isFormControl(e.target)) return;
 
     const now = Date.now();
     if (now - lastTouchEnd <= 300) {
@@ -4448,7 +4458,7 @@ function _lockGesturesEmbedded(target) {
   };
 
   const contextMenuHandler = function(e) {
-    if (target.contains(e.target)) {
+    if (target.contains(e.target) && !_isFormControl(e.target)) {
       e.preventDefault();
       e.stopPropagation();
     }
@@ -4495,8 +4505,10 @@ function _lockGesturesFullscreen(options) {
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
 
-      if (touchStartX < edgeThreshold ||
-          touchStartX > window.innerWidth - edgeThreshold) {
+      // A text field near the edge still has to take a tap
+      if ((touchStartX < edgeThreshold ||
+          touchStartX > window.innerWidth - edgeThreshold) &&
+          !_isFormControl(e.target)) {
         e.preventDefault();
       }
     }
@@ -4540,7 +4552,8 @@ function _lockGesturesFullscreen(options) {
 
   let lastTouchEnd = 0;
   const touchEndHandler = function(e) {
-    if (_isPermissionUIElement(e.target)) return;
+    // A second tap on a form control is a word selection or a checkbox toggle, not a zoom
+    if (_isPermissionUIElement(e.target) || _isFormControl(e.target)) return;
 
     const now = Date.now();
     if (now - lastTouchEnd <= 300) {
@@ -4552,6 +4565,8 @@ function _lockGesturesFullscreen(options) {
 
   _gestureLockState.savedHandlers.oncontextmenu = window.oncontextmenu;
   window.oncontextmenu = function(e) {
+    // Right-click or long-press in a text field still offers Paste
+    if (_isFormControl(e.target)) return;
     e.preventDefault();
     e.stopPropagation();
     return false;
@@ -4584,6 +4599,13 @@ function _initializeP5TouchOverrides() {
   setTimeout(tryOverride, 100);
 }
 
+// What the wrapped handlers return to p5: false makes p5 cancel the press, which keeps the
+// page from scrolling or zooming. A press on a form control is not cancelled, so it still
+// focuses the field (p5 listens on window, so it sees presses outside the canvas too).
+function _lockedPressResult(e) {
+  return _isFormControl(e && e.target) ? undefined : false;
+}
+
 function _overrideP5Touch() {
   if (_gestureLockState.savedHandlers.p5Callbacks) return;
 
@@ -4604,33 +4626,33 @@ function _overrideP5Touch() {
 
     window.touchStarted = function(e) {
       saved.touchStarted(e);
-      return false;
+      return _lockedPressResult(e);
     };
 
     window.touchMoved = function(e) {
       saved.touchMoved(e);
-      return false;
+      return _lockedPressResult(e);
     };
 
     window.touchEnded = function(e) {
       saved.touchEnded(e);
-      return false;
+      return _lockedPressResult(e);
     };
   }
 
   window.mousePressed = function(e) {
     saved.mousePressed(e);
-    return false;
+    return _lockedPressResult(e);
   };
 
   window.mouseDragged = function(e) {
     saved.mouseDragged(e);
-    return false;
+    return _lockedPressResult(e);
   };
 
   window.mouseReleased = function(e) {
     saved.mouseReleased(e);
-    return false;
+    return _lockedPressResult(e);
   };
 
   _gestureLockState.savedHandlers.p5Callbacks = saved;
@@ -5319,8 +5341,12 @@ class PhoneCamera {
       audio: false
     };
     
-    // Use p5's createCapture
-    this._video = createCapture(constraints, () => {
+    // Use p5's createCapture. No callback: p5.js 2.2.3 checks the arguments as
+    // (type, flipped, callback) and logs "Expected object at the second parameter" for
+    // (constraints, callback). p5 calls its callback from its own loadedmetadata listener,
+    // and this one is added after it, so it runs at the same point.
+    this._video = createCapture(constraints);
+    this._video.elt.addEventListener('loadedmetadata', () => {
       this._ready = true;
       this._video.hide(); // Hide default video element
       console.log('✅ PhoneCamera ready');
@@ -5373,7 +5399,9 @@ class PhoneCamera {
       audio: false
     };
     
-    this._video = createCapture(constraints, () => {
+    // No callback, as in _initializeCamera()
+    this._video = createCapture(constraints);
+    this._video.elt.addEventListener('loadedmetadata', () => {
       this._ready = true;
       this._video.hide();
       console.log(`✅ PhoneCamera switched to ${this._active} camera`);
@@ -5811,23 +5839,32 @@ window.flashlightOff = flashlightOff;
 window.toggleFlashlight = toggleFlashlight;
 window.stopFlashlight = stopFlashlight;
 
-// Override p5's image() function to support PhoneCamera
-if (typeof p5 !== 'undefined' && p5.prototype) {
-  const originalImage = p5.prototype.image;
-  
-  p5.prototype.image = function(...args) {
-    // Check if first argument is a PhoneCamera instance
+// image(cam, ...) draws a PhoneCamera; anything else goes to p5's image()
+function _withPhoneCameraImage(image) {
+  return function(...args) {
     if (args[0] instanceof PhoneCamera) {
-      const cam = args[0];
-      
       // Always use auto-positioning for PhoneCamera
       // The camera calculates the correct position based on mode (fitHeight, fitWidth, etc)
-      cam._draw(this);
-    } else {
-      // Not a PhoneCamera, use original image function
-      originalImage.apply(this, args);
+      args[0]._draw(this);
+      return;
     }
+    return image.apply(this, args);
   };
+}
+
+if (typeof p5 !== 'undefined' && p5.prototype) {
+  p5.prototype.image = _withPhoneCameraImage(p5.prototype.image);
+
+  // p5.js 2.2.3 checks arguments in a decorator it wraps around every p5.prototype method
+  // when the first sketch starts, so the check ran before the override above and logged
+  // "Expected Image or Element ... at the first parameter in image()" on every frame.
+  // Decorators apply in the order they were registered and p5's own registers when p5.js
+  // loads, so this one wraps it and draws a PhoneCamera before the check sees it.
+  if (typeof p5.registerDecorator === 'function') {
+    p5.registerDecorator('p5.prototype.image', function(target, context) {
+      return context && context.kind === 'method' ? _withPhoneCameraImage(target) : undefined;
+    });
+  }
 }
 
 // =========================================

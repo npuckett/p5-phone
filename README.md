@@ -1525,6 +1525,8 @@ function draw() {
 }
 ```
 
+With p5-phone 1.15.4 and earlier under the unminified p5.js 2.2.3 or later (`p5.js`, not `p5.min.js`), `image(cam)` logs "Expected Image or Element … at the first parameter in image()" every frame, and starting the camera logs "Expected object at the second parameter in createCapture()" once. The camera still draws. Newer versions log neither.
+
 **Display Modes:**
 
 | Mode | Behavior |
@@ -1616,6 +1618,18 @@ Helpers that aren't tied to one piece of hardware: keep the browser from scrolli
 - **Long-press context menus** - Prevents copy/paste menus from appearing
 - **Text selection** - Stops accidental text highlighting on touch and hold
 - **Double-tap zoom** - Eliminates double-tap to zoom behavior
+
+**What it leaves alone:** form controls on the page, in both modes. These are text fields, textareas, selects, checkboxes, sliders and `contenteditable` elements, including the ones p5's `createInput()`, `createSelect()`, `createCheckbox()` and `createSlider()` make, and their labels. A tap or click focuses them and typing reaches them, even when your `mousePressed()` returns `false`. Quick repeated taps on them all count, and a long-press or right-click in a text field still offers Paste. Pinch-zoom and pull-to-refresh stay blocked over them.
+
+With p5-phone 1.15.4 and earlier, `lockGestures()` cancelled presses on form controls in both modes, so a text field never took focus. A sketch that loads one of those versions can keep each field's presses away from p5:
+
+```javascript
+// p5-phone 1.15.4 and earlier only
+let field = createInput('');
+for (const type of ['pointerdown', 'mousedown', 'touchstart', 'touchend']) {
+  field.elt.addEventListener(type, (e) => e.stopPropagation());
+}
+```
 
 ```javascript
 // Full-screen mobile sketch (default)

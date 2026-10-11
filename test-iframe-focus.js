@@ -32,6 +32,11 @@
  *    stop before scanning with nfcStatus 'unsupported' and an nfcError that says to open
  *    the sketch on its own page; on a top-level page it still scans. Desktop Chromium has
  *    no NDEFReader, so a stand-in throws the way Chrome on Android does in a child frame.
+ * 7. A text field in the sketch (createInput()) with lockGestures(), in the editor's frames:
+ *    a tap on a phone, or a click on a laptop after the editor's code area had focus,
+ *    focuses the field and typing reaches it. Regression: lockGestures() made p5 cancel
+ *    presses on the field too, so it never took focus (test-camera-forms.js checks the
+ *    same on a top-level page).
  */
 
 const fs = require('fs');
@@ -181,6 +186,31 @@ async function laptopCase(browser) {
   await ctx.close();
 }
 
+async function fieldCase(browser, device) {
+  const label = `text field, lockGestures(), ${device}`;
+  const phone = device === 'phone';
+  // The third argument is code for setup(): here a field over the top of the canvas
+  const field = "window.field = createInput('x'); field.position(20, 20).size(160, 28)";
+  const { ctx, p, errors } = await open(browser, `${EDITOR}/someone/full/abc123`, {
+    [`${EDITOR}/someone/full/abc123`]: editorPage,
+    [`${PREVIEW}/`]: previewPage(sketchPage(P5_2, 'lockGestures()', field)),
+  }, phone ? devices['Pixel 7'] : { viewport: { width: 1000, height: 700 } });
+  const f = await sketchFrame(p, errors);
+  await p.waitForTimeout(300);
+  if (!phone) await p.focus('#code');
+  const box = await p.locator('iframe').boundingBox();
+  if (phone) await p.touchscreen.tap(box.x + 100, box.y + 34); else await p.mouse.click(box.x + 100, box.y + 34);
+  await p.waitForTimeout(300);
+  await p.keyboard.type('abc');
+  const s = await f.evaluate(() => ({
+    hasFocus: document.hasFocus(), fieldFocused: document.activeElement === field.elt, value: field.value(),
+  }));
+  check(`${label}: a ${phone ? 'tap' : 'click'} on the field focuses it and typing reaches it`,
+    s.hasFocus && s.fieldFocused && s.value === 'xabc', s);
+  check(`${label}: no page errors`, errors.length === 0, errors);
+  await ctx.close();
+}
+
 async function topLevelCase(browser) {
   const url = `${PAGES}/sketch/`;
   const { ctx, p, errors } = await open(browser, url, { [url]: sketchPage(P5_2, 'lockGestures()') });
@@ -235,6 +265,8 @@ async function nfcCase(browser, where) {
     await editorCase(browser, 'p5.js 2.2.3, vibration tap', P5_2, 'lockGestures()', "enableVibrationTap('Tap to start')", 'vibrationEnabled');
     await editorCase(browser, 'p5.js 2.2.3, no tap, no lock', P5_2, '', '');
     await laptopCase(browser);
+    await fieldCase(browser, 'phone');
+    await fieldCase(browser, 'laptop');
     await topLevelCase(browser);
     await nfcCase(browser, 'top-level page');
     await nfcCase(browser, 'Web Editor');

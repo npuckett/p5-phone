@@ -98,7 +98,7 @@ The most common failure mode is a model **hand-rolling hardware plumbing** (a ra
 | How fast it is turning | `rotationX - pRotationX` (and Y, Z) each frame, or `deviceTurned()` with `turnAxis` | p5.js has **no** rotation-rate globals (see the trap below) |
 | Motion events / thresholds | `deviceMoved()`, `deviceShaken()`, `setMoveThreshold()`, `setShakeThreshold()`, `deviceOrientation` | define the callbacks as globals |
 | Touch / pointer input | `mousePressed()`, `mouseDragged()`, `mouseReleased()`, `mouseX`, `mouseY`, `touches[]` | p5.js 2 unifies mouse+touch under the pointer model; use `touches[]` for multitouch, and `touches.length > 0` for "a finger is down" (`mouseIsPressed` turns false when any one finger lifts). Do **not** add your own `addEventListener('touchstart', …)` |
-| Drawing the camera feed | `image(cam, x, y, w, h)` + `cam.mapKeypoint()/mapBox()` | `PhoneCamera` integrates with p5's `image()`; map ML5 results with its helpers, not manual video compositing |
+| Drawing the camera feed | `image(cam, x, y, w, h)` + `cam.mapKeypoint()/mapBox()` | `PhoneCamera` integrates with p5's `image()`; map ML5 results with its helpers, not manual video compositing. Under the unminified p5.js 2.2.3+, p5-phone 1.15.4 and earlier log a harmless "Expected Image or Element" warning each frame; the camera still draws |
 | Microphone level / analysis | `p5.AudioIn`, `p5.Amplitude`, `p5.FFT` (p5.sound) | not a raw Web Audio graph |
 | Generated sound | `p5.Oscillator`, `p5.Envelope` (p5.sound) | prefer over `loadSound()` for portability |
 | Loading images/audio/JSON/font | `await loadImage()/loadSound()/loadJSON()/loadFont()` in `async setup()` | p5.js 2: `load*` return Promises — no `preload()`. See the `p5js-2x` skill |
@@ -614,7 +614,16 @@ lockGestures(options?)
 
 Use bare `lockGestures()` for full-screen mobile sketches. Use `lockGestures({ mode: 'embedded', element: canvas })` for a canvas embedded in a scrollable, multi-section page — it scopes gesture blocking to that canvas so the rest of the page still scrolls. `unlockGestures()` restores the saved handlers, listeners, and styles. `window.gesturesLocked` reflects the current state.
 
-Caveat: p5 touch/mouse callbacks are snapshotted when gestures lock. If you assign `window.mousePressed = ...` *after* `lockGestures()`, you replace p5-phone's wrapper. Define your callbacks before locking, or reassign is fine as long as you `return false` from them.
+Form controls work under either mode: `createInput()`, `createSelect()`, `createCheckbox()`, `createSlider()`, textareas, `contenteditable` elements and labels take taps, clicks, focus and typing. The sketch's own `mousePressed()` can keep `return false`. So a sketch with a text field still calls plain `lockGestures()`; it does not need embedded mode for that. Up to p5-phone 1.15.4, `lockGestures()` cancelled presses on form controls in both modes and a text field never took focus. In a sketch pinned to 1.15.4 or earlier, keep each field's presses away from p5:
+
+```javascript
+// p5-phone 1.15.4 and earlier only
+for (const type of ['pointerdown', 'mousedown', 'touchstart', 'touchend']) {
+  field.elt.addEventListener(type, (e) => e.stopPropagation());
+}
+```
+
+Caveat: p5 touch/mouse callbacks are snapshotted when gestures lock. If you assign `window.mousePressed = ...` *after* `lockGestures()`, you replace p5-phone's wrapper. Define your callbacks before locking, or reassign is fine as long as you `return false` from them. A reassigned handler that returns `false` cancels presses on text fields too, so they never take focus.
 
 ## Debug console
 
