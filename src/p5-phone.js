@@ -429,6 +429,35 @@ function _isFormControl(target) {
     target.closest('input, textarea, select, label') !== null;
 }
 
+// A form control or a button (p5's createButton(); inputs of type button and submit are
+// form controls already). lockGestures() does not cancel a press on one. In p5.js 1.x a
+// cancelled touchstart or touchend means the tap sends no click, so a createButton() never
+// fired. Long-press on a button stays blocked; only form controls keep their context menu.
+function _isPageControl(target) {
+  return _isFormControl(target) ||
+    (!!target && typeof target.closest === 'function' && target.closest('button') !== null);
+}
+
+// lockGestures() lets a second tap within 300 ms through on these, so the browser itself
+// must not read it as a double-tap zoom: touch-action: manipulation keeps panning and
+// pinch-zoom and drops double-tap zoom. :where() gives the rule no specificity, so the
+// page's own touch-action rules still win. unlockGestures() removes it.
+const _LOCKED_CONTROLS_STYLE_ID = 'p5phoneLockedControls';
+
+function _addLockedControlsStyle() {
+  if (document.getElementById(_LOCKED_CONTROLS_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = _LOCKED_CONTROLS_STYLE_ID;
+  style.textContent =
+    ':where(button, input, textarea, select, label, [contenteditable]) { touch-action: manipulation; }';
+  document.head.appendChild(style);
+}
+
+function _removeLockedControlsStyle() {
+  const style = document.getElementById(_LOCKED_CONTROLS_STYLE_ID);
+  if (style) style.remove();
+}
+
 // p5.js version detection (1.x vs 2.x) — evaluated at call time, not script load
 function _getP5MajorVersion() {
   return (typeof p5 !== 'undefined' && p5.VERSION)
@@ -805,6 +834,7 @@ function lockGestures(options = {}) {
   } else {
     _lockGesturesFullscreen({ warnBeforeLeave, trapHistory });
   }
+  _addLockedControlsStyle();
 
   _initializeP5TouchOverrides();
   window.gesturesLocked = true;
@@ -840,6 +870,7 @@ function unlockGestures() {
   if (_gestureLockState.target && _gestureLockState.appliedStyles.touchAction !== undefined) {
     _gestureLockState.target.style.touchAction = _gestureLockState.appliedStyles.touchAction;
   }
+  _removeLockedControlsStyle();
 
   _resetGestureLockState();
   window.gesturesLocked = false;
@@ -4442,7 +4473,7 @@ function _lockGesturesEmbedded(target) {
   let lastTouchEnd = 0;
   const touchEndHandler = function(e) {
     if (!touchStartedOnTarget || !target.contains(e.target)) return;
-    if (_isPermissionUIElement(e.target) || _isFormControl(e.target)) return;
+    if (_isPermissionUIElement(e.target) || _isPageControl(e.target)) return;
 
     const now = Date.now();
     if (now - lastTouchEnd <= 300) {
@@ -4505,10 +4536,10 @@ function _lockGesturesFullscreen(options) {
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
 
-      // A text field near the edge still has to take a tap
+      // A text field or button near the edge still has to take a tap
       if ((touchStartX < edgeThreshold ||
           touchStartX > window.innerWidth - edgeThreshold) &&
-          !_isFormControl(e.target)) {
+          !_isPageControl(e.target)) {
         e.preventDefault();
       }
     }
@@ -4552,8 +4583,9 @@ function _lockGesturesFullscreen(options) {
 
   let lastTouchEnd = 0;
   const touchEndHandler = function(e) {
-    // A second tap on a form control is a word selection or a checkbox toggle, not a zoom
-    if (_isPermissionUIElement(e.target) || _isFormControl(e.target)) return;
+    // A second tap on a form control or button is a word selection, a checkbox toggle or
+    // another press, not a zoom (their touch-action: manipulation stops the browser's own)
+    if (_isPermissionUIElement(e.target) || _isPageControl(e.target)) return;
 
     const now = Date.now();
     if (now - lastTouchEnd <= 300) {
@@ -4600,10 +4632,11 @@ function _initializeP5TouchOverrides() {
 }
 
 // What the wrapped handlers return to p5: false makes p5 cancel the press, which keeps the
-// page from scrolling or zooming. A press on a form control is not cancelled, so it still
-// focuses the field (p5 listens on window, so it sees presses outside the canvas too).
+// page from scrolling or zooming. A press on a form control or button is not cancelled, so
+// a field still takes focus and a button still gets its click (p5 listens on window, so it
+// sees presses outside the canvas too; p5.js 1.x cancels a tap's touchstart and touchend).
 function _lockedPressResult(e) {
-  return _isFormControl(e && e.target) ? undefined : false;
+  return _isPageControl(e && e.target) ? undefined : false;
 }
 
 function _overrideP5Touch() {

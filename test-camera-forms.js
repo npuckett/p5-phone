@@ -26,6 +26,17 @@
  *    Regression: lockGestures() makes the sketch's press handlers return false, and p5
  *    listens on window, so p5 cancelled presses on the page's text fields too. Clicking
  *    one left document.activeElement on BODY and typing did nothing.
+ * 3. lockGestures() and createButton(), in the same 8 setups: one tap or click runs the
+ *    button's mousePressed(), its mouseClicked() and a plain click listener once each;
+ *    three quick presses (60 ms apart) count three times; with touch, a tap on a button at
+ *    the screen's left edge clicks it; no press on a button is cancelled; buttons get
+ *    touch-action: manipulation while locked, a page's own touch-action rule still wins,
+ *    and unlockGestures() removes it. With a mouse in fullscreen, a right-click on a button
+ *    is still cancelled. A press on the canvas is still cancelled.
+ *    Regression: under p5.js 1.x a tap on a createButton() did nothing. p5 called
+ *    preventDefault() on the tap's touchstart and touchend, so the browser sent no mousedown
+ *    and no click. Under p5.js 2.x the fullscreen lock dropped every second quick tap as a
+ *    double-tap, and a tap on a button at the edge did nothing.
  */
 
 const fs = require('fs');
@@ -247,6 +258,112 @@ async function formCase(browser, ver, src, device, mode) {
   await ctx.close();
 }
 
+// Buttons on the page, outside the canvas. #go counts its createButton() mousePressed() and
+// mouseClicked() and a plain click listener. #edge sits at the screen's left edge. .own
+// sets its own touch-action, which lockGestures()'s rule must not override.
+const buttonSketch = (lock) => `
+let go, edgeButton;
+window.presses = 0;
+window.hits = { pressed: 0, clicked: 0, click: 0 };
+window.edgeClicks = 0;
+window.prevented = [];
+function setup() {
+  createCanvas(360, 200);
+  const own = document.createElement('style');
+  own.textContent = '.own { touch-action: pan-y; }';
+  document.head.appendChild(own);
+  ${lock}
+  go = createButton('go');
+  go.id('go').position(40, 240).size(120, 40);
+  go.mousePressed(() => hits.pressed++);
+  go.mouseClicked(() => hits.clicked++);
+  go.elt.addEventListener('click', () => hits.click++);
+  edgeButton = createButton('edge');
+  edgeButton.id('edge').class('own').position(0, 320).size(120, 40);
+  edgeButton.elt.addEventListener('click', () => edgeClicks++);
+  for (const type of ['pointerdown', 'mousedown', 'touchstart', 'touchend', 'contextmenu']) {
+    window.addEventListener(type, (e) => setTimeout(() => {
+      if (e.defaultPrevented) prevented.push(type + ':' + (e.target.tagName || '').toLowerCase());
+    }), true);
+  }
+  window.ready = true;
+}
+function draw() { background(30); }
+function mousePressed() { presses++; return false; }
+function touchStarted() { presses++; return false; } // p5.js 1.x sends touches here`;
+
+async function buttonCase(browser, ver, src, device, mode) {
+  const label = `buttons, p5.js ${ver}, ${device}, ${mode}`;
+  const touch = device === 'touch';
+  const ctx = await browser.newContext(touch ? devices['Pixel 7'] : { viewport: { width: 800, height: 600 } });
+  const { p, errors } = await open(ctx, page(src, buttonSketch(LOCKS[mode])));
+  await p.waitForTimeout(300); // lockGestures() wraps the press handlers after 100 ms
+  const counts = () => p.evaluate(() => ({ ...hits }));
+  const box = await p.locator('#go').boundingBox();
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  const press = () => (touch ? p.touchscreen.tap(x, y) : p.mouse.click(x, y));
+
+  await press();
+  await p.waitForTimeout(400); // past the 300 ms double-tap window
+  const once = await counts();
+  check(`${label}: one ${touch ? 'tap' : 'click'} runs mousePressed(), mouseClicked() and a click listener once each`,
+    once.pressed === 1 && once.clicked === 1 && once.click === 1, once);
+
+  // Three presses 60 ms apart: under 300 ms, so lockGestures() would count them as double-taps
+  for (let i = 0; i < 3; i++) {
+    await press();
+    await p.waitForTimeout(60);
+  }
+  await p.waitForTimeout(400);
+  const quick = await counts();
+  check(`${label}: three quick ${touch ? 'taps' : 'clicks'} count three times`,
+    quick.pressed === 4 && quick.clicked === 4 && quick.click === 4, quick);
+
+  if (touch) {
+    const edge = await p.locator('#edge').boundingBox();
+    await p.touchscreen.tap(6, edge.y + edge.height / 2); // inside lockGestures()'s 20 px edge
+    await p.waitForTimeout(400);
+    const edgeClicks = await p.evaluate(() => edgeClicks);
+    check(`${label}: a tap on a button at the screen's edge clicks it`, edgeClicks === 1, edgeClicks);
+  }
+
+  const onButtons = await p.evaluate(() => prevented.slice());
+  check(`${label}: no press on a button was cancelled`, onButtons.length === 0, onButtons);
+  const presses = await p.evaluate(() => presses);
+  check(`${label}: the sketch's press handler still ran for them`, presses > 0, presses);
+
+  // Quick taps get through, so the browser must not read them as a double-tap zoom
+  const touchAction = () => p.evaluate(() => [
+    getComputedStyle(go.elt).touchAction,
+    getComputedStyle(edgeButton.elt).touchAction,
+  ]);
+  const locked = await touchAction();
+  check(`${label}: buttons get touch-action: manipulation, and the page's own touch-action still wins`,
+    locked[0] === 'manipulation' && locked[1] === 'pan-y', locked);
+
+  if (!touch && mode === 'fullscreen') {
+    await p.click('#go', { button: 'right' });
+    await p.waitForTimeout(100);
+    const menu = await p.evaluate(() => prevented.slice());
+    check(`${label}: a right-click on a button is still cancelled`, menu.includes('contextmenu:button'), menu);
+  }
+
+  // The canvas: p5 cancels the press (pointerdown in 2.x; mousedown or touchstart in 1.x)
+  await p.evaluate(() => { prevented.length = 0; });
+  if (touch) await p.tap('canvas'); else await p.click('canvas');
+  await p.waitForTimeout(100);
+  const onCanvas = await p.evaluate(() => prevented.slice());
+  check(`${label}: a press on the canvas is still cancelled`,
+    onCanvas.some((s) => /^(pointerdown|mousedown|touchstart):canvas$/.test(s)), onCanvas);
+
+  const unlocked = await p.evaluate(() => { unlockGestures(); return getComputedStyle(go.elt).touchAction; });
+  check(`${label}: unlockGestures() takes the touch-action rule away`, unlocked === 'auto', unlocked);
+
+  check(`${label}: no page errors`, errors.length === 0, errors);
+  await ctx.close();
+}
+
 (async () => {
   // Chromium's fake camera and an automatic yes to the camera prompt
   const browser = await chromium.launch({
@@ -260,6 +377,7 @@ async function formCase(browser, ver, src, device, mode) {
       for (const device of ['mouse', 'touch']) {
         for (const mode of Object.keys(LOCKS)) {
           await formCase(browser, ver, src, device, mode);
+          await buttonCase(browser, ver, src, device, mode);
         }
       }
     }

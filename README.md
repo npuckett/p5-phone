@@ -1619,9 +1619,9 @@ Helpers that aren't tied to one piece of hardware: keep the browser from scrolli
 - **Text selection** - Stops accidental text highlighting on touch and hold
 - **Double-tap zoom** - Eliminates double-tap to zoom behavior
 
-**What it leaves alone:** form controls on the page, in both modes. These are text fields, textareas, selects, checkboxes, sliders and `contenteditable` elements, including the ones p5's `createInput()`, `createSelect()`, `createCheckbox()` and `createSlider()` make, and their labels. A tap or click focuses them and typing reaches them, even when your `mousePressed()` returns `false`. Quick repeated taps on them all count, and a long-press or right-click in a text field still offers Paste. Pinch-zoom and pull-to-refresh stay blocked over them.
+**What it leaves alone:** form controls and buttons on the page, in both modes. These are text fields, textareas, selects, checkboxes, sliders and `contenteditable` elements, including the ones p5's `createInput()`, `createSelect()`, `createCheckbox()` and `createSlider()` make, their labels, and buttons, including `createButton()`. A tap or click focuses a field and typing reaches it, and a tap or click on a button runs its `mousePressed()`, `mouseClicked()` and click listeners, even when your own `mousePressed()` returns `false`. Quick repeated taps on them all count: while gestures are locked they get `touch-action: manipulation`, so the browser does not read two quick taps as a double-tap zoom. A long-press or right-click in a text field still offers Paste. Pinch-zoom and pull-to-refresh stay blocked over them.
 
-With p5-phone 1.15.4 and earlier, `lockGestures()` cancelled presses on form controls in both modes, so a text field never took focus. A sketch that loads one of those versions can keep each field's presses away from p5:
+With p5-phone 1.15.4 and earlier, `lockGestures()` cancelled presses on form controls in both modes, so a text field never took focus. Under p5.js 1.x a tap on a `createButton()` did nothing either. A sketch that loads one of those versions can keep each field's or button's presses away from p5:
 
 ```javascript
 // p5-phone 1.15.4 and earlier only
