@@ -115,6 +115,7 @@ window.shareClientId = '';
 window.shareIsHost = false;
 window.shareKept = false; // true when the server confirmed it keeps this room (the keep option)
 window.shareKeptUntil = 0; // ms timestamp when the kept copy is deleted if nothing changes, or 0
+window.shareQuiet = false; // true when the server confirmed it will not send other phones' me changes (the quiet option)
 window.shared = {};
 window.me = {};
 window.guests = [];
@@ -2916,6 +2917,15 @@ const _SHARE_KEEP_DEFAULT_MS = 7 * 24 * 60 * 60 * 1000;
 const _SHARE_KEEP_MAX_MS = 30 * 24 * 60 * 60 * 1000;
 const _SHARE_KEEP_MIN_MS = 1000;
 
+// The quiet option: true asks the server not to send this phone the other phones' `me`
+// changes. guests then holds who is here and what each had when this phone joined (and at
+// each later join and leave), not their live values.
+function _shareParseQuiet(value) {
+  if (value === undefined || value === null || value === false) return { quiet: false };
+  if (value === true) return { quiet: true };
+  return { quiet: false, error: 'shareSetup(): quiet must be true or false.' };
+}
+
 // A time as milliseconds: a number of ms, or a string like '30m', '24h', '7d', '90s', '500ms'.
 // Returns NaN for anything else (including a string with no unit).
 function _shareParseDuration(value) {
@@ -3207,6 +3217,12 @@ function shareSetup(config) {
   }
   if (keepOption && keepOption.note) debugWarn(keepOption.note);
 
+  const quietOption = _shareParseQuiet(config.quiet);
+  if (quietOption.error) {
+    debugError(quietOption.error);
+    return false;
+  }
+
   _shareProfile = {
     host: String(host).replace(/\/$/, ''),
     room: String(room),
@@ -3216,6 +3232,8 @@ function shareSetup(config) {
     // Ask the server to keep this room's `shared` after the last phone leaves. Only the
     // first phone to create the room sets this; the welcome says what the room does.
     keep: keepOption ? { expire: keepOption.expire } : null,
+    // Ask the server not to send other phones' `me` changes. Every phone chooses for itself.
+    quiet: quietOption.quiet,
     autoReconnect: config.autoReconnect !== false,
     sendInterval: Number.isFinite(config.sendInterval) && config.sendInterval >= 0
       ? config.sendInterval
@@ -3238,6 +3256,7 @@ function shareSetup(config) {
   window.shareIsHost = false;
   window.shareKept = false;
   window.shareKeptUntil = 0;
+  window.shareQuiet = false;
   _shareKeptSeen = false;
   _shareReadySent = false;
   debug(
@@ -3556,6 +3575,12 @@ function _shareHandleMessage(raw) {
         debugWarn('share: keep was asked for, but this room is not kept. Either the room was ' +
           'created without keep and is still open, or the server is older (redeploy P5PhoneShare).');
       }
+      // The welcome says whether the server used the quiet option. An older server ignores it.
+      window.shareQuiet = msg.quiet === true;
+      if (_shareProfile && _shareProfile.quiet && !window.shareQuiet) {
+        debugWarn('share: quiet was asked for, but the server does not support it, so it sends ' +
+          'everything (redeploy P5PhoneShare). guests will still update live.');
+      }
       window.shareConnected = true;
       window.shareStatus = 'connected';
       window.shareError = '';
@@ -3698,6 +3723,7 @@ function shareConnect() {
         shared: _shareCloneJson(_shareKeptSeen ? _shareProfile.shared : _shareSharedRoot)
       };
       if (_shareProfile.keep) hello.keep = { expire: _shareProfile.keep.expire };
+      if (_shareProfile.quiet) hello.quiet = true;
       _shareSend(hello);
       if (!settled) {
         settled = true;
@@ -3766,6 +3792,7 @@ function shareDisconnect() {
   window.shareClientId = '';
   window.shareKept = false;
   window.shareKeptUntil = 0;
+  window.shareQuiet = false;
   _shareReadySent = false;
 }
 

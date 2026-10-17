@@ -4,8 +4,9 @@
  */
 
 // v2: 'batch' messages, and shared patches are echoed to their sender.
-// The keep option (hello.keep, welcome.keep, 'kept', 'clear', 'reset') is optional and added
-// without a version bump: a peer that does not know it ignores the fields and the messages.
+// The keep option (hello.keep, welcome.keep, 'kept', 'clear', 'reset') and the quiet option
+// (hello.quiet, welcome.quiet) are optional and added without a version bump: a peer that
+// does not know them ignores the fields and the messages.
 export const SHARE_PROTOCOL_VERSION = 2;
 
 // The keep option: a room that keeps `shared` after the last phone leaves.
@@ -20,8 +21,8 @@ export type KeepPolicy = { expire: number };
 export type ShareScope = 'shared' | 'me';
 
 export type ShareMessage =
-  | { type: 'hello'; v: number; app: string; room: string; me: Record<string, unknown>; shared?: Record<string, unknown>; keep?: { expire?: number } }
-  | { type: 'welcome'; v: number; clientId: string; isHost: boolean; shared: Record<string, unknown>; guests: GuestEntry[]; you: Record<string, unknown>; keep?: KeepStatus }
+  | { type: 'hello'; v: number; app: string; room: string; me: Record<string, unknown>; shared?: Record<string, unknown>; keep?: { expire?: number }; quiet?: boolean }
+  | { type: 'welcome'; v: number; clientId: string; isHost: boolean; shared: Record<string, unknown>; guests: GuestEntry[]; you: Record<string, unknown>; keep?: KeepStatus; quiet?: boolean }
   | { type: 'kept'; v: number; expire: number; remaining: number }
   | { type: 'clear'; v: number; shared?: Record<string, unknown> }
   | { type: 'reset'; v: number; shared: Record<string, unknown> }
@@ -93,6 +94,19 @@ export function parseKeep(raw: unknown): KeepPolicy | null {
     return null;
   }
   return { expire: Math.min(KEEP_MAX_MS, Math.max(KEEP_MIN_MS, Math.round(expire))) };
+}
+
+/** hello.quiet: only the boolean true turns it on. Anything else is a connection that hears everything. */
+export function parseQuiet(raw: unknown): boolean {
+  return raw === true;
+}
+
+/**
+ * The part of a list of patches that a quiet connection is sent: the `shared` ones. A quiet
+ * connection never gets another phone's `me` changes.
+ */
+export function opsForQuiet(ops: PatchOp[]): PatchOp[] {
+  return ops.filter((op) => op.scope === 'shared');
 }
 
 export function cloneJson<T>(value: T): T {

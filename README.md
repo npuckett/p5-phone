@@ -455,6 +455,7 @@ this.enableGyroTap('Tap to start');
 - `window.shareStatus` - Share status (`idle`/`connecting`/`connected`/`error`/`unsupported`)
 - `window.shareIsHost` - Boolean indicating if this client is the room host
 - `window.shareKept` / `window.shareKeptUntil` - Whether the Share server keeps this room after the last phone leaves, and when the kept copy is deleted (ms timestamp, or `0`)
+- `window.shareQuiet` - `true` once the Share server has agreed not to send this phone the other phones' `me` changes (the `quiet` option)
 - `shared` / `me` / `guests` - Live multi-user objects (see Share section)
 - `window.gesturesLocked` - Boolean, `true` after `lockGestures()` has installed its handlers
 - `window.isMobile` / `window.isDesktop` - Best-effort device detection (see [Desktop QR Helper and Device Detection](#desktop-qr-helper-and-device-detection))
@@ -1316,8 +1317,9 @@ https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
 2. Call `enableShareTap()` (or another `enableShare*` helper) so the user joins from a tap. On desktop, `showDesktopQr()` helps others join.
 
 **Commands:**
-- `shareSetup({ host, room, app, shared, me, keep, autoReconnect, sendInterval, disconnectWhenHidden })` — configure PartyServer host and room (URL query params override host/room/app when present)
+- `shareSetup({ host, room, app, shared, me, keep, quiet, autoReconnect, sendInterval, disconnectWhenHidden })` — configure PartyServer host and room (URL query params override host/room/app when present)
   - `keep` (default off): keep the room's `shared` after the last phone leaves. `true` (7 days), a number of ms, a string like `'30m'`, `'24h'` or `'7d'`, or `{ expire: '24h' }`. The most is 30 days. See [Keep the room between visits](#keep-the-room-between-visits)
+  - `quiet` (default `false`): do not send this phone the other phones' `me` changes. For a page that reads only `shared`. `guests` then tells you who is here and their role, not their live values. See [Quiet](companion/P5PhoneShare/README.md#quiet-a-page-that-does-not-read-the-other-phones-values)
   - `sendInterval` (ms, default `50`): changes are batched and sent at most this often; `0` sends each change at once
   - `disconnectWhenHidden` (default `true` on phones): leave the room while the page is hidden (screen locked, another app) and rejoin when it is visible, keeping `me`
 - `getShareJoinUrl()` — sketch URL with `shareHost` / `room` / `app` for copy/QR sharing
@@ -1331,9 +1333,10 @@ https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
 **Live objects / status:**
 - `shared` — room-scoped object (Proxy; assign like `shared.score = 1`; arrays sync too: `shared.list.push(x)`)
 - `me` — this client's per-guest object
-- `guests` — array of other clients' `me` objects
+- `guests` — array of other clients' `me` objects (with `quiet`, snapshots: who is here and their role, not live values)
 - `window.shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`
 - `window.shareKept` — `true` once the server has said it keeps this room; `window.shareKeptUntil` — when the kept copy is deleted if nothing changes (ms, like `Date.now()`), or `0`
+- `window.shareQuiet` — `true` once the server has said it will not send this phone the other phones' `me` changes
 
 **Optional callbacks:**
 
@@ -1412,6 +1415,23 @@ function addMark(x, y) {
 - `shareClear()` puts `shared` back to its starting value for everyone. Any phone in the room can call it, so give the button to one person.
 - Redeploy your worker to use it (`npx wrangler deploy`). An older worker ignores `keep`: the sketch works, `shareKept` stays `false`, and `shareClear()` sets `shareError`.
 - Details and limits: [companion/P5PhoneShare/README.md](companion/P5PhoneShare/README.md#keep-the-room-between-visits).
+
+**Quiet: a page that does not read the other phones' values.** The server sends every phone's `me` changes to every other phone. In a room of n phones that is n times n messages: 30 phones at 10 Hz make about 8,700 messages a second. A page that reads only `shared` does not need them, for example a class-wide phone page that reads `shared.average` while the projector adds up the phones. Say so with `quiet`:
+
+```javascript
+// The phone page: reads shared.average, never guests[i].x
+shareSetup({ host: 'https://YOUR.workers.dev', room: 'class', me: { role: 'phone' }, quiet: true });
+
+// The projector page: not quiet, so it sees every phone
+shareSetup({ host: 'https://YOUR.workers.dev', room: 'class', me: { role: 'projector' } });
+```
+
+- Each page chooses for itself. A quiet phone still sends its own `me`, and still gets `shared`, events, joins and leaves.
+- **`guests` on a quiet page tells you who is here and their `role`, not their live values.** Each entry is a snapshot of that phone's `me`, taken when you join and again each time anyone joins or leaves. Put `role` and `name` in the `me` you give `shareSetup()`, so they are in the snapshot. A value a phone changes later does not reach a quiet page.
+- Need other phones' live values on that page? Do not use `quiet`. Or let the projector add them up and write the total to `shared`.
+- `shareQuiet` is `true` once the server has agreed. Against an older worker it stays `false` and the sketch gets everything, as before. The console says so.
+- 29 quiet phones and a projector make the room send about 290 `me` messages a second, down from about 8,700 with 30 ordinary phones. Each quiet phone is sent about 5 messages a second (the `shared.average` writes) instead of about 290.
+- Redeploy your worker (`npx wrangler deploy`) to use it. Details: [companion/P5PhoneShare/README.md](companion/P5PhoneShare/README.md#quiet-a-page-that-does-not-read-the-other-phones-values).
 
 **Roadmap (not built yet):** remember host in `localStorage`, short room codes only, one-click Cloudflare deploy button, optional Supabase/Vercel adapters.
 

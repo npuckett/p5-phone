@@ -92,6 +92,8 @@ Re-deploy anytime with `npx wrangler deploy` after you change server code. Your 
 | `shareSetup({ keep })` | Keep the room's `shared` after the last phone leaves (see below) |
 | `shareClear()` | Put `shared` back to its starting value for everyone, and erase the kept copy |
 | `shareKept`, `shareKeptUntil` | Did the server keep this room, and until when |
+| `shareSetup({ quiet })` | Do not send this phone the other phones' `me` changes (see below) |
+| `shareQuiet` | Did the server go quiet for this phone |
 
 See [PROTOCOL.md](./PROTOCOL.md) for the wire format.
 
@@ -129,6 +131,32 @@ Keep marks small. At about 80 bytes each, 64 KB holds around 800. A phone can de
 
 **Server update needed.** Keep is part of the worker, so redeploy it (`npx wrangler deploy`) before sketches use it. No migration is needed: the worker already uses SQLite-backed Durable Objects, which also run the expiry alarm. Against an older worker, a sketch with `keep` still works, but `shareKept` stays `false` and `shareClear()` sets `shareError` ("Unexpected message type: clear"). Kept rooms cost one stored copy per room. Writes are debounced to once a second, so a busy room stays inside the free tier.
 
+## Quiet: a page that does not read the other phones' values
+
+By default the server sends every change in `me` from every phone to every other phone. In a room of n phones that is n times n messages. 30 phones sending 10 times a second make about 8,700 messages a second out of the room. 60 phones lag, and a small board cannot take it at all.
+
+Many pages do not need those messages. A class-wide phone page reads only `shared`, because the projector adds up the phones and writes `shared.average`. A board reads `shared.average` too. Only the projector needs every phone's `me`. The **quiet** option lets a phone say so:
+
+```js
+shareSetup({
+  host: 'https://p5-phone-share.YOUR_SUBDOMAIN.workers.dev',
+  room: 'class',
+  me: { role: 'phone' },
+  quiet: true         // this phone reads shared.average, not the other phones' values
+});
+```
+
+- **Each phone chooses for itself.** The projector page does not set `quiet`, so it still sees every phone. A room can mix quiet and ordinary pages.
+- **A quiet phone still sends.** Its own `me` and `shared` changes reach everyone else, as before.
+- **What a quiet phone still gets.** `shared` (every change), events (`shareEvent`), joins and leaves, `shareClear()`, and the keep messages.
+- **What `guests` holds.** `guests` tells you who is here, and each one's `role` and `name`. It does not give live values. Each entry is a snapshot of that phone's `me`. It is taken when you join, and taken again each time anyone joins or leaves. In between, it does not change. Put `role` and `name` in the `me` you give `shareSetup()`, so they are there from the start. A value that a phone changes later (`me.x = ...`) does not reach a quiet page.
+- **If you need live values, do not be quiet.** Or have the projector add the values up and write the total to `shared`.
+- **Status.** `shareQuiet` is `true` once the server has said it went quiet for this phone. Against an older worker it stays `false`, the console says so, and the sketch gets everything, as it did before.
+- **What it saves.** With 29 quiet phones and one projector, the room sends about 290 `me` messages a second instead of 8,700, and each quiet phone is sent about 5 messages a second (the `shared.average` writes) instead of about 290. `test-share-quiet-e2e.js` measures it.
+- **What it does not save.** Joins and leaves are the same for everyone. Each one sends the whole guest list, with every guest's `me`. While 30 phones join one by one, that is about 45 KB in all. An Arduino board using the P5PhoneShareArduino library asks for it with `share.setQuiet(true)`.
+
+**Server update needed.** Redeploy the worker (`npx wrangler deploy`) before sketches use `quiet`. Nothing else changes: no migration, no new binding. Until the worker is redeployed, a quiet sketch works but is not quiet.
+
 ## Free tier notes
 
 Durable Objects work on the Workers Free plan. Hibernation keeps idle cost near zero. **Deploy your own worker for your project** — do not point coursework at someone else’s relay.
@@ -140,7 +168,8 @@ Durable Objects work on the Workers Free plan. Hibernation keeps idle cost near 
 3. Remember host in `localStorage`; short room codes only day-to-day
 4. One-click / agent Cloudflare deploy that prints a ready join URL
 5. Optional adapters (Supabase, Vercel + Redis) behind the same client protocol
-6. `shareThrottle(ms)` for high-rate sensor writes into `me`
+6. **Done on branch `feat/share-quiet` (not released):** `quiet` for phones and boards that do not read other phones' `me`. See "Quiet"
+7. `shareThrottle(ms)` for high-rate sensor writes into `me`
 
 ## License
 

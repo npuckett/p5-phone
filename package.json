@@ -17,6 +17,7 @@
     "test:audio": "node test-audio-unlock.js",
     "test:share": "node test-share-e2e.js",
     "test:share-keep": "node test-share-keep-e2e.js",
+    "test:share-quiet": "node test-share-quiet-e2e.js",
     "test:input": "node test-input-state.js",
     "test:modes": "node test-sketch-modes.js",
     "test:remove": "node test-remove-cleanup.js",

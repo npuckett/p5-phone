@@ -31,7 +31,8 @@ function loadShareHelpers() {
       '  shareReadUrlParams: _shareReadUrlParams,\n' +
       '  shareBuildJoinUrl: _shareBuildJoinUrl,\n' +
       '  shareParseDuration: _shareParseDuration,\n' +
-      '  shareParseKeep: _shareParseKeep\n' +
+      '  shareParseKeep: _shareParseKeep,\n' +
+      '  shareParseQuiet: _shareParseQuiet\n' +
       '};'
   );
   return factory();
@@ -48,7 +49,8 @@ const {
   shareReadUrlParams,
   shareBuildJoinUrl,
   shareParseDuration,
-  shareParseKeep
+  shareParseKeep,
+  shareParseQuiet
 } = loadShareHelpers();
 
 let passed = 0;
@@ -168,6 +170,16 @@ assert(shareParseKeep({ expire: 'soon' }).error, 'keep: { expire: \'soon\' } is 
 assert(shareParseKeep([]).error, 'keep: an array is an error');
 assert(Number.isNaN(shareParseDuration(Infinity)), 'duration: Infinity rejected');
 
+// ---- the quiet option (client side) ----
+
+assert(shareParseQuiet(undefined).quiet === false && shareParseQuiet(null).quiet === false && shareParseQuiet(false).quiet === false, 'no quiet option: not quiet');
+assert(shareParseQuiet(undefined).error === undefined && shareParseQuiet(false).error === undefined, 'no quiet option: no error');
+assert(shareParseQuiet(true).quiet === true && shareParseQuiet(true).error === undefined, 'quiet: true is quiet');
+assert(shareParseQuiet('yes').error && shareParseQuiet(1).error && shareParseQuiet('true').error, 'quiet: only true or false are accepted');
+assert(shareParseQuiet({}).error && shareParseQuiet([]).error, 'quiet: an object or an array is an error');
+assert(shareParseQuiet(0).error && shareParseQuiet('').error, 'quiet: 0 and an empty string are errors too (write false)');
+assert(shareParseQuiet('yes').quiet === false, 'quiet: an error never turns quiet on');
+
 // ---- the keep option (server side): protocol.ts must agree with the client ----
 
 function loadServerProtocol() {
@@ -205,6 +217,24 @@ if (!server) {
   assert(server.parseKeep('24h') === null && server.parseKeep(7) === null && server.parseKeep([]) === null, 'server: only true or an object asks for keep');
   assert(server.jsonBytes({ a: 'é' }) === JSON.stringify({ a: 'é' }).length + 1, 'jsonBytes counts UTF-8 bytes');
   assert(server.jsonBytes({}) === 2, 'jsonBytes of {} is 2');
+
+  // ---- the quiet option (server side) ----
+  assert(server.SHARE_PROTOCOL_VERSION === 2, 'server speaks protocol v2 (the quiet option does not bump it)');
+  assert(server.parseQuiet(true) === true, 'server: hello.quiet true is quiet');
+  assert(server.parseQuiet(undefined) === false && server.parseQuiet(null) === false && server.parseQuiet(false) === false, 'server: no quiet field, not quiet');
+  assert(server.parseQuiet(1) === false && server.parseQuiet('true') === false && server.parseQuiet({}) === false && server.parseQuiet([]) === false, 'server: only the boolean true is quiet');
+  const mixed = [
+    { scope: 'me', path: 'x', value: 1 },
+    { scope: 'shared', path: 'score', value: 2 },
+    { scope: 'me', path: 'y' }
+  ];
+  const forQuiet = server.opsForQuiet(mixed);
+  assert(forQuiet.length === 1 && forQuiet[0].scope === 'shared' && forQuiet[0].path === 'score' && forQuiet[0].value === 2, 'server: a quiet connection gets only the shared ops of a batch');
+  assert(server.opsForQuiet([{ scope: 'me', path: 'x', value: 1 }]).length === 0, 'server: a quiet connection gets nothing from a me-only batch');
+  const sharedOnly = [{ scope: 'shared', path: 'a', value: 1 }, { scope: 'shared', path: 'b', value: 2 }];
+  assert(server.opsForQuiet(sharedOnly).length === 2, 'server: a shared-only batch goes to a quiet connection whole');
+  assert(server.opsForQuiet([]).length === 0, 'server: no ops, nothing for a quiet connection');
+  assert(mixed.length === 3, 'server: opsForQuiet does not change its input');
 }
 
 console.log(`Share contract tests: ${passed} passed, ${failed} failed`);

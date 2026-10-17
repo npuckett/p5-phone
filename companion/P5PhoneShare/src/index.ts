@@ -16,7 +16,9 @@ import {
   isJsonSerializable,
   isSafePath,
   jsonBytes,
+  opsForQuiet,
   parseKeep,
+  parseQuiet,
   type GuestEntry,
   type KeepPolicy,
   type KeepStatus,
@@ -28,6 +30,9 @@ import {
 type ConnState = {
   me: Record<string, unknown>;
   helloDone: boolean;
+  // The quiet option: this connection is not sent other phones' `me` changes. Set from
+  // hello.quiet and kept in the connection's state, so it survives hibernation.
+  quiet?: boolean;
 };
 
 type RoomMeta = {
@@ -45,6 +50,12 @@ const PERSIST_DELAY_MS = 1000;
 
 function emptyState(): ConnState {
   return { me: {}, helloDone: false };
+}
+
+// A connection's state with its `me`. `quiet` is written only when it is on, so the state of
+// an ordinary connection is the same as before the quiet option.
+function connState(me: Record<string, unknown>, quiet: boolean): ConnState {
+  return quiet ? { me, helloDone: true, quiet: true } : { me, helloDone: true };
 }
 
 export class ShareRoom extends Server {
@@ -264,7 +275,10 @@ export class ShareRoom extends Server {
         ? cloneJson(msg.me as Record<string, unknown>)
         : {};
 
-    connection.setState({ me, helloDone: true } satisfies ConnState);
+    // The quiet option: hello.quiet asks not to be sent other phones' `me` changes. The
+    // welcome says whether it was used. An older server ignores the field and sends everything.
+    const quiet = parseQuiet(msg.quiet);
+    connection.setState(connState(me, quiet));
 
     // A kept room whose time ran out (and whose alarm has not run yet) is gone. This phone
     // starts a new room.
@@ -316,6 +330,7 @@ export class ShareRoom extends Server {
     };
     const keep = this.keepStatus();
     if (keep) welcome.keep = keep;
+    if (quiet) welcome.quiet = true;
     connection.send(encodeMessage(welcome));
     if (keepRefused) this.sendError(connection, keepRefused);
 
@@ -408,15 +423,42 @@ export class ShareRoom extends Server {
     }
     if (applied.length === 0) return;
 
-    if (meChanged) connection.setState({ me: state.me, helloDone: true } satisfies ConnState);
+    if (meChanged) connection.setState(connState(state.me, state.quiet === true));
     const shared = applied.filter((op) => op.scope === 'shared');
     if (shared.length) {
       if (this.keep) this.touchedAt = Date.now();
       this.schedulePersist();
     }
 
-    this.broadcast(this.encodeOps(applied, connection.id), [connection.id]);
+    this.relayOps(connection, applied);
     if (shared.length) connection.send(this.encodeOps(shared, connection.id));
+  }
+
+  // Send patches to every connection but the sender. A quiet connection is sent only the
+  // `shared` ones: a batch with both kinds is cut down to its shared part for it, and a
+  // patch or batch with only `me` changes is not sent to it at all. This is what keeps a
+  // room of n phones from sending n times n messages to a page that does not use them.
+  private relayOps(sender: Connection, applied: PatchOp[]) {
+    const full = this.encodeOps(applied, sender.id);
+    const sharedOps = opsForQuiet(applied);
+    const forQuiet =
+      sharedOps.length === applied.length
+        ? full
+        : sharedOps.length > 0
+          ? this.encodeOps(sharedOps, sender.id)
+          : null;
+    for (const c of this.getConnections()) {
+      if (c.id === sender.id) continue;
+      const quiet = ((c.state as ConnState | null)?.quiet) === true;
+      const out = quiet ? forQuiet : full;
+      if (out === null) continue;
+      try {
+        c.send(out);
+      } catch (_e) {
+        // The same handling as PartyServer's broadcast().
+        c.close(1011, 'Unexpected error');
+      }
+    }
   }
 
   // clear: put `shared` back to the seed the phone sends (its shareSetup shared, or {}), for
