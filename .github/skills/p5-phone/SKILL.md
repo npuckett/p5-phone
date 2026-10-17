@@ -200,7 +200,7 @@ Read these `window.*` flags before using hardware data:
 - **NFC:** `nfcEnabled`, `nfcStatus`, `nfcError`, `nfcTagAliases`, `lastNfcSerialNumber`, `lastNfcAlias`, `lastNfcMessage`
 - **GPS:** `geoEnabled`, `geoStatus`, `geoError`, `lastGeoPosition`
 - **BLE:** `bleSupported`, `bleConnected`, `bleStatus`, `bleError`, `bleDeviceName`, `bleValues`
-- **Share:** `shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`, `shared`, `me`, `guests`
+- **Share:** `shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`, `shareKept`, `shareKeptUntil`, `shared`, `me`, `guests`
 - **Camera:** `cameraEnabled`
 - **Gestures:** `gesturesLocked`
 - **Device:** `isMobile`, `isDesktop` (best-effort detection, set when the library loads)
@@ -498,7 +498,7 @@ function setup() {
 }
 ```
 
-Functions: `shareSetup(config)`, `enableShare*` (or `shareConnect()` from a gesture), `shareDisconnect()`, `shareSet(path, v)` / `shareSetMe(path, v)`, `shareEmit(name, data?)` (one-shot room event, received in `shareEvent(name, data)`, not stored, not echoed to the sender), `getShareJoinUrl()`, `isShareSupported()`.
+Functions: `shareSetup(config)`, `enableShare*` (or `shareConnect()` from a gesture), `shareDisconnect()`, `shareSet(path, v)` / `shareSetMe(path, v)`, `shareEmit(name, data?)` (one-shot room event, received in `shareEvent(name, data)`, not stored, not echoed to the sender), `shareClear()` (reset `shared` to its `shareSetup` value for everyone), `getShareJoinUrl()`, `isShareSupported()`.
 
 Join URL shape: `?shareHost=https://….workers.dev&room=my-game&app=final-project`  
 Helpers: `getShareJoinUrl()`, `showDesktopQr({ share: false })` to opt out.  
@@ -513,6 +513,8 @@ Rules:
 - `guests` is read-mostly (other players' `me` snapshots); mutating it does not sync.
 - `shareIsHost` is true for the first client to join; when the host leaves, the lexicographically first remaining client takes over.
 - After updating p5-phone, redeploy the worker (`npx wrangler deploy`): 1.14.0 speaks protocol v2, and a mismatch shows as `shareError` "Unsupported protocol version".
+- **Keep (the room between visits).** `shareSetup({ ..., keep: '7d' })` keeps `shared` after the last phone leaves. `keep` is `true` (7 days), ms, `'30m'` / `'24h'` / `'7d'`, or `{ expire: '24h' }`; the most is 30 days. The copy is deleted `expire` after the last *change* (a visit does not extend it). The first phone to create the room sets the rule; read the result in `shareKept` (bool) and `shareKeptUntil` (ms timestamp or 0). Only `shared` is kept, never `me` or `guests`. A kept room holds at most 64 KB of `shared`; a bigger write is refused and sets `shareError` ("Not saved …"). `shareClear()` resets `shared` to the `shareSetup` value for everyone and erases the kept copy (any phone can call it, so give the button to one person). The worker must be redeployed to keep rooms: an older worker ignores `keep` (`shareKept` stays `false`) and answers `shareClear()` with a `shareError`.
+- **Many phones adding to one kept room.** Last write wins, so `shared.marks.push(x)` from five phones at once loses marks. Give each addition its own key: `shared['m-' + shareClientId.slice(0, 8) + '-' + n++] = { x, y, t: Date.now() }`. Deleting the same old key from two phones is safe.
 - Wire protocol: see `companion/P5PhoneShare/PROTOCOL.md`.
 - Roadmap: localStorage host memory, short room codes, one-click deploy, adapters.
 

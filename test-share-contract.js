@@ -29,7 +29,9 @@ function loadShareHelpers() {
       '  shareApplyPatchInPlace: _shareApplyPatchInPlace,\n' +
       '  shareRoomKey: _shareRoomKey,\n' +
       '  shareReadUrlParams: _shareReadUrlParams,\n' +
-      '  shareBuildJoinUrl: _shareBuildJoinUrl\n' +
+      '  shareBuildJoinUrl: _shareBuildJoinUrl,\n' +
+      '  shareParseDuration: _shareParseDuration,\n' +
+      '  shareParseKeep: _shareParseKeep\n' +
       '};'
   );
   return factory();
@@ -44,7 +46,9 @@ const {
   shareApplyPatchInPlace,
   shareRoomKey,
   shareReadUrlParams,
-  shareBuildJoinUrl
+  shareBuildJoinUrl,
+  shareParseDuration,
+  shareParseKeep
 } = loadShareHelpers();
 
 let passed = 0;
@@ -138,6 +142,70 @@ const joinDefaultApp = shareBuildJoinUrl(
   { host: 'https://demo.workers.dev', room: 'lab', app: 'default' }
 );
 assert(joinDefaultApp.indexOf('app=') === -1, 'default app omitted from join url');
+
+// ---- the keep option (client side) ----
+
+const DAY = 24 * 60 * 60 * 1000;
+assert(shareParseKeep(undefined) === null && shareParseKeep(false) === null && shareParseKeep(null) === null, 'no keep option: no keep');
+assert(shareParseKeep(true).expire === 7 * DAY, 'keep: true is 7 days');
+assert(shareParseKeep({}).expire === 7 * DAY, 'keep: {} is 7 days');
+assert(shareParseKeep({ expire: 3000 }).expire === 3000, 'keep: { expire: ms }');
+assert(shareParseKeep(86400000).expire === DAY, 'keep: a bare number is ms');
+assert(shareParseKeep('24h').expire === DAY, 'keep: \'24h\'');
+assert(shareParseKeep({ expire: '7d' }).expire === 7 * DAY, 'keep: { expire: \'7d\' }');
+assert(shareParseKeep('30m').expire === 30 * 60 * 1000, 'keep: \'30m\'');
+assert(shareParseKeep(' 90 s ').expire === 90000, 'keep: spaces and seconds');
+assert(shareParseKeep('1.5h').expire === 90 * 60 * 1000, 'keep: fractions');
+assert(shareParseKeep('2D').expire === 2 * DAY, 'keep: unit is case-insensitive');
+assert(shareParseKeep('500ms').expire === 1000 && shareParseKeep('500ms').note, 'keep: under 1 s is raised to 1 s, with a note');
+assert(shareParseKeep('45d').expire === 30 * DAY && shareParseKeep('45d').note, 'keep: over 30 days is cut to 30 days, with a note');
+assert(shareParseKeep(30 * DAY).expire === 30 * DAY && !shareParseKeep(30 * DAY).note, 'keep: 30 days exactly is fine');
+assert(shareParseKeep('7 days').error, 'keep: \'7 days\' is an error');
+assert(shareParseKeep('forever').error, 'keep: a word is an error');
+assert(shareParseKeep('24').error, 'keep: a string with no unit is an error');
+assert(shareParseKeep(-5).error && shareParseKeep(0).error && shareParseKeep(NaN).error, 'keep: zero, negative and NaN are errors');
+assert(shareParseKeep({ expire: 'soon' }).error, 'keep: { expire: \'soon\' } is an error');
+assert(shareParseKeep([]).error, 'keep: an array is an error');
+assert(Number.isNaN(shareParseDuration(Infinity)), 'duration: Infinity rejected');
+
+// ---- the keep option (server side): protocol.ts must agree with the client ----
+
+function loadServerProtocol() {
+  let ts;
+  try {
+    ts = require(path.join(__dirname, 'companion', 'P5PhoneShare', 'node_modules', 'typescript'));
+  } catch (e) {
+    return null;
+  }
+  const file = path.join(__dirname, 'companion', 'P5PhoneShare', 'src', 'protocol.ts');
+  const js = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 }
+  }).outputText;
+  const mod = { exports: {} };
+  new Function('module', 'exports', 'TextEncoder', js)(mod, mod.exports, TextEncoder);
+  return mod.exports;
+}
+
+const server = loadServerProtocol();
+if (!server) {
+  console.log('Skipping server protocol checks: run npm install in companion/P5PhoneShare to enable them.');
+} else {
+  assert(server.SHARE_PROTOCOL_VERSION === 2, 'server speaks protocol v2 (the keep option does not bump it)');
+  assert(server.KEEP_DEFAULT_MS === shareParseKeep(true).expire, 'server and client agree on the default keep time');
+  assert(server.KEEP_MAX_MS === 30 * DAY && server.KEEP_MIN_MS === 1000, 'server limits are 1 second and 30 days');
+  assert(server.KEEP_MAX_BYTES === 64 * 1024, 'a kept room holds 64 KB');
+  assert(server.parseKeep(undefined) === null && server.parseKeep(null) === null && server.parseKeep(false) === null, 'server: no keep field, no keep');
+  assert(server.parseKeep(true).expire === 7 * DAY, 'server: keep true is 7 days');
+  assert(server.parseKeep({}).expire === 7 * DAY, 'server: keep {} is 7 days');
+  assert(server.parseKeep({ expire: 5000 }).expire === 5000, 'server: keep.expire is used');
+  assert(server.parseKeep({ expire: 1 }).expire === 1000, 'server: a tiny keep.expire is raised to 1 s');
+  assert(server.parseKeep({ expire: 99 * DAY }).expire === 30 * DAY, 'server: a huge keep.expire is cut to 30 days');
+  assert(server.parseKeep({ expire: 'abc' }).expire === 7 * DAY, 'server: a bad keep.expire falls back to 7 days');
+  assert(server.parseKeep({ expire: NaN }).expire === 7 * DAY, 'server: NaN keep.expire falls back to 7 days');
+  assert(server.parseKeep('24h') === null && server.parseKeep(7) === null && server.parseKeep([]) === null, 'server: only true or an object asks for keep');
+  assert(server.jsonBytes({ a: 'é' }) === JSON.stringify({ a: 'é' }).length + 1, 'jsonBytes counts UTF-8 bytes');
+  assert(server.jsonBytes({}) === 2, 'jsonBytes of {} is 2');
+}
 
 console.log(`Share contract tests: ${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

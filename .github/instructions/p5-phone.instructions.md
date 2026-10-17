@@ -69,7 +69,7 @@ Check these to know if permissions have been granted:
 - `window.vibrationEnabled` — vibration available (Android only)
 - `window.geoEnabled` — GPS watch active; latest fix in `window.lastGeoPosition`
 - `window.bleConnected` — Bluetooth device connected; values in `window.bleValues`
-- `window.shareConnected` — joined a Share room; live objects `shared`, `me`, `guests`
+- `window.shareConnected` — joined a Share room; live objects `shared`, `me`, `guests`. `shareSetup({ keep: '7d' })` keeps `shared` after the last phone leaves; `window.shareKept` / `window.shareKeptUntil` say whether and until when; `shareClear()` resets it for everyone
 - `window.cameraEnabled` — camera startup succeeded
 - `window.torchEnabled` — torch control stream active (iOS 17.4+ and Android)
 - `window.torchActive` — flashlight currently on

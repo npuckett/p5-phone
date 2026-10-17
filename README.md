@@ -454,6 +454,7 @@ this.enableGyroTap('Tap to start');
 - `window.shareConnected` - Boolean indicating if the Share PartyServer room is connected
 - `window.shareStatus` - Share status (`idle`/`connecting`/`connected`/`error`/`unsupported`)
 - `window.shareIsHost` - Boolean indicating if this client is the room host
+- `window.shareKept` / `window.shareKeptUntil` - Whether the Share server keeps this room after the last phone leaves, and when the kept copy is deleted (ms timestamp, or `0`)
 - `shared` / `me` / `guests` - Live multi-user objects (see Share section)
 - `window.gesturesLocked` - Boolean, `true` after `lockGestures()` has installed its handlers
 - `window.isMobile` / `window.isDesktop` - Best-effort device detection (see [Desktop QR Helper and Device Detection](#desktop-qr-helper-and-device-detection))
@@ -1315,7 +1316,8 @@ https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
 2. Call `enableShareTap()` (or another `enableShare*` helper) so the user joins from a tap. On desktop, `showDesktopQr()` helps others join.
 
 **Commands:**
-- `shareSetup({ host, room, app, shared, me, autoReconnect, sendInterval, disconnectWhenHidden })` — configure PartyServer host and room (URL query params override host/room/app when present)
+- `shareSetup({ host, room, app, shared, me, keep, autoReconnect, sendInterval, disconnectWhenHidden })` — configure PartyServer host and room (URL query params override host/room/app when present)
+  - `keep` (default off): keep the room's `shared` after the last phone leaves. `true` (7 days), a number of ms, a string like `'30m'`, `'24h'` or `'7d'`, or `{ expire: '24h' }`. The most is 30 days. See [Keep the room between visits](#keep-the-room-between-visits)
   - `sendInterval` (ms, default `50`): changes are batched and sent at most this often; `0` sends each change at once
   - `disconnectWhenHidden` (default `true` on phones): leave the room while the page is hidden (screen locked, another app) and rejoin when it is visible, keeping `me`
 - `getShareJoinUrl()` — sketch URL with `shareHost` / `room` / `app` for copy/QR sharing
@@ -1323,6 +1325,7 @@ https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
 - `shareConnect()` / `shareDisconnect()` — low-level connect/disconnect
 - `shareSet(path, value)` / `shareSetMe(path, value)` — explicit path writes (`'pos.x'`)
 - `shareEmit(name, data?)` — room one-shot events (not stored)
+- `shareClear()` — put `shared` back to the value you gave `shareSetup()` (or `{}`) for every phone in the room, and erase the kept copy
 - `isShareSupported()` — WebSocket availability check
 
 **Live objects / status:**
@@ -1330,6 +1333,7 @@ https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
 - `me` — this client's per-guest object
 - `guests` — array of other clients' `me` objects
 - `window.shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`
+- `window.shareKept` — `true` once the server has said it keeps this room; `window.shareKeptUntil` — when the kept copy is deleted if nothing changes (ms, like `Date.now()`), or `0`
 
 **Optional callbacks:**
 
@@ -1386,6 +1390,28 @@ function mousePressed() {
 - Changes to `shared` made while disconnected are replaced by the room's state when you rejoin; `me` is kept
 - **After updating p5-phone, redeploy your worker** (`npx wrangler deploy`). 1.14.0 uses protocol v2; an older worker answers with an "Unsupported protocol version" error
 - See [companion/P5PhoneShare/PROTOCOL.md](companion/P5PhoneShare/PROTOCOL.md) for the wire format
+
+**Keep the room between visits.** Normally a room is cleared when the last phone leaves. With `keep`, `shared` stays for a time you choose, so the next visitor finds what the last one left (a wall of marks, a guest book, a counter that lasts all week):
+
+```javascript
+shareSetup({ host: 'https://YOUR.workers.dev', room: 'the-wall', shared: {}, keep: '7d' });
+// ...
+console.log(shareKept, new Date(shareKeptUntil)); // true, and when it will be forgotten
+
+let n = 0; // marks this phone has added
+function addMark(x, y) {
+  // One key per mark. If many phones push to one shared array, the last write wins and marks are lost.
+  shared['m-' + shareClientId.slice(0, 8) + '-' + n++] = { x: x, y: y, t: Date.now() };
+}
+```
+
+- The kept copy is deleted `expire` after the last change to `shared`. Each change moves the deadline. Visiting does not.
+- The first phone to create the room sets the rule. A later phone's `keep` is ignored, and `shareKept` tells you what the room does.
+- Only `shared` is kept. `me` and `guests` are presence only.
+- A kept room holds at most 64 KB of `shared`. A write that would go over is refused, and `shareError` starts with "Not saved".
+- `shareClear()` puts `shared` back to its starting value for everyone. Any phone in the room can call it, so give the button to one person.
+- Redeploy your worker to use it (`npx wrangler deploy`). An older worker ignores `keep`: the sketch works, `shareKept` stays `false`, and `shareClear()` sets `shareError`.
+- Details and limits: [companion/P5PhoneShare/README.md](companion/P5PhoneShare/README.md#keep-the-room-between-visits).
 
 **Roadmap (not built yet):** remember host in `localStorage`, short room codes only, one-click Cloudflare deploy button, optional Supabase/Vercel adapters.
 

@@ -7,6 +7,7 @@
 
 import { routePartykitRequest, Server, type Connection, type ConnectionContext } from 'partyserver';
 import {
+  KEEP_MAX_BYTES,
   SHARE_PROTOCOL_VERSION,
   applyPatchInPlace,
   cloneJson,
@@ -14,7 +15,11 @@ import {
   encodeMessage,
   isJsonSerializable,
   isSafePath,
+  jsonBytes,
+  parseKeep,
   type GuestEntry,
+  type KeepPolicy,
+  type KeepStatus,
   type PatchOp,
   type ShareMessage,
   type ShareScope
@@ -28,6 +33,9 @@ type ConnState = {
 type RoomMeta = {
   hostId: string | null;
   seeded: boolean;
+  // Only in a kept room: the keep time, and when `shared` last changed (ms since 1970).
+  keep?: KeepPolicy;
+  touchedAt?: number;
 };
 
 // Storage writes are debounced: the free tier allows 100,000 row writes a day, and a
@@ -47,9 +55,16 @@ export class ShareRoom extends Server {
   seeded = false;
   persistTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // The keep option. A room created with keep holds on to `shared` after the last phone
+  // leaves, until `keep.expire` ms after its last change. The first phone to create the
+  // room sets the policy; it never changes while the room exists.
+  keep: KeepPolicy | null = null;
+  touchedAt = 0; // when `shared` last changed (or the room was created)
+  sharedBytes = 0; // an upper bound on the JSON size of `shared`, kept for kept rooms only
+
   async onStart() {
     // Light persistence so hibernation wake does not wipe room state.
-    // Long-term DB adapters remain a roadmap item.
+    // A kept room goes further: see the keep option.
     const storedShared = await this.ctx.storage.get<Record<string, unknown>>('shared');
     const meta = await this.ctx.storage.get<RoomMeta>('meta');
     this.shared =
@@ -58,6 +73,14 @@ export class ShareRoom extends Server {
         : {};
     this.hostId = meta?.hostId ?? null;
     this.seeded = Boolean(meta?.seeded);
+    this.keep = this.seeded && meta?.keep ? parseKeep(meta.keep) : null;
+    this.touchedAt = this.keep ? meta?.touchedAt ?? Date.now() : 0;
+    this.sharedBytes = this.keep ? jsonBytes(this.shared) : 0;
+
+    // Backup for a missed alarm: a kept room that ran out of time while it slept is gone.
+    if (this.isExpired() && this.openConnections() === 0) {
+      await this.expireRoom('time ran out, found on wake');
+    }
   }
 
   onConnect(connection: Connection, _ctx: ConnectionContext) {
@@ -97,6 +120,9 @@ export class ShareRoom extends Server {
       case 'emit':
         this.handleEmit(connection, msg);
         break;
+      case 'clear':
+        void this.handleClear(connection, msg);
+        break;
       default:
         this.sendError(connection, `Unexpected message type: ${(msg as ShareMessage).type}`);
     }
@@ -110,14 +136,18 @@ export class ShareRoom extends Server {
     this.broadcastPresence(undefined, leftId, [leftId]);
 
     if (remaining.length === 0) {
-      this.shared = {};
-      this.hostId = null;
-      this.seeded = false;
       if (this.persistTimer) {
         clearTimeout(this.persistTimer);
         this.persistTimer = null;
       }
-      await this.ctx.storage.deleteAll();
+      if (this.keep && !this.isExpired()) {
+        // A kept room stays. Save it now (not after the debounce), and set the alarm that
+        // deletes it when its time runs out.
+        this.hostId = null;
+        await this.persistRoom();
+        return;
+      }
+      await this.expireRoom('time ran out, last phone left');
       return;
     }
 
@@ -130,12 +160,87 @@ export class ShareRoom extends Server {
     console.error('ShareRoom connection error', connection.id, error);
   }
 
+  // True when a kept room's time has run out: `keep.expire` ms with no change to `shared`.
+  private isExpired(): boolean {
+    return this.keep !== null && Date.now() >= this.touchedAt + this.keep.expire;
+  }
+
+  private openConnections(exceptId?: string): number {
+    let n = 0;
+    for (const c of this.getConnections()) if (c.id !== exceptId) n++;
+    return n;
+  }
+
+  // Forget the room: shared, host, keep policy, the stored copy and the alarm.
+  // `why` is logged when a kept room ends, so the dashboard (or wrangler dev) shows it.
+  private async expireRoom(why = 'cleared') {
+    const wasKept = this.keep !== null;
+    if (wasKept) console.log(`ShareRoom: kept room deleted (${why})`);
+    this.shared = {};
+    this.hostId = null;
+    this.seeded = false;
+    this.keep = null;
+    this.touchedAt = 0;
+    this.sharedBytes = 0;
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+    }
+    // Both calls are issued before anything is awaited, so a phone that joins during the
+    // delete cannot have its new room wiped by it.
+    await Promise.all([
+      wasKept ? this.ctx.storage.deleteAlarm() : Promise.resolve(),
+      this.ctx.storage.deleteAll()
+    ]);
+  }
+
+  // The alarm runs when a kept room's time may be up. It deletes the room if it is empty and
+  // has not changed since. A room with phones in it is left alone: it is checked again when
+  // the last phone leaves.
+  async onAlarm() {
+    if (!this.keep) return;
+    if (this.openConnections() > 0) return;
+    if (this.isExpired()) {
+      await this.expireRoom('time ran out, alarm');
+    } else {
+      await this.ctx.storage.setAlarm(this.touchedAt + this.keep.expire);
+    }
+  }
+
+  // Keep the alarm at or before the room's deadline. If it fires early (the room changed
+  // since), onAlarm sets it again, so a change never needs its own alarm write.
+  private async armAlarm() {
+    if (!this.keep) return;
+    const deadline = this.touchedAt + this.keep.expire;
+    const current = await this.ctx.storage.getAlarm();
+    if (current === null || current > deadline) await this.ctx.storage.setAlarm(deadline);
+  }
+
+  private keepStatus(): KeepStatus | undefined {
+    if (!this.keep) return undefined;
+    return {
+      expire: this.keep.expire,
+      remaining: Math.max(0, this.touchedAt + this.keep.expire - Date.now())
+    };
+  }
+
+  // Tell everyone how long the kept copy lives now (each change moves the deadline).
+  private broadcastKept() {
+    const status = this.keepStatus();
+    if (!status) return;
+    const msg: ShareMessage = { type: 'kept', v: SHARE_PROTOCOL_VERSION, ...status };
+    this.broadcast(encodeMessage(msg));
+  }
+
   private async persistRoom() {
     try {
-      await this.ctx.storage.put({
-        shared: this.shared,
-        meta: { hostId: this.hostId, seeded: this.seeded } satisfies RoomMeta
-      });
+      const meta: RoomMeta = { hostId: this.hostId, seeded: this.seeded };
+      if (this.keep) {
+        meta.keep = this.keep;
+        meta.touchedAt = this.touchedAt;
+      }
+      await this.ctx.storage.put({ shared: this.shared, meta });
+      await this.armAlarm();
     } catch (err) {
       // Over the free-tier write limit: keep the live room working from memory.
       console.error('ShareRoom persist failed', err);
@@ -146,7 +251,7 @@ export class ShareRoom extends Server {
     if (this.persistTimer) return;
     this.persistTimer = setTimeout(() => {
       this.persistTimer = null;
-      void this.persistRoom();
+      void this.persistRoom().then(() => this.broadcastKept());
     }, PERSIST_DELAY_MS);
   }
 
@@ -161,6 +266,13 @@ export class ShareRoom extends Server {
 
     connection.setState({ me, helloDone: true } satisfies ConnState);
 
+    // A kept room whose time ran out (and whose alarm has not run yet) is gone. This phone
+    // starts a new room.
+    if (this.isExpired() && this.openConnections(connection.id) === 0) {
+      await this.expireRoom('time ran out, found on join');
+    }
+
+    let keepRefused = '';
     if (!this.seeded) {
       if (
         msg.shared &&
@@ -174,6 +286,18 @@ export class ShareRoom extends Server {
       }
       this.seeded = true;
       this.hostId = connection.id;
+      // The first phone sets the keep policy. Later phones' hello.keep is ignored.
+      const wanted = parseKeep(msg.keep);
+      if (wanted) {
+        const size = jsonBytes(this.shared);
+        if (size <= KEEP_MAX_BYTES) {
+          this.keep = wanted;
+          this.touchedAt = Date.now();
+          this.sharedBytes = size;
+        } else {
+          keepRefused = `The shared data you start with is ${Math.ceil(size / 1024)} KB. A kept room holds at most ${KEEP_MAX_BYTES / 1024} KB, so this room is not kept.`;
+        }
+      }
       await this.persistRoom();
     } else if (!this.hostId) {
       this.hostId = connection.id;
@@ -190,7 +314,10 @@ export class ShareRoom extends Server {
       guests: this.guestList([connection.id]),
       you: cloneJson(me)
     };
+    const keep = this.keepStatus();
+    if (keep) welcome.keep = keep;
     connection.send(encodeMessage(welcome));
+    if (keepRefused) this.sendError(connection, keepRefused);
 
     this.broadcastPresence(connection.id, undefined, [connection.id]);
   }
@@ -206,8 +333,8 @@ export class ShareRoom extends Server {
       return;
     }
 
-    const applied: PatchOp[] = [];
-    let meChanged = false;
+    type Checked = { scope: ShareScope; path: string; value: unknown };
+    let checked: Checked[] = [];
     for (const op of ops) {
       if (!op || (op.scope !== 'shared' && op.scope !== 'me')) {
         this.sendError(connection, 'Invalid patch scope');
@@ -221,21 +348,115 @@ export class ShareRoom extends Server {
         this.sendError(connection, 'Patch value must be JSON-serializable');
         continue;
       }
-      const value = op.value === undefined ? undefined : cloneJson(op.value);
-      applyPatchInPlace(op.scope === 'shared' ? this.shared : state.me, op.path, value);
-      if (op.scope === 'me') meChanged = true;
+      checked.push({
+        scope: op.scope,
+        path: op.path,
+        value: op.value === undefined ? undefined : cloneJson(op.value)
+      });
+    }
+
+    // A kept room holds at most KEEP_MAX_BYTES of `shared`. Most writes are small, so they
+    // are counted by their own size (an upper bound) and nothing is measured. Only when
+    // that bound nears the limit is the whole object measured, with the write applied to a
+    // copy. A write that does not fit is refused as a whole, and the sender gets the
+    // room's real state back so its screen matches.
+    let sharedApplied = false;
+    const sharedOps = checked.filter((op) => op.scope === 'shared');
+    if (this.keep && sharedOps.length) {
+      let growth = 0;
+      for (const op of sharedOps) {
+        if (op.value !== undefined) growth += op.path.length + jsonBytes(op.value) + 8;
+      }
+      if (this.sharedBytes + growth <= KEEP_MAX_BYTES) {
+        this.sharedBytes += growth;
+      } else {
+        const next = cloneJson(this.shared);
+        for (const op of sharedOps) applyPatchInPlace(next, op.path, op.value);
+        const size = jsonBytes(next);
+        if (size > KEEP_MAX_BYTES) {
+          this.sendError(
+            connection,
+            `Not saved: a kept room holds at most ${KEEP_MAX_BYTES / 1024} KB of shared data, and this change would make it ${Math.ceil(size / 1024)} KB.`
+          );
+          const reset: ShareMessage = {
+            type: 'reset',
+            v: SHARE_PROTOCOL_VERSION,
+            shared: cloneJson(this.shared)
+          };
+          connection.send(encodeMessage(reset));
+          checked = checked.filter((op) => op.scope !== 'shared');
+        } else {
+          this.shared = next;
+          this.sharedBytes = size;
+          sharedApplied = true;
+        }
+      }
+    }
+
+    const applied: PatchOp[] = [];
+    let meChanged = false;
+    for (const op of checked) {
+      if (op.scope === 'me') {
+        applyPatchInPlace(state.me, op.path, op.value);
+        meChanged = true;
+      } else if (!sharedApplied) {
+        applyPatchInPlace(this.shared, op.path, op.value);
+      }
       const out: PatchOp = { scope: op.scope, path: op.path };
-      if (value !== undefined) out.value = value;
+      if (op.value !== undefined) out.value = op.value;
       applied.push(out);
     }
     if (applied.length === 0) return;
 
     if (meChanged) connection.setState({ me: state.me, helloDone: true } satisfies ConnState);
     const shared = applied.filter((op) => op.scope === 'shared');
-    if (shared.length) this.schedulePersist();
+    if (shared.length) {
+      if (this.keep) this.touchedAt = Date.now();
+      this.schedulePersist();
+    }
 
     this.broadcast(this.encodeOps(applied, connection.id), [connection.id]);
     if (shared.length) connection.send(this.encodeOps(shared, connection.id));
+  }
+
+  // clear: put `shared` back to the seed the phone sends (its shareSetup shared, or {}), for
+  // everyone, and replace the kept copy at once. `me` and guests are not touched.
+  private async handleClear(
+    connection: Connection,
+    msg: Extract<ShareMessage, { type: 'clear' }>
+  ) {
+    const state = (connection.state || emptyState()) as ConnState;
+    if (!state.helloDone) {
+      this.sendError(connection, 'Send hello before clear');
+      return;
+    }
+    let next: Record<string, unknown> = {};
+    if (
+      msg.shared &&
+      typeof msg.shared === 'object' &&
+      !Array.isArray(msg.shared) &&
+      isJsonSerializable(msg.shared) &&
+      (!this.keep || jsonBytes(msg.shared) <= KEEP_MAX_BYTES)
+    ) {
+      next = cloneJson(msg.shared as Record<string, unknown>);
+    }
+    this.shared = next;
+    if (this.keep) {
+      this.sharedBytes = jsonBytes(next);
+      this.touchedAt = Date.now();
+    }
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+    }
+    const reset: ShareMessage = {
+      type: 'reset',
+      v: SHARE_PROTOCOL_VERSION,
+      shared: cloneJson(next)
+    };
+    this.broadcast(encodeMessage(reset));
+    await this.persistRoom();
+    this.broadcastKept();
   }
 
   private encodeOps(ops: PatchOp[], clientId: string): string {

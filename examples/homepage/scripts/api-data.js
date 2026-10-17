@@ -136,12 +136,13 @@ enableMicTap('Tap for the microphone');`,
     title: 'Share (multi-user)',
     description: 'PartyServer-backed shared variables across phones. Deploy companion/P5PhoneShare, call shareSetup(), then connect from a user gesture.',
     items: [
-      { name: 'shareSetup', signature: "shareSetup({ host, room, app, shared, me, sendInterval, disconnectWhenHidden })", summary: 'Configures the PartyServer host and room. Seeds shared (room) and me (this client). URL ?shareHost=&room=&app= override host/room/app when present.', tags: ['share', 'setup'] },
+      { name: 'shareSetup', signature: "shareSetup({ host, room, app, shared, me, keep, sendInterval, disconnectWhenHidden })", summary: 'Configures the PartyServer host and room. Seeds shared (room) and me (this client). URL ?shareHost=&room=&app= override host/room/app when present. keep (true, ms, \'24h\', \'7d\' or { expire }) keeps shared after the last phone leaves, up to 30 days after the last change.', tags: ['share', 'setup'] },
       { name: 'getShareJoinUrl', signature: 'getShareJoinUrl()', summary: 'Returns the sketch URL with shareHost/room/app query params for copy-link or QR sharing.', tags: ['share'] },
       { name: 'enableShareTap', signature: "enableShareTap({ label: 'Tap to join room' })", summary: 'Shows a join overlay. Other styles: enableShareButton, Canvas, Banner, Minimal, On. Pair with showDesktopQr() on desktop.', tags: ['share', 'tap'] },
       { name: 'shared / me / guests', signature: 'shared.score = 1; me.x = 0.5; guests.length', summary: 'Proxied live objects. Mutate shared and me (arrays too); read guests in draw(). Unchanged values are not re-sent, so me.x = mouseX in draw() is fine.', tags: ['share', 'status'] },
       { name: 'shareEmit', signature: "shareEmit('pulse', data)", summary: 'Room one-shot events. Handle with function shareEvent(name, data).', tags: ['share'] },
       { name: 'shareReady', signature: 'function shareReady() { ... }', summary: 'Optional callback after welcome state is applied.', tags: ['callback', 'share'] },
+      { name: 'shareClear', signature: 'shareClear()', summary: 'Puts shared back to the value given to shareSetup() (or {}) for every phone in the room, and erases the kept copy. Any phone in the room can call it.', tags: ['share'] },
       { name: 'shareSet / shareSetMe', signature: "shareSet('pos.x', 0.5); shareSetMe('name', 'Ana')", summary: 'Explicit dotted-path writes to shared or me; same effect as assigning through the proxies.', tags: ['share'] },
       { name: 'shareConnect / shareDisconnect', signature: 'shareConnect(); shareDisconnect()', summary: 'Low-level join and leave. shareConnect must run from a user gesture; the enableShare* helpers call it for you.', tags: ['share'] },
       { name: 'isShareSupported', signature: 'isShareSupported()', summary: 'Returns whether WebSocket is available; sets shareSupported and shareStatus.', tags: ['share', 'status'] }
@@ -268,7 +269,7 @@ enableMicTap('Tap for the microphone');`,
       { name: 'NFC state', signature: 'window.nfcStatus, nfcError, lastNfcMessage, lastNfcSerialNumber, lastNfcAlias, nfcTagAliases', summary: 'NFC diagnostic and tag alias state for sketches and debug screens.', tags: ['nfc', 'status'] },
       { name: 'GPS state', signature: 'window.geoStatus, geoError, lastGeoPosition', summary: 'GPS status string, latest error message, and most recent normalized position for sketches and debug screens.', tags: ['geo', 'status'] },
       { name: 'BLE state', signature: 'window.bleSupported, bleConnected, bleStatus, bleError, bleDeviceName, bleValues', summary: 'Web Bluetooth connection state and latest decoded characteristic values.', tags: ['ble', 'status'] },
-      { name: 'Share state', signature: 'window.shareSupported, shareConnected, shareStatus, shareError, shareRoom, shareClientId, shareIsHost, shared, me, guests', summary: 'PartyServer multi-user connection state and live shared objects.', tags: ['share', 'status'] }
+      { name: 'Share state', signature: 'window.shareSupported, shareConnected, shareStatus, shareError, shareRoom, shareClientId, shareIsHost, shareKept, shareKeptUntil, shared, me, guests', summary: 'PartyServer multi-user connection state and live shared objects. shareKept is true when the server keeps this room after the last phone leaves; shareKeptUntil is when the kept copy is deleted if nothing changes (ms), or 0.', tags: ['share', 'status'] }
     ]
   }
 ];

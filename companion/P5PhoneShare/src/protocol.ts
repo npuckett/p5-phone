@@ -4,19 +4,40 @@
  */
 
 // v2: 'batch' messages, and shared patches are echoed to their sender.
+// The keep option (hello.keep, welcome.keep, 'kept', 'clear', 'reset') is optional and added
+// without a version bump: a peer that does not know it ignores the fields and the messages.
 export const SHARE_PROTOCOL_VERSION = 2;
+
+// The keep option: a room that keeps `shared` after the last phone leaves.
+export const KEEP_DEFAULT_MS = 7 * 24 * 60 * 60 * 1000;
+export const KEEP_MAX_MS = 30 * 24 * 60 * 60 * 1000;
+export const KEEP_MIN_MS = 1000;
+// A kept room holds at most this much JSON (UTF-8 bytes).
+export const KEEP_MAX_BYTES = 64 * 1024;
+
+export type KeepPolicy = { expire: number };
 
 export type ShareScope = 'shared' | 'me';
 
 export type ShareMessage =
-  | { type: 'hello'; v: number; app: string; room: string; me: Record<string, unknown>; shared?: Record<string, unknown> }
-  | { type: 'welcome'; v: number; clientId: string; isHost: boolean; shared: Record<string, unknown>; guests: GuestEntry[]; you: Record<string, unknown> }
+  | { type: 'hello'; v: number; app: string; room: string; me: Record<string, unknown>; shared?: Record<string, unknown>; keep?: { expire?: number } }
+  | { type: 'welcome'; v: number; clientId: string; isHost: boolean; shared: Record<string, unknown>; guests: GuestEntry[]; you: Record<string, unknown>; keep?: KeepStatus }
+  | { type: 'kept'; v: number; expire: number; remaining: number }
+  | { type: 'clear'; v: number; shared?: Record<string, unknown> }
+  | { type: 'reset'; v: number; shared: Record<string, unknown> }
   | { type: 'patch'; v: number; scope: ShareScope; path: string; value?: unknown; clientId?: string }
   | { type: 'batch'; v: number; ops: PatchOp[]; clientId?: string }
   | { type: 'presence'; v: number; guests: GuestEntry[]; joined?: string; left?: string }
   | { type: 'host'; v: number; clientId: string; isHost: boolean }
   | { type: 'emit'; v: number; name: string; data?: unknown; clientId?: string }
   | { type: 'error'; v: number; message: string };
+
+export type KeepStatus = {
+  /** The room's keep time in ms: how long the kept copy lives after the last change. */
+  expire: number;
+  /** Ms left until the kept copy is deleted, if nothing changes. */
+  remaining: number;
+};
 
 export type PatchOp = {
   scope: ShareScope;
@@ -54,6 +75,24 @@ export function isJsonSerializable(value: unknown, depth = 0): boolean {
     return true;
   }
   return false;
+}
+
+/** UTF-8 size of a value as JSON. */
+export function jsonBytes(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value)).length;
+}
+
+/** Turn a hello.keep value into a policy, or null for no keep. Never trusts the client's number. */
+export function parseKeep(raw: unknown): KeepPolicy | null {
+  if (raw === undefined || raw === null || raw === false) return null;
+  let expire = KEEP_DEFAULT_MS;
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    const e = (raw as { expire?: unknown }).expire;
+    if (typeof e === 'number' && Number.isFinite(e)) expire = e;
+  } else if (raw !== true) {
+    return null;
+  }
+  return { expire: Math.min(KEEP_MAX_MS, Math.max(KEEP_MIN_MS, Math.round(expire))) };
 }
 
 export function cloneJson<T>(value: T): T {

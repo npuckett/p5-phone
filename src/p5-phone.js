@@ -113,6 +113,8 @@ window.shareError = '';
 window.shareRoom = '';
 window.shareClientId = '';
 window.shareIsHost = false;
+window.shareKept = false; // true when the server confirmed it keeps this room (the keep option)
+window.shareKeptUntil = 0; // ms timestamp when the kept copy is deleted if nothing changes, or 0
 window.shared = {};
 window.me = {};
 window.guests = [];
@@ -376,6 +378,7 @@ let _shareFlushTimer = null;
 let _sharePending = new Map(); // shared path -> my sent writes the worker has not echoed yet
 let _shareHiddenClosed = false; // socket closed because the page was hidden
 let _shareVisibilityBound = false;
+let _shareKeptSeen = false; // a welcome said this room is kept (cleared by shareSetup)
 
 const _gestureLockState = {
   locked: false,
@@ -2908,6 +2911,51 @@ function _shareRoomKey(app, room) {
   return a + ':' + r;
 }
 
+// The keep option: a room that holds on to `shared` after the last phone leaves.
+const _SHARE_KEEP_DEFAULT_MS = 7 * 24 * 60 * 60 * 1000;
+const _SHARE_KEEP_MAX_MS = 30 * 24 * 60 * 60 * 1000;
+const _SHARE_KEEP_MIN_MS = 1000;
+
+// A time as milliseconds: a number of ms, or a string like '30m', '24h', '7d', '90s', '500ms'.
+// Returns NaN for anything else (including a string with no unit).
+function _shareParseDuration(value) {
+  if (typeof value === 'number') return Number.isFinite(value) && value > 0 ? value : NaN;
+  if (typeof value !== 'string') return NaN;
+  const m = /^\s*(\d+(?:\.\d+)?)\s*(ms|s|m|h|d)\s*$/i.exec(value);
+  if (!m) return NaN;
+  const unit = { ms: 1, s: 1000, m: 60000, h: 3600000, d: 86400000 }[m[2].toLowerCase()];
+  const ms = parseFloat(m[1]) * unit;
+  return ms > 0 ? ms : NaN;
+}
+
+// keep: true | ms | '24h' | { expire: ms | '24h' }  ->  { expire, note? } | { error } | null (no keep).
+// A time under 1 second or over 30 days is moved to the limit, with a note.
+function _shareParseKeep(keep) {
+  if (keep === undefined || keep === null || keep === false) return null;
+  let expire = _SHARE_KEEP_DEFAULT_MS;
+  if (keep === true) {
+    // the default
+  } else if (typeof keep === 'object' && !Array.isArray(keep)) {
+    if (keep.expire !== undefined) expire = _shareParseDuration(keep.expire);
+  } else {
+    expire = _shareParseDuration(keep);
+  }
+  if (!(expire > 0)) {
+    return {
+      error: 'shareSetup(): keep must be true, a number of milliseconds, a string like \'24h\' (s, m, h, d) ' +
+        'or { expire: \'24h\' }.'
+    };
+  }
+  expire = Math.round(expire);
+  if (expire > _SHARE_KEEP_MAX_MS) {
+    return { expire: _SHARE_KEEP_MAX_MS, note: 'shareSetup(): keep is at most 30 days. Using 30 days.' };
+  }
+  if (expire < _SHARE_KEEP_MIN_MS) {
+    return { expire: _SHARE_KEEP_MIN_MS, note: 'shareSetup(): keep is at least 1 second. Using 1 second.' };
+  }
+  return { expire: expire };
+}
+
 /**
  * Read Share join params from the page URL.
  * Accepts: shareHost (or host), shareRoom (or room), shareApp (or app).
@@ -3152,12 +3200,22 @@ function shareSetup(config) {
     return false;
   }
 
+  const keepOption = _shareParseKeep(config.keep);
+  if (keepOption && keepOption.error) {
+    debugError(keepOption.error);
+    return false;
+  }
+  if (keepOption && keepOption.note) debugWarn(keepOption.note);
+
   _shareProfile = {
     host: String(host).replace(/\/$/, ''),
     room: String(room),
     app: String(app),
     shared: _shareCloneJson(sharedInit),
     me: _shareCloneJson(meInit),
+    // Ask the server to keep this room's `shared` after the last phone leaves. Only the
+    // first phone to create the room sets this; the welcome says what the room does.
+    keep: keepOption ? { expire: keepOption.expire } : null,
     autoReconnect: config.autoReconnect !== false,
     sendInterval: Number.isFinite(config.sendInterval) && config.sendInterval >= 0
       ? config.sendInterval
@@ -3178,6 +3236,9 @@ function shareSetup(config) {
   window.shareConnected = false;
   window.shareClientId = '';
   window.shareIsHost = false;
+  window.shareKept = false;
+  window.shareKeptUntil = 0;
+  _shareKeptSeen = false;
   _shareReadySent = false;
   debug(
     'shareSetup room=' + window.shareRoom + ' host=' + _shareProfile.host +
@@ -3335,14 +3396,32 @@ function shareEmit(name, data) {
   return _shareSend(msg);
 }
 
+// Put `shared` back to the value given to shareSetup() (or {}) for everyone in the room, and
+// erase the kept copy. Any phone in the room can call it. `me` and guests are not touched.
+function shareClear() {
+  if (!window.shareConnected) {
+    debugWarn('shareClear(): not connected.');
+    return false;
+  }
+  // Changes made just before the clear are sent first, so the clear removes them too.
+  _shareFlush();
+  return _shareSend({
+    type: 'clear',
+    v: _SHARE_PROTOCOL_VERSION,
+    shared: _shareCloneJson(_shareProfile.shared)
+  });
+}
+
 // The worker applies patches in one order and sends every shared patch to everyone,
 // the sender included. A phone keeps its own unconfirmed writes on screen and skips
 // remote writes that one of them will override on the worker, so all phones settle
 // on the worker's value even when two write the same key at once.
 function _shareApplySharedPatch(path, value, clientId) {
-  if (clientId && clientId === window.shareClientId) {
+  if (clientId && clientId === window.shareClientId && _sharePending.has(path)) {
     // Echo of my own write: the worker has applied it. Local state already shows it.
-    const left = (_sharePending.get(path) || 1) - 1;
+    // (An echo with no pending write comes after a reset or an error cleared the list:
+    // the room's value was not on screen, so it is applied below.)
+    const left = _sharePending.get(path) - 1;
     if (left > 0) _sharePending.set(path, left);
     else _sharePending.delete(path);
     return false;
@@ -3402,6 +3481,44 @@ function _shareApplyRemotePatch(msg, fromId) {
   }
 }
 
+// The server's keep status (welcome.keep or a 'kept' message): { expire, remaining } in ms.
+// Without it (an older server, or a room that is not kept) shareKept is false.
+function _shareSetKept(keep) {
+  const remaining = keep && Number.isFinite(keep.remaining) ? Math.max(0, keep.remaining) : null;
+  if (keep && typeof keep === 'object' && remaining !== null) {
+    window.shareKept = true;
+    _shareKeptSeen = true;
+    // The server sends time left, not a clock time, so a phone's clock being off does not matter.
+    window.shareKeptUntil = Date.now() + remaining;
+  } else {
+    window.shareKept = false;
+    window.shareKeptUntil = 0;
+  }
+}
+
+// The room's `shared` was replaced as a whole: shareClear(), or the server refused a write
+// and sends its real state back. Writes of mine the server has not applied yet come after
+// this on the server, so they stay on screen on top of it.
+function _shareApplyReset(sharedValue) {
+  const unconfirmed = _shareUnconfirmedPaths();
+  const keep = unconfirmed.map(function(p) {
+    const v = _shareGetAtPath(_shareSharedRoot, p);
+    return [p, v === undefined ? undefined : _shareCloneJson(v)];
+  });
+  _shareApplyingRemote = true;
+  try {
+    _shareSharedRoot = sharedValue && typeof sharedValue === 'object' && !Array.isArray(sharedValue)
+      ? _shareCloneJson(sharedValue)
+      : {};
+    for (let i = 0; i < keep.length; i++) {
+      _shareApplyPatchInPlace(_shareSharedRoot, keep[i][0], keep[i][1]);
+    }
+    _shareBindProxies();
+  } finally {
+    _shareApplyingRemote = false;
+  }
+}
+
 function _shareHandleMessage(raw) {
   let msg;
   try {
@@ -3433,6 +3550,11 @@ function _shareHandleMessage(raw) {
         _shareRebuildGuestsArray();
       } finally {
         _shareApplyingRemote = false;
+      }
+      _shareSetKept(msg.keep);
+      if (_shareProfile && _shareProfile.keep && !window.shareKept) {
+        debugWarn('share: keep was asked for, but this room is not kept. Either the room was ' +
+          'created without keep and is still open, or the server is older (redeploy P5PhoneShare).');
       }
       window.shareConnected = true;
       window.shareStatus = 'connected';
@@ -3480,6 +3602,13 @@ function _shareHandleMessage(raw) {
       if (typeof shareEvent === 'function') {
         shareEvent(msg.name, msg.data);
       }
+      break;
+    case 'kept':
+      // Each change moves the deadline; the server says where it is now.
+      _shareSetKept(msg);
+      break;
+    case 'reset':
+      _shareApplyReset(msg.shared);
       break;
     case 'error':
       // A write the worker rejected is never echoed; stop waiting on pending writes.
@@ -3556,16 +3685,20 @@ function shareConnect() {
 
     socket.onopen = function() {
       _shareReconnectAttempt = 0;
-      _shareSend({
+      const hello = {
         type: 'hello',
         v: _SHARE_PROTOCOL_VERSION,
         app: _shareProfile.app,
         room: _shareProfile.room,
         // Current state, not the shareSetup() seed: me set before joining or before a
-        // reconnect survives, and an emptied room is reseeded from where it was.
+        // reconnect survives, and an emptied room is reseeded from where it was. A kept
+        // room is the exception: its content must be able to expire, so a phone that
+        // comes back to a room that was kept offers only its starting value.
         me: _shareCloneJson(_shareMeRoot),
-        shared: _shareCloneJson(_shareSharedRoot)
-      });
+        shared: _shareCloneJson(_shareKeptSeen ? _shareProfile.shared : _shareSharedRoot)
+      };
+      if (_shareProfile.keep) hello.keep = { expire: _shareProfile.keep.expire };
+      _shareSend(hello);
       if (!settled) {
         settled = true;
         resolve();
@@ -3631,6 +3764,8 @@ function shareDisconnect() {
   window.shareStatus = 'idle';
   window.shareIsHost = false;
   window.shareClientId = '';
+  window.shareKept = false;
+  window.shareKeptUntil = 0;
   _shareReadySent = false;
 }
 
@@ -4911,6 +5046,7 @@ window.shareDisconnect = shareDisconnect;
 window.shareSet = shareSet;
 window.shareSetMe = shareSetMe;
 window.shareEmit = shareEmit;
+window.shareClear = shareClear;
 window.getShareJoinUrl = getShareJoinUrl;
 window.enableShareTap = enableShareTap;
 window.enableShareButton = enableShareButton;
@@ -5940,6 +6076,7 @@ const _p5PhoneMethods = {
   shareSet,
   shareSetMe,
   shareEmit,
+  shareClear,
   getShareJoinUrl,
   enableShareTap,
   enableShareButton,
