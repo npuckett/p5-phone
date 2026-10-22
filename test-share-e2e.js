@@ -34,6 +34,8 @@ const STYLES = {
   minimal: { call: `enableShareMinimal({ label: 'join' });`, selector: '#minimalOverlay' },
   canvas: { call: `enableShareCanvas({ label: 'join' });`, selector: 'canvas' },
   on: { call: `enableShareOn('#customBtn');`, selector: '#customBtn' },
+  // 'share' in the permission list joins from the same tap as the other permissions.
+  perms: { call: `enablePermissionsTap(['share'], 'join');`, selector: '#tapOverlay' },
 };
 
 const rows = [];
@@ -88,6 +90,9 @@ function shareReceive(p, v){ evlog.push('recv:' + p); }
 function shareEvent(n, d, from){ evlog.push('event:' + n + ':' + JSON.stringify(d)); evlog.push('eventFrom:' + n + ':' + from); }
 function shareHostChanged(h){ evlog.push('host:' + h); }
 function shareClosed(){ evlog.push('closed'); }
+function shareJoined(id, d){ evlog.push('joined:' + id + ':' + (d && d.name)); }
+function shareLeft(id, d){ evlog.push('left:' + id + ':' + (d && d.name)); }
+function userSetupComplete(){ evlog.push('usc'); }
 function mouseReleased(){ evlog.push('mouseReleased'); }`;
 }
 
@@ -199,6 +204,23 @@ async function coreSync(browser) {
   check(S, 'late joiner gets room state, not its own seed', eq(b.shared, { score: 0, nested: { a: 1 } }) && !b.isHost, JSON.stringify(b.shared));
   check(S, 'late joiner sees existing guest', b.guests.some((g) => g.id === a.id && g.name === 'A'), JSON.stringify(b.guests));
   check(S, 'existing guest sees late joiner', await waitFor(A, (id) => window.guests.some((g) => g.id === id && g.name === 'B'), 4000, b.id));
+  check(S, 'shareJoined fires for a later joiner', await waitFor(A, (id) => window.evlog.includes('joined:' + id + ':B'), 4000, b.id));
+  check(S, 'shareJoined does not fire for phones already there', !b.evlog.some((e) => e.startsWith('joined:')), b.evlog.join(','));
+  check(S, 'enableShareTap runs userSetupComplete', a.evlog.includes('usc') && b.evlog.includes('usc'));
+  const helpers = await B.evaluate((ids) => ({
+    other: shareGuest(ids.a) && shareGuest(ids.a).name,
+    self: shareGuest(ids.b) === me,
+    missing: shareGuest('nobody'),
+    withName: guestsWith('name').length,
+    namedA: guestsWith('name', 'A').length,
+    withNothing: guestsWith('nothing').length,
+    status: shareStatusText(),
+    json: JSON.stringify(guests),
+  }), { a: a.id, b: b.id });
+  check(S, 'shareGuest finds a guest, me, or null', helpers.other === 'A' && helpers.self && helpers.missing === null, JSON.stringify(helpers));
+  check(S, 'guestsWith filters by field and value', helpers.withName === 1 && helpers.namedA === 1 && helpers.withNothing === 0, JSON.stringify(helpers));
+  check(S, 'shareStatusText says the room and who is here', /In room .*1 other here/.test(helpers.status), helpers.status);
+  check(S, 'guest ids show in JSON', helpers.json.includes(a.id), helpers.json);
   check(S, 'guests never includes yourself', !b.guests.some((g) => g.id === b.id) && !(await state(A)).guests.some((g) => g.id === a.id));
 
   await A.evaluate(() => { shared.score = 5; });
@@ -298,6 +320,8 @@ async function coreSync(browser) {
   await setHidden(C, true);
   check(S, 'hidden phone disconnects', await waitFor(C, () => !window.shareConnected && window.shareStatus === 'idle', 3000));
   check(S, 'hidden phone leaves guests at once', await waitFor(B, (id) => !window.guests.some((g) => g.id === id), 3000, cId));
+  check(S, 'shareLeft fires with the leaver\'s last me', await waitFor(B, (id) => window.evlog.includes('left:' + id + ':C'), 3000, cId));
+  check(S, 'a hidden phone keeps no guests', (await C.evaluate(() => window.guests.length)) === 0);
   await C.waitForTimeout(2500);
   check(S, 'hidden phone does not auto-reconnect', !(await C.evaluate(() => window.shareConnected)));
   await setHidden(C, false);
@@ -401,6 +425,8 @@ async function joinLink(browser) {
   await bad.mouse.click(400, 300);
   const failed = await waitFor(bad, () => window.shareStatus === 'error' && window.shareConnected === false, 5000);
   check('errors', 'unreachable host reports error status', failed, await bad.evaluate(() => window.shareStatus + ' ' + window.shareError));
+  const badText = await bad.evaluate(() => shareStatusText());
+  check('errors', 'shareStatusText explains an unreachable host', /Cannot reach the room/.test(badText), badText);
   await bad.context().close();
 }
 

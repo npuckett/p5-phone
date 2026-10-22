@@ -215,7 +215,7 @@ Callbacks your sketch can define (p5-phone calls them if present):
 - `bleReceive(name, value)` — a BLE characteristic notified or was read.
 - `shareReady()` — Share room welcome applied.
 - `shareReceive(path, value)` — remote Share patch applied.
-- `shareClosed()` / `shareHostChanged(isHost)` / `shareEvent(name, data, from)` — Share lifecycle and emits (`from` is the sender's id, matching `guests[i].id`).
+- `shareClosed()` / `shareHostChanged(isHost)` / `shareEvent(name, data, from)` — Share lifecycle and emits (`from` is the sender's id, matching `guests[i].id`). `shareJoined(id, data)` / `shareLeft(id, data)` — another phone joined after you, or left (with its last `me`).
 
 ```javascript
 function userSetupComplete() {
@@ -498,7 +498,7 @@ function setup() {
 }
 ```
 
-Functions: `shareSetup(config)`, `enableShare*` (or `shareConnect()` from a gesture), `shareDisconnect()`, `shareSet(path, v)` / `shareSetMe(path, v)`, `shareEmit(name, data?)` (one-shot room event, received in `shareEvent(name, data, from)` with the sender's id, not stored, not echoed to the sender), `shareClear()` (reset `shared` to its `shareSetup` value for everyone), `getShareJoinUrl()`, `isShareSupported()`.
+Functions: `shareSetup(config)`, `enableShare*` (or `shareConnect()` from a gesture), `shareDisconnect()`, `shareSet(path, v)` / `shareSetMe(path, v)`, `shareEmit(name, data?)` (one-shot room event, received in `shareEvent(name, data, from)` with the sender's id, not stored, not echoed to the sender), `shareClear()` (reset `shared` to its `shareSetup` value for everyone), `getShareJoinUrl()`, `isShareSupported()`, `shareGuest(id)` (that guest's `me`, or your own `me`, or `null`), `guestsWith(field, value?)` (filter guests: has the field, or has that value), `shareStatusText()` (one sentence about the connection), `keepScreenOn()` (wake lock; joining calls it). Joining from the same tap as other permissions: `enablePermissionsTap(['gyro', 'share'])` after `shareSetup()`.
 
 Join URL shape: `?shareHost=https://….workers.dev&room=my-game&app=final-project`  
 Helpers: `getShareJoinUrl()`, `showDesktopQr({ share: false })` to opt out.  

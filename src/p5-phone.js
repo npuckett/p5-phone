@@ -1544,6 +1544,8 @@ function _shareConnectFromUI(source) {
   shareConnect().then(() => {
     console.log('✅ Share connect initiated via ' + source);
   }).catch(() => {});
+  // Like every other enable* helper, the join tap runs userSetupComplete().
+  _notifySketchReady();
 }
 
 function enableShareButton(options = {}) {
@@ -3064,9 +3066,10 @@ function _shareRebuildGuestsArray() {
     // Expose id for sketches without requiring a nested {id,data} shape.
     if (entry.id !== id) {
       try {
+        // Enumerable, so console.log(guests) and JSON.stringify(guests) show who is who.
         Object.defineProperty(entry, 'id', {
           value: id,
-          enumerable: false,
+          enumerable: true,
           configurable: true,
           writable: false
         });
@@ -3179,6 +3182,14 @@ function shareSetup(config) {
   // URL params win so a shared / QR link configures every phone without edits.
   const host = (fromUrl.host || config.host || '').trim();
   const room = (fromUrl.room || config.room || '').trim();
+  if (fromUrl.room && config.room && fromUrl.room !== config.room) {
+    console.info('p5-phone Share: the address has ?room=' + fromUrl.room + ', so it is used instead of ' +
+      "room: '" + config.room + "' in shareSetup().");
+  }
+  if (fromUrl.host && config.host && fromUrl.host.replace(/\/$/, '') !== String(config.host).replace(/\/$/, '')) {
+    console.info('p5-phone Share: the address has ?shareHost=' + fromUrl.host + ', so it is used instead of ' +
+      'the host in shareSetup().');
+  }
   const app = (fromUrl.app || config.app || 'default').trim() || 'default';
 
   if (!host) {
@@ -3242,7 +3253,9 @@ function shareSetup(config) {
     // in everyone's guests (and possibly as host) until its socket times out.
     disconnectWhenHidden: config.disconnectWhenHidden !== undefined
       ? !!config.disconnectWhenHidden
-      : !!window.isMobile
+      : !!window.isMobile,
+    // A phone whose screen locks leaves the room, so joining asks for a wake lock.
+    keepScreenOn: config.keepScreenOn !== false
   };
   _shareBindVisibility();
 
@@ -3413,6 +3426,149 @@ function shareEmit(name, data) {
     msg.data = _shareCloneJson(data);
   }
   return _shareSend(msg);
+}
+
+// ---- Share helpers -------------------------------------------------------------
+
+// Joining from a tap in enablePermissionsTap(['gyro', 'share']). It does not wait for
+// the room, so the other permissions and userSetupComplete() run straight away.
+function _requestShareJoinCore() {
+  if (!_shareProfile) {
+    debugError("'share' in the permission list needs shareSetup() in setup() first.");
+    return false;
+  }
+  shareConnect().catch(function() {});
+  return true;
+}
+
+/**
+ * The guest with this id, or `me` when the id is this phone's own.
+ * Use it with the third argument of shareEvent(name, data, from) to find who sent an event.
+ * @param {string} id
+ * @returns {object|null} that phone's me, or null if it is not in the room
+ */
+function shareGuest(id) {
+  if (!id) return null;
+  if (id === window.shareClientId) return window.me;
+  return _shareGuestsById.get(id) || null;
+}
+
+/**
+ * The guests that have a field, or that have it set to a value.
+ * guestsWith('value') skips phones that have not sent a value yet.
+ * guestsWith('role', 'phone') skips a projector page in the same room.
+ * @param {string} field
+ * @param {*} [value]
+ * @returns {object[]}
+ */
+function guestsWith(field, value) {
+  const list = Array.isArray(window.guests) ? window.guests : [];
+  if (arguments.length < 2) {
+    return list.filter(function(g) { return g && g[field] !== undefined && g[field] !== null; });
+  }
+  return list.filter(function(g) { return g && g[field] === value; });
+}
+
+/**
+ * One plain sentence about the room connection, to draw on the canvas.
+ * @returns {string}
+ */
+function shareStatusText() {
+  if (window.shareStatus === 'unsupported' || window.shareSupported === false) {
+    return 'This browser cannot join a room.';
+  }
+  if (!_shareProfile) {
+    return 'No room yet. Call shareSetup({ host, room }) in setup().';
+  }
+  const room = _shareProfile.room;
+  if (window.shareConnected) {
+    const n = Array.isArray(window.guests) ? window.guests.length : 0;
+    return 'In room ' + room + ' · ' + (n === 0 ? 'nobody else here yet' : n === 1 ? '1 other here' : n + ' others here');
+  }
+  if (window.shareStatus === 'connecting') return 'Joining room ' + room + '…';
+  if (window.shareStatus === 'error') {
+    const why = window.shareError || 'Share WebSocket error';
+    if (/protocol/i.test(why)) return 'The server is a different version of Share. Redeploy it. (' + why + ')';
+    return _shareReconnectTimer
+      ? 'Cannot reach the room. Trying again. (' + why + ')'
+      : 'Cannot reach the room. (' + why + ')';
+  }
+  return 'Tap to join room ' + room + '.';
+}
+
+// ---- Keep the screen on ----------------------------------------------------------
+// A phone leaves its Share room when the screen locks. Share asks for a wake lock when
+// it joins; keepScreenOn() asks for one in any sketch. The lock is dropped by the
+// browser when the page is hidden, so it is asked for again when the page comes back.
+
+let _wakeLockSentinel = null;
+let _wakeLockWanted = false;
+let _wakeLockBound = false;
+window.screenAwake = false;
+
+/**
+ * Keep the screen on while the page is showing. Call it from a tap on iPhone.
+ * keepScreenOn(false) lets the screen sleep again.
+ * @param {boolean} [on=true]
+ * @returns {Promise<boolean>} true if the screen is being kept on
+ */
+function keepScreenOn(on) {
+  return _keepScreenOnCore(on !== false);
+}
+
+function _keepScreenOnCore(on) {
+  if (!on) {
+    _wakeLockWanted = false;
+    const sentinel = _wakeLockSentinel;
+    _wakeLockSentinel = null;
+    window.screenAwake = false;
+    if (sentinel && !sentinel.released) sentinel.release().catch(function() {});
+    return Promise.resolve(false);
+  }
+  _wakeLockWanted = true;
+  if (!_wakeLockBound && typeof document !== 'undefined') {
+    _wakeLockBound = true;
+    document.addEventListener('visibilitychange', function() {
+      if (_wakeLockWanted && document.visibilityState === 'visible') _requestWakeLock();
+    });
+  }
+  return _requestWakeLock();
+}
+
+function _requestWakeLock() {
+  if (typeof navigator === 'undefined' || !navigator.wakeLock ||
+      typeof navigator.wakeLock.request !== 'function') {
+    return Promise.resolve(false);
+  }
+  if (_wakeLockSentinel && !_wakeLockSentinel.released) return Promise.resolve(true);
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+    return Promise.resolve(false);
+  }
+  let request;
+  try {
+    request = navigator.wakeLock.request('screen');
+  } catch (err) {
+    return Promise.resolve(false);
+  }
+  return Promise.resolve(request).then(function(sentinel) {
+    if (!_wakeLockWanted) {
+      sentinel.release().catch(function() {});
+      return false;
+    }
+    _wakeLockSentinel = sentinel;
+    window.screenAwake = true;
+    sentinel.addEventListener('release', function() {
+      if (_wakeLockSentinel === sentinel) {
+        _wakeLockSentinel = null;
+        window.screenAwake = false;
+      }
+    });
+    return true;
+  }).catch(function(err) {
+    debug('keepScreenOn: ' + (err && err.message ? err.message : err));
+    window.screenAwake = false;
+    return false;
+  });
 }
 
 // Put `shared` back to the value given to shareSetup() (or {}) for everyone in the room, and
@@ -3604,6 +3760,7 @@ function _shareHandleMessage(raw) {
       break;
     }
     case 'presence': {
+      const before = _shareGuestsById;
       _shareGuestsById = new Map();
       const guests = Array.isArray(msg.guests) ? msg.guests : [];
       for (let i = 0; i < guests.length; i++) {
@@ -3613,6 +3770,15 @@ function _shareHandleMessage(raw) {
         }
       }
       _shareRebuildGuestsArray();
+      // The worker names who joined or left. guests is already up to date when these run.
+      if (typeof msg.joined === 'string' && msg.joined !== window.shareClientId &&
+          _shareGuestsById.has(msg.joined) && typeof shareJoined === 'function') {
+        shareJoined(msg.joined, _shareGuestsById.get(msg.joined));
+      }
+      if (typeof msg.left === 'string' && msg.left !== window.shareClientId &&
+          typeof shareLeft === 'function') {
+        shareLeft(msg.left, before.get(msg.left) || {});
+      }
       break;
     }
     case 'host': {
@@ -3682,6 +3848,7 @@ function shareConnect() {
   _shareReconnectStopped = false;
   _shareHiddenClosed = false;
   _shareClearReconnect();
+  if (_shareProfile.keepScreenOn) _keepScreenOnCore(true);
 
   if (_shareSocket && (_shareSocket.readyState === WebSocket.OPEN || _shareSocket.readyState === WebSocket.CONNECTING)) {
     return Promise.resolve();
@@ -3759,6 +3926,9 @@ function shareConnect() {
         _shareSocket = null;
       }
       _shareClearQueues();
+      // A page that is out of the room must not keep counting phones it can no longer see.
+      _shareGuestsById = new Map();
+      _shareRebuildGuestsArray();
       if (wasConnected && typeof shareClosed === 'function') {
         shareClosed();
       }
@@ -3795,6 +3965,8 @@ function shareDisconnect() {
   window.shareKeptUntil = 0;
   window.shareQuiet = false;
   _shareReadySent = false;
+  _shareGuestsById = new Map();
+  _shareRebuildGuestsArray();
 }
 
 function _shareBindVisibility() {
@@ -3850,7 +4022,10 @@ function _normalizePermissionList(permissions) {
     geolocation: 'geo',
     camera: 'camera',
     video: 'camera',
-    webcam: 'camera'
+    webcam: 'camera',
+    share: 'share',
+    room: 'share',
+    rooms: 'share'
   };
 
   const source = Array.isArray(permissions)
@@ -3883,7 +4058,7 @@ function _normalizePermissionList(permissions) {
   }
 
   if (normalized.length === 0) {
-    console.warn('p5-phone: No valid permission types provided. Use sensors, mic, sound, speech, vibration, torch, nfc, geo, or camera.');
+    console.warn('p5-phone: No valid permission types provided. Use sensors, mic, sound, speech, vibration, torch, nfc, geo, camera or share.');
   }
 
   return normalized;
@@ -3897,6 +4072,8 @@ async function _requestPermissionsCore(permissions) {
     _unlockAudioInGesture();
   }
   _focusSketchFrame(); // any permission: the sketch should have focus once the tap is done
+  // Joining keeps the screen on, and a wake lock is surest asked for inside the tap.
+  if (normalized.includes('share') && (!_shareProfile || _shareProfile.keepScreenOn)) _keepScreenOnCore(true);
 
   for (const permission of normalized) {
     if (permission === 'sensors') {
@@ -3917,6 +4094,8 @@ async function _requestPermissionsCore(permissions) {
       await _requestGeoPermissionCore();
     } else if (permission === 'camera') {
       await _requestCameraPermissionCore();
+    } else if (permission === 'share') {
+      _requestShareJoinCore();
     }
   }
 
@@ -5075,6 +5254,10 @@ window.shareSet = shareSet;
 window.shareSetMe = shareSetMe;
 window.shareEmit = shareEmit;
 window.shareClear = shareClear;
+window.shareGuest = shareGuest;
+window.guestsWith = guestsWith;
+window.shareStatusText = shareStatusText;
+window.keepScreenOn = keepScreenOn;
 window.getShareJoinUrl = getShareJoinUrl;
 window.enableShareTap = enableShareTap;
 window.enableShareButton = enableShareButton;
@@ -6105,6 +6288,10 @@ const _p5PhoneMethods = {
   shareSetMe,
   shareEmit,
   shareClear,
+  shareGuest,
+  guestsWith,
+  shareStatusText,
+  keepScreenOn,
   getShareJoinUrl,
   enableShareTap,
   enableShareButton,

@@ -285,7 +285,7 @@ function draw() {
 }
 ```
 
-The list can hold any of `gyro` (motion), `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo` and `camera`. Each one sets its own flag: `gyro` sets `window.sensorsEnabled`, `mic` sets `window.micOpen`, `torch` sets `window.torchEnabled`, and so on. See [Multiple Inputs and Outputs](#multiple-inputs-and-outputs) for the full list, the other styles, and adding Bluetooth or Share.
+The list can hold any of `gyro` (motion), `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo`, `camera` and `share` (join the Share room set up by `shareSetup()`). Each one sets its own flag: `gyro` sets `window.sensorsEnabled`, `mic` sets `window.micOpen`, `torch` sets `window.torchEnabled`, and so on. See [Multiple Inputs and Outputs](#multiple-inputs-and-outputs) for the full list, the other styles, and adding Bluetooth or Share.
 
 ## API Reference
 
@@ -540,12 +540,13 @@ enablePermissionsTap(['gyro', 'mic'], 'Tap to start');
 | `nfc` | NFC tags (Android) | `window.nfcEnabled` | `tag`, `tags` |
 | `geo` | GPS / location | `window.geoEnabled` | `gps`, `location`, `geolocation` |
 | `camera` | `PhoneCamera` | `window.cameraEnabled` | `video`, `webcam` |
+| `share` | joins the [Share](#share-multi-user-shared-state) room from `shareSetup()` and keeps the screen on | `window.shareConnected` (once the room answers) | `room`, `rooms` |
 
 `userSetupComplete()` runs once, after every request in the tap has finished.
 
 A complete sketch is in the Quick Start: [Several inputs and outputs from one tap](#several-inputs-and-outputs-from-one-tap).
 
-**Bluetooth and Share as well.** They are not in the list, and a second `enable*` call in `setup()` would remove the first one's tap screen. Start them once the first tap has worked. The Bluetooth chooser needs a tap of its own, so show its button from `userSetupComplete()`:
+**Bluetooth as well.** It is not in the list, and a second `enable*` call in `setup()` would remove the first one's tap screen. Start them once the first tap has worked. The Bluetooth chooser needs a tap of its own, so show its button from `userSetupComplete()`:
 
 ```javascript
 function setup() {
@@ -561,7 +562,7 @@ function userSetupComplete() {
 }
 ```
 
-For Share, call `shareSetup()` in `setup()` and `shareConnect()` in `userSetupComplete()`. Share needs no second tap.
+Share is in the list: call `shareSetup()` in `setup()`, then put `'share'` in the same tap, as in `enablePermissionsTap(['gyro', 'share'], 'Tap to join')`. The tap joins the room and keeps the screen on, and does not wait for the room before `userSetupComplete()` runs.
 
 ### Motion Sensor Activation
 
@@ -1317,11 +1318,13 @@ https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
 2. Call `enableShareTap()` (or another `enableShare*` helper) so the user joins from a tap. On desktop, `showDesktopQr()` helps others join.
 
 **Commands:**
-- `shareSetup({ host, room, app, shared, me, keep, quiet, autoReconnect, sendInterval, disconnectWhenHidden })` — configure PartyServer host and room (URL query params override host/room/app when present)
+- `shareSetup({ host, room, app, shared, me, keep, quiet, autoReconnect, sendInterval, disconnectWhenHidden, keepScreenOn })` — configure PartyServer host and room (URL query params override host/room/app when present)
   - `keep` (default off): keep the room's `shared` after the last phone leaves. `true` (7 days), a number of ms, a string like `'30m'`, `'24h'` or `'7d'`, or `{ expire: '24h' }`. The most is 30 days. See [Keep the room between visits](#keep-the-room-between-visits)
   - `quiet` (default `false`): do not send this phone the other phones' `me` changes. For a page that reads only `shared`. `guests` then tells you who is here and their role, not their live values. See [Quiet](companion/P5PhoneShare/README.md#quiet-a-page-that-does-not-read-the-other-phones-values)
   - `sendInterval` (ms, default `50`): changes are batched and sent at most this often; `0` sends each change at once
   - `disconnectWhenHidden` (default `true` on phones): leave the room while the page is hidden (screen locked, another app) and rejoin when it is visible, keeping `me`
+  - `keepScreenOn` (default `true`): joining asks for a screen wake lock, and asks again when the page comes back, so a phone does not drop out of the room when its screen would lock. `false` leaves the screen alone
+  - If the page address has `?room=` or `?shareHost=`, it wins over the config, and the console says so
 - `getShareJoinUrl()` — sketch URL with `shareHost` / `room` / `app` for copy/QR sharing
 - `enableShareTap(label | options?)`, `enableShareButton(label | options?)`, `enableShareCanvas(label | options?)`, `enableShareBanner(label | options?)`, `enableShareMinimal(label | options?)`, `enableShareOn(selector)` — gesture-gated join UI
 - `shareConnect()` / `shareDisconnect()` — low-level connect/disconnect
@@ -1329,11 +1332,15 @@ https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
 - `shareEmit(name, data?)` — room one-shot events (not stored). Others receive them in `shareEvent(name, data, from)`, where `from` is the sender's id (the same `id` as in `guests`), so `guests.find(g => g.id === from)` is the sender's `me`
 - `shareClear()` — put `shared` back to the value you gave `shareSetup()` (or `{}`) for every phone in the room, and erase the kept copy
 - `isShareSupported()` — WebSocket availability check
+- `shareGuest(id)` — the guest with that id (its `me`), or your own `me` for your own id, or `null`. Use it with `from` in `shareEvent(name, data, from)` to find who sent an event
+- `guestsWith(field, value?)` — the guests that have `field` (`guestsWith('value')` skips phones that have not sent one yet), or that have it set to `value` (`guestsWith('role', 'phone')` skips a projector page)
+- `shareStatusText()` — one plain sentence about the connection, to draw on the canvas: "Tap to join room demo.", "Joining room demo…", "In room demo · 2 others here", "Cannot reach the room. Trying again. (…)"
+- `keepScreenOn(on = true)` — keep the screen on while the page is showing (a wake lock, asked for again when the page comes back). Share calls it when you join; any sketch can call it from a tap. `window.screenAwake` is `true` while it holds
 
 **Live objects / status:**
 - `shared` — room-scoped object (Proxy; assign like `shared.score = 1`; arrays sync too: `shared.list.push(x)`)
 - `me` — this client's per-guest object
-- `guests` — array of other clients' `me` objects (with `quiet`, snapshots: who is here and their role, not live values)
+- `guests` — array of other clients' `me` objects (with `quiet`, snapshots: who is here and their role, not live values). Each has its `id`, which shows in `console.log` and `JSON.stringify`. A page that is out of the room has no guests: the list empties when the connection closes, and fills again when it rejoins
 - `window.shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`
 - `window.shareKept` — `true` once the server has said it keeps this room; `window.shareKeptUntil` — when the kept copy is deleted if nothing changes (ms, like `Date.now()`), or `0`
 - `window.shareQuiet` — `true` once the server has said it will not send this phone the other phones' `me` changes
@@ -1346,6 +1353,8 @@ function shareReceive(path, value) { /* remote patch */ }
 function shareClosed() {}
 function shareHostChanged(isHost) {}
 function shareEvent(name, data, from) { /* shareEmit traffic; from is the sender's id, as in guests[i].id */ }
+function shareJoined(id, data) { /* another phone joined after you; data is its me, already in guests */ }
+function shareLeft(id, data) { /* a phone left; data is its last me, already gone from guests */ }
 ```
 
 **Minimal sketch:**

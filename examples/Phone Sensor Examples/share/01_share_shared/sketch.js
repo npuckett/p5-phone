@@ -54,12 +54,19 @@ function mousePressed() {
   if (!shareConnected) return false;
 
   if (mouseY < height * 0.5) {
-    shared.score = (shared.score || 0) + 1;
+    // Last write wins: two phones adding 1 at the same moment would count once.
+    // So only the host writes the score, and every other phone asks it to.
+    if (shareIsHost) shared.score = (shared.score || 0) + 1;
+    else shareEmit('plusOne');
   } else {
     const next = COLORS[floor(random(COLORS.length))];
     shared.color = next;
   }
   return false;
+}
+
+function shareEvent(name, data, from) {
+  if (name === 'plusOne' && shareIsHost) shared.score = (shared.score || 0) + 1;
 }
 
 function shareReady() {
