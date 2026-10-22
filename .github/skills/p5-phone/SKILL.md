@@ -6,7 +6,7 @@ argument-hint: "Describe the p5-phone example or API question"
 
 # p5-phone: Mobile Hardware for p5.js
 
-p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, Bluetooth LE, and multi-user Share rooms — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.15.4**.
+p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, Bluetooth LE, and multi-user Share rooms — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.16.0**.
 
 It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public function is attached to `window` (global mode) and mirrored on `p5.prototype` (instance mode), so you call them as bare globals like `lockGestures()` and `enableGyroTap()`.
 
@@ -34,7 +34,7 @@ HTML baseline (p5.js 2-compatible):
   </style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.4/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.16.0/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>
@@ -215,7 +215,7 @@ Callbacks your sketch can define (p5-phone calls them if present):
 - `bleReceive(name, value)` — a BLE characteristic notified or was read.
 - `shareReady()` — Share room welcome applied.
 - `shareReceive(path, value)` — remote Share patch applied.
-- `shareClosed()` / `shareHostChanged(isHost)` / `shareEvent(name, data)` — Share lifecycle and emits.
+- `shareClosed()` / `shareHostChanged(isHost)` / `shareEvent(name, data, from)` — Share lifecycle and emits (`from` is the sender's id, matching `guests[i].id`). `shareJoined(id, data)` / `shareLeft(id, data)` — another phone joined after you, or left (with its last `me`).
 
 ```javascript
 function userSetupComplete() {
@@ -498,7 +498,7 @@ function setup() {
 }
 ```
 
-Functions: `shareSetup(config)`, `enableShare*` (or `shareConnect()` from a gesture), `shareDisconnect()`, `shareSet(path, v)` / `shareSetMe(path, v)`, `shareEmit(name, data?)` (one-shot room event, received in `shareEvent(name, data)`, not stored, not echoed to the sender), `shareClear()` (reset `shared` to its `shareSetup` value for everyone), `getShareJoinUrl()`, `isShareSupported()`.
+Functions: `shareSetup(config)`, `enableShare*` (or `shareConnect()` from a gesture), `shareDisconnect()`, `shareSet(path, v)` / `shareSetMe(path, v)`, `shareEmit(name, data?)` (one-shot room event, received in `shareEvent(name, data, from)` with the sender's id, not stored, not echoed to the sender), `shareClear()` (reset `shared` to its `shareSetup` value for everyone), `getShareJoinUrl()`, `isShareSupported()`, `shareGuest(id)` (that guest's `me`, or your own `me`, or `null`), `guestsWith(field, value?)` (filter guests: has the field, or has that value), `shareStatusText()` (one sentence about the connection), `keepScreenOn()` (wake lock; joining calls it). Joining from the same tap as other permissions: `enablePermissionsTap(['gyro', 'share'])` after `shareSetup()`.
 
 Join URL shape: `?shareHost=https://….workers.dev&room=my-game&app=final-project`  
 Helpers: `getShareJoinUrl()`, `showDesktopQr({ share: false })` to opt out.  
