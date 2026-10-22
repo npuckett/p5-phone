@@ -3625,7 +3625,8 @@ function _shareHandleMessage(raw) {
     }
     case 'emit':
       if (typeof shareEvent === 'function') {
-        shareEvent(msg.name, msg.data);
+        // The worker stamps every event with the sender's id, so a sketch can tell who sent it.
+        shareEvent(msg.name, msg.data, typeof msg.clientId === 'string' ? msg.clientId : null);
       }
       break;
     case 'kept':

@@ -1326,7 +1326,7 @@ https://your-sketch.example/?shareHost=https://YOUR.workers.dev&room=my-game
 - `enableShareTap(label | options?)`, `enableShareButton(label | options?)`, `enableShareCanvas(label | options?)`, `enableShareBanner(label | options?)`, `enableShareMinimal(label | options?)`, `enableShareOn(selector)` — gesture-gated join UI
 - `shareConnect()` / `shareDisconnect()` — low-level connect/disconnect
 - `shareSet(path, value)` / `shareSetMe(path, value)` — explicit path writes (`'pos.x'`)
-- `shareEmit(name, data?)` — room one-shot events (not stored)
+- `shareEmit(name, data?)` — room one-shot events (not stored). Others receive them in `shareEvent(name, data, from)`, where `from` is the sender's id (the same `id` as in `guests`), so `guests.find(g => g.id === from)` is the sender's `me`
 - `shareClear()` — put `shared` back to the value you gave `shareSetup()` (or `{}`) for every phone in the room, and erase the kept copy
 - `isShareSupported()` — WebSocket availability check
 
@@ -1345,7 +1345,7 @@ function shareReady() { /* welcome applied */ }
 function shareReceive(path, value) { /* remote patch */ }
 function shareClosed() {}
 function shareHostChanged(isHost) {}
-function shareEvent(name, data) { /* shareEmit traffic */ }
+function shareEvent(name, data, from) { /* shareEmit traffic; from is the sender's id, as in guests[i].id */ }
 ```
 
 **Minimal sketch:**

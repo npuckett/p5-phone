@@ -85,7 +85,7 @@ function setup(){
 function draw(){ background(40); }
 function shareReady(){ evlog.push('ready'); }
 function shareReceive(p, v){ evlog.push('recv:' + p); }
-function shareEvent(n, d){ evlog.push('event:' + n + ':' + JSON.stringify(d)); }
+function shareEvent(n, d, from){ evlog.push('event:' + n + ':' + JSON.stringify(d)); evlog.push('eventFrom:' + n + ':' + from); }
 function shareHostChanged(h){ evlog.push('host:' + h); }
 function shareClosed(){ evlog.push('closed'); }
 function mouseReleased(){ evlog.push('mouseReleased'); }`;
@@ -216,6 +216,8 @@ async function coreSync(browser) {
   await A.evaluate(() => { shareEmit('boom', { k: 1 }); });
   check(S, 'shareEmit reaches others', await waitFor(B, () => window.evlog.includes('event:boom:{"k":1}')));
   await A.waitForTimeout(200);
+  const aId = await A.evaluate(() => window.shareClientId);
+  check(S, 'shareEvent gets the sender id', await waitFor(B, (id) => window.evlog.includes('eventFrom:boom:' + id), 4000, aId));
   check(S, 'shareEmit does not echo to sender', !(await state(A)).evlog.some((e) => e.startsWith('event:boom')));
 
   await A.evaluate(() => { shared.list = [1, 2]; });
