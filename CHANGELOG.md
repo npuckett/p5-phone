@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.16.0] - 2026-10-22
 
 ### Added
 - **Share helpers for the code every multi-phone sketch was writing by hand.** All client-side; they need no worker change.
