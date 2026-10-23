@@ -1801,68 +1801,45 @@ debug({rotation: rotationX, acceleration: accelerationX});
 
 **Purpose:** Stop the phone from dimming and locking while a sketch runs. Only touches reset the phone's auto-lock timer, so a sketch driven by motion, sound, GPS, or BLE goes dark after 30 seconds or so unless it holds a wake lock.
 
-This is the browser's own [Screen Wake Lock API](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API), not a p5-phone function. It takes a few lines, so p5-phone does not wrap it.
+From 1.16.0, p5-phone has `keepScreenOn()`. It uses the browser's [Screen Wake Lock API](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API) and asks for the lock again each time the page comes back. Joining a [Share](#share-multi-user-shared-state) room calls it for you (turn that off with `shareSetup({ keepScreenOn: false })`).
 
 **Commands:**
 
 | Command | Purpose |
 |---------|---------|
-| `await navigator.wakeLock.request('screen')` | Keep the screen on while the page is visible. Returns a `WakeLockSentinel` |
-| `await wakeLock.release()` | Let the screen sleep again. A released sentinel can't be reused; request a new one |
-| `wakeLock.released` | `true` once the lock is gone, whether the sketch released it or the browser did |
-| `wakeLock.addEventListener('release', fn)` | Run `fn` when the lock is released |
-| `'wakeLock' in navigator` | `false` in browsers without the API and on pages not served over HTTPS |
+| `keepScreenOn()` | Keep the screen on while the page is showing. Returns a `Promise<boolean>`: `true` if the screen is being kept on |
+| `keepScreenOn(false)` | Let the screen sleep again |
+| `window.screenAwake` | `true` while the lock is held. It turns `false` when the browser drops the lock and `true` again when `keepScreenOn()` gets it back |
 
 **Things to know:**
-- **Ask from a tap, in `mouseReleased()`.** iOS Safari refuses the first request without a user gesture, and a touch only counts as one when the finger lifts, so `mousePressed()` is too early. `userSetupComplete()` is too late: it runs after the permission prompts, when iOS may no longer count the tap. Chrome doesn't need a tap, but asking from one works everywhere.
-- **Ask again when the page comes back.** The browser releases the lock whenever the page is hidden (another app, another tab, the side button), and it doesn't come back by itself. Request it again on `visibilitychange`. On iOS, only the first request needs a tap.
-- **Expect refusals.** Power saving or a low battery can refuse or drop the lock, so wrap the request in `try`/`catch`.
+- **Call it from a tap, in `mouseReleased()`.** iOS Safari refuses the first request without a user gesture, and a touch only counts as one when the finger lifts, so `mousePressed()` is too early. `userSetupComplete()` is too late: it runs after the permission prompts, when iOS may no longer count the tap. Chrome doesn't need a tap, but calling it from one works everywhere.
+- **It comes back by itself.** The browser releases the lock whenever the page is hidden (another app, another tab, the side button). After `keepScreenOn()`, p5-phone asks again when the page is visible. On iOS, only the first request needs a tap.
+- **Expect refusals.** Power saving or a low battery can refuse or drop the lock. `keepScreenOn()` then resolves `false` and `screenAwake` stays `false`; it does not throw.
 - **HTTPS only** (or `localhost`).
-- **Not in the p5.js Web Editor.** Its preview runs in an iframe without `allow="screen-wake-lock"`, so the request fails with `NotAllowedError`. Host the sketch on its own page, such as GitHub Pages. An iframe on your own site needs `allow="screen-wake-lock"`.
+- **Not in the p5.js Web Editor.** Its preview runs in an iframe without `allow="screen-wake-lock"`, so the request is refused. Host the sketch on its own page, such as GitHub Pages. An iframe on your own site needs `allow="screen-wake-lock"`.
 - **It only keeps the screen on.** It can't change the phone's auto-lock setting or brightness, turn on a screen that is already off, or keep the sketch running in the background.
 
 **Support:** Chrome and Edge (Android and desktop), Safari 16.4+ on iOS (Home Screen web apps from iOS 18.4), Firefox 126+.
 
 ```javascript
-let wakeLock = null;
-let wantAwake = false;
-
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
-
-  // The lock is dropped while the page is hidden. Ask again when it's back.
-  document.addEventListener('visibilitychange', () => {
-    if (wantAwake && document.visibilityState === 'visible') {
-      requestWakeLock();
-    }
-  });
-}
-
-async function requestWakeLock() {
-  try {
-    wakeLock = await navigator.wakeLock.request('screen');
-  } catch (err) {
-    debugWarn('Wake lock refused: ' + err.message);
-  }
 }
 
 function mouseReleased() {
-  const awake = wakeLock !== null && !wakeLock.released;
-  if ('wakeLock' in navigator && !awake) {
-    wantAwake = true;
-    requestWakeLock();
-  }
+  keepScreenOn(!window.screenAwake);   // each tap turns it on or off
   return false;
 }
 
 function draw() {
-  const awake = wakeLock !== null && !wakeLock.released;
-  background(awake ? 'gold' : 20);
+  background(window.screenAwake ? 'gold' : 20);
 }
 ```
 
-Example: [Keep Screen On](examples/Phone%20Sensor%20Examples/wakelock/01_keep_screen_on/) (tap to toggle the lock, with a timer since the last touch).
+**The browser API underneath.** With p5-phone 1.15.4 or earlier, or to handle the lock yourself, call it directly: `wakeLock = await navigator.wakeLock.request('screen')` in a `try`/`catch` from a tap, `await wakeLock.release()` to let the screen sleep, `wakeLock.released` to see whether the lock is gone, and a `visibilitychange` listener that asks again when the page is visible. `'wakeLock' in navigator` is `false` without the API or without HTTPS.
+
+Example: [Keep Screen On](examples/Phone%20Sensor%20Examples/wakelock/01_keep_screen_on/) (tap to toggle the lock, with a timer since the last touch). It calls the browser API directly, so it also works with p5-phone 1.15.4 and earlier.
 
 ---
 
@@ -2073,7 +2050,7 @@ You can also check the status variables at any time:
 
 ### The screen goes dark while my sketch is running
 
-Only touches reset the phone's auto-lock timer, so tilting the phone, making sound, or walking with GPS doesn't keep the screen on. Hold a wake lock: see [Screen Wake Lock (Keep the Screen On)](#screen-wake-lock-keep-the-screen-on).
+Only touches reset the phone's auto-lock timer, so tilting the phone, making sound, or walking with GPS doesn't keep the screen on. Call `keepScreenOn()` from a tap (p5-phone 1.16.0+): see [Screen Wake Lock (Keep the Screen On)](#screen-wake-lock-keep-the-screen-on).
 
 ### Vibration isn't working on iOS
 

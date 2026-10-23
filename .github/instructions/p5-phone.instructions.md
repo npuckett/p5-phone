@@ -56,7 +56,7 @@ For arbitrary combinations, use `enablePermissionsTap(['gyro', 'torch'])`, `enab
 
 Aliases: `enableSensorTap`, `enableSensorButton` and the other `enableSensor*` styles are the same functions as `enableGyro*`. Write `enableGyro*`.
 
-Each `enable*` call removes the button or overlay of an earlier one, so use one call per tap (combine with `enablePermissions*`). BLE and Share are not tokens there: call `enableBle*()` or `shareConnect()` inside `userSetupComplete()`.
+Each `enable*` call removes the button or overlay of an earlier one, so use one call per tap (combine with `enablePermissions*`). Share is a name there (`'share'`, after `shareSetup()` in `setup()`). BLE is not: call `enableBle*()` inside `userSetupComplete()`.
 
 ## Status Variables
 

@@ -85,7 +85,7 @@ function mousePressed() {
 5. **Serve over HTTPS** (or `localhost`). Sensors, mic, camera, NFC, BLE, GPS, and torch all require a secure context on mobile.
 6. **Need several hardware features from one tap? Use a single combined call** — `enablePermissionsTap(['gyro', 'torch'])` — not several single-permission binds on the same gesture. One call keeps iOS transient activation intact and fires `userSetupComplete()` once.
 7. **Use exactly one activation style per permission need** unless the user explicitly asks to compare styles.
-8. **One `enable*` call at a time.** Each `enable*` call removes the button, overlay or banner of any earlier one, so `enableGyroTap()` followed by `enableBleButton()` leaves only the BLE button and motion never starts. Combine permissions in one `enablePermissions*` call. BLE and Share are not tokens there: start them from `userSetupComplete()` (see [Combining features](#combining-features)).
+8. **One `enable*` call at a time.** Each `enable*` call removes the button, overlay or banner of any earlier one, so `enableGyroTap()` followed by `enableBleButton()` leaves only the BLE button and motion never starts. Combine permissions in one `enablePermissions*` call; Share can go in it as `'share'`. BLE is not a name there: start it from `userSetupComplete()` (see [Combining features](#combining-features)).
 
 ## Use p5.js built-ins — do not reimplement them
 
@@ -151,9 +151,9 @@ Notes:
 
 `enablePermissions*` (a.k.a. `enableHardware*`) takes a list plus a message. The list can be an array or a space/comma string.
 
-**Names for the list:** `gyro` (motion and orientation, like `enableGyroTap()`; it sets `window.sensorsEnabled`), `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo`, `camera`. Write `gyro` for motion in generated code, not the more generic `sensors`.
+**Names for the list:** `gyro` (motion and orientation, like `enableGyroTap()`; it sets `window.sensorsEnabled`), `mic`, `sound`, `speech`, `vibration`, `torch`, `nfc`, `geo`, `camera`, `share` (joins the room from `shareSetup()` and keeps the screen on; call `shareSetup()` in `setup()` first). Write `gyro` for motion in generated code, not the more generic `sensors`.
 
-**Other names that work** (each means the same as one above): `motion`, `sensors`, `sensor`, `orientation`, `gyroscope`, `accelerometer` → `gyro`; `microphone`, `audioin` → `mic`; `audio`, `audiooutput`, `output` → `sound`; `voice`, `recognition` → `speech`; `vibrate`, `haptic`, `haptics` → `vibration`; `flashlight`, `flash`, `light` → `torch`; `tag`, `tags` → `nfc`; `gps`, `location`, `geolocation` → `geo`; `video`, `webcam` → `camera`; `all` → `gyro` + `mic`.
+**Other names that work** (each means the same as one above): `motion`, `sensors`, `sensor`, `orientation`, `gyroscope`, `accelerometer` → `gyro`; `microphone`, `audioin` → `mic`; `audio`, `audiooutput`, `output` → `sound`; `voice`, `recognition` → `speech`; `vibrate`, `haptic`, `haptics` → `vibration`; `flashlight`, `flash`, `light` → `torch`; `tag`, `tags` → `nfc`; `gps`, `location`, `geolocation` → `geo`; `video`, `webcam` → `camera`; `room`, `rooms` → `share`; `all` → `gyro` + `mic`.
 
 ```javascript
 function setup() {
@@ -169,7 +169,7 @@ function draw() {
 }
 ```
 
-**BLE or Share as well.** `ble` and `share` are not tokens, and a second `enable*` call in `setup()` would remove the first one's UI. Start them once the first tap has worked:
+**BLE as well.** `ble` is not a name for the list, and a second `enable*` call in `setup()` would remove the first one's UI. Start it once the first tap has worked:
 
 ```javascript
 function setup() {
@@ -185,7 +185,7 @@ function userSetupComplete() {
 }
 ```
 
-For Share, call `shareSetup()` in `setup()` and `shareConnect()` in `userSetupComplete()`. Share needs no second tap.
+Share is in the list: call `shareSetup()` in `setup()`, then `enablePermissionsTap(['gyro', 'share'], 'Tap to join')`. The tap joins the room and keeps the screen on; `userSetupComplete()` runs without waiting for the room, so read `window.shareConnected` (or use `shareReady()`) before relying on `shared`.
 
 ## Status variables and callbacks
 
@@ -202,6 +202,7 @@ Read these `window.*` flags before using hardware data:
 - **BLE:** `bleSupported`, `bleConnected`, `bleStatus`, `bleError`, `bleDeviceName`, `bleValues`
 - **Share:** `shareSupported`, `shareConnected`, `shareStatus`, `shareError`, `shareRoom`, `shareClientId`, `shareIsHost`, `shareKept`, `shareKeptUntil`, `shareQuiet`, `shared`, `me`, `guests`
 - **Camera:** `cameraEnabled`
+- **Wake lock:** `screenAwake` (set by `keepScreenOn()` and by joining a Share room)
 - **Gestures:** `gesturesLocked`
 - **Device:** `isMobile`, `isDesktop` (best-effort detection, set when the library loads)
 
@@ -560,48 +561,35 @@ Keep flashing pulses slow and short, avoid rapid strobing, and call `torchOff()`
 
 ## Screen Wake Lock (keep the screen on)
 
-Only touches reset the phone's auto-lock timer, so a sketch driven by motion, sound, GPS, or BLE goes dark after about 30 seconds. Keep the screen on with the browser's own Screen Wake Lock API. **It is not a p5-phone feature:** there is no `keepScreenOn()`, no `enableWakeLock*()`, and no `wakelock` token for `enablePermissions*`. Do not invent them; call `navigator.wakeLock` directly.
+Only touches reset the phone's auto-lock timer, so a sketch driven by motion, sound, GPS, or BLE goes dark after about 30 seconds. From p5-phone 1.16.0, call `keepScreenOn()` from a tap. It wraps the browser's Screen Wake Lock API and asks for the lock again each time the page comes back. Joining a Share room calls it for you (`shareSetup({ keepScreenOn: false })` turns that off). There is no `enableWakeLock*()` and no `wakelock` name for `enablePermissions*`; do not invent them.
 
 ```javascript
-let wakeLock = null;
-let wantAwake = false;
-
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
-  // The browser drops the lock while the page is hidden. Ask again when it's back.
-  document.addEventListener('visibilitychange', () => {
-    if (wantAwake && document.visibilityState === 'visible') requestWakeLock();
-  });
-}
-
-async function requestWakeLock() {
-  try {
-    wakeLock = await navigator.wakeLock.request('screen');
-  } catch (err) {
-    debugWarn('Wake lock refused: ' + err.message); // power saving, low battery, blocked iframe
-  }
 }
 
 function mouseReleased() {
-  const awake = wakeLock !== null && !wakeLock.released;
-  if ('wakeLock' in navigator && !awake) {
-    wantAwake = true;
-    requestWakeLock();
-  }
+  keepScreenOn(!window.screenAwake); // each tap turns it on or off
   return false;
+}
+
+function draw() {
+  background(window.screenAwake ? 'gold' : 20);
 }
 ```
 
-- **Request from `mouseReleased()`.** iOS Safari refuses the first request without a user gesture, and a touch only counts as one when the finger lifts, so `mousePressed()` is too early. `userSetupComplete()` is too late: it runs after the permission prompts, when iOS may no longer count the tap. Chrome needs no gesture.
-- **Request again on `visibilitychange`.** The lock is released whenever the page is hidden (another app, another tab, the side button) and never comes back by itself. On iOS, only the first request needs a tap.
-- Wrap `request()` in `try`/`catch`: power saving and low battery can refuse or drop the lock. Check `wakeLock.released` (or listen for the sentinel's `release` event) rather than assuming the lock is still held.
-- HTTPS or `localhost` only; `'wakeLock' in navigator` is `false` otherwise.
-- It fails in the p5.js Web Editor with `NotAllowedError`, because the preview iframe lacks `allow="screen-wake-lock"`. Host the sketch on its own page (GitHub Pages works).
+- `keepScreenOn()` returns a `Promise<boolean>` (`true` if the screen is being kept on); `keepScreenOn(false)` lets the screen sleep. `window.screenAwake` is `true` while the lock is held.
+- **Call it from `mouseReleased()`.** iOS Safari refuses the first request without a user gesture, and a touch only counts as one when the finger lifts, so `mousePressed()` is too early. `userSetupComplete()` is too late: it runs after the permission prompts, when iOS may no longer count the tap. Chrome needs no gesture.
+- The browser releases the lock whenever the page is hidden (another app, another tab, the side button); after `keepScreenOn()`, p5-phone asks again when the page is visible. On iOS, only the first request needs a tap.
+- A refusal (power saving, low battery, a blocked iframe) resolves `false` and leaves `screenAwake` `false`; it does not throw.
+- HTTPS or `localhost` only.
+- It is refused in the p5.js Web Editor, because the preview iframe lacks `allow="screen-wake-lock"`. Host the sketch on its own page (GitHub Pages works).
 - It only keeps the screen on. It can't change the phone's auto-lock setting or brightness, turn on a screen that is off, or keep the sketch running in the background.
 - Support: Chrome and Edge, Safari 16.4+ on iOS (Home Screen web apps from 18.4), Firefox 126+.
+- For p5-phone 1.15.4 or earlier, call the browser API directly: `wakeLock = await navigator.wakeLock.request('screen')` in a `try`/`catch` from `mouseReleased()`, and ask again on `visibilitychange` when the page is visible.
 
-Example: `examples/Phone Sensor Examples/wakelock/01_keep_screen_on/`.
+Example: `examples/Phone Sensor Examples/wakelock/01_keep_screen_on/` (it calls `navigator.wakeLock` directly, so it also runs on 1.15.4).
 
 ## lockGestures reference
 

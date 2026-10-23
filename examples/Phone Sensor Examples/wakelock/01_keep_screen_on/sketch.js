@@ -1,5 +1,7 @@
 // Keep the screen from dimming and locking with the browser's Screen Wake Lock API.
-// navigator.wakeLock is built into the browser, not part of p5-phone.
+// This sketch calls navigator.wakeLock directly. From p5-phone 1.16.0, keepScreenOn()
+// does the same in one line (and asks again when the page comes back), and
+// window.screenAwake says whether the lock is held.
 // Only touches reset the phone's auto-lock timer, so sketches driven by motion,
 // sound, GPS or BLE go dark after a while unless they hold a wake lock.
 

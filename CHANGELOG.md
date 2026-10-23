@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- **Docs caught up with 1.16.0.** SKILL.md (and its four copies, and `examples/SKILL.zip`), the Copilot instructions and the homepage API list said `'share'` could not go in `enablePermissions*`; it can, after `shareSetup()`. SKILL.md, the README and the homepage also said p5-phone had no wake-lock function, and SKILL.md told assistants not to use `keepScreenOn()`. Their wake-lock sections now lead with `keepScreenOn()` and `window.screenAwake`, with the browser API as the fallback for 1.15.4 and earlier. The homepage API list gains `shareJoined` / `shareLeft`, `shareGuest()`, `guestsWith()`, `shareStatusText()`, `shareKept` / `shareKeptUntil` / `shareQuiet`, the other Share callbacks and the `keepScreenOn` option. The 1.16.0 npm package still has the old README and SKILL.zip.
+
 ## [1.16.0] - 2026-10-22
 
 ### Added
