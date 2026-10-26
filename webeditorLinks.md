@@ -6,6 +6,8 @@ Several examples link to the p5 Web Editor so users can edit starter sketches an
 
 ## Migration log
 
+**2026-10-26 (p5-phone 1.16.1):** Exported with `npm run export:webeditor` (in d7018eb), then synced with `npx p5-webeditor-sync sync --batch all`: 37 projects updated, the three THREE.js projects skipped as unchanged, no failures, sketch IDs unchanged. `npm run verify:webeditor` verified all 37 against `p5-phone@1.16.1`. The CC2026 sketches on the creationcomputation account were not synced in this batch.
+
 **2026-10-22 (p5-phone 1.16.0):** Exported with `npm run export:webeditor` (in b205aba), then synced with `npx p5-webeditor-sync sync --batch all`: 37 projects updated, the three THREE.js projects skipped as unchanged, no failures, sketch IDs unchanged. `npm run verify:webeditor` verified all 37 against `p5-phone@1.16.0`. The device-shaken Present page loads and shows its motion tap, with no console errors. The CC2026 sketches on the creationcomputation account were not synced in this batch.
 
 **2026-10-08 (sound tracks):** Sound Basic and Volume by Touches carried `tracks/*.mp3` that their sketches never load (both make their sound with `p5.Oscillator`), and p5-webeditor-sync 1.1.0 uploaded those MP3s corrupted (about 221,000 U+FFFD characters each). `export-projects.mjs` now leaves their `tracks/` out. Re-exported, then synced the two with `npx p5-webeditor-sync sync --slug sound-basic` and `--slug volume-touches`: both updated, sketch IDs unchanged. Read back through the editor API, each has only `index.html` and `sketch.js`, both match `webeditor/projects/`, and `index.html` loads `p5-phone@1.15.4`. The Sound Basic Present page loads with no console errors.
