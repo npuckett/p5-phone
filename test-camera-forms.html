@@ -6,14 +6,15 @@
   <title>p5-phone: camera and form controls check</title>
   <style>
     body { margin: 0; padding: 0; overflow: hidden; background: #101318; }
-    input, select { font: 16px system-ui, sans-serif; }
+    input, select, button { font: 16px system-ui, sans-serif; }
   </style>
   <!--
-    Laptop and phone check for image(cam) under p5.js 2.2.3 and for text fields with
-    lockGestures(). Serve over HTTPS or localhost:  npm run serve:docs  ->  /test-camera-forms.html
+    Laptop and phone check for image(cam) under p5.js 2.2.3 and for text fields and buttons
+    with lockGestures(). Serve over HTTPS or localhost:  npm run serve:docs  ->  /test-camera-forms.html
     Query params:
       lib  = src | 1.15.4              this repo's src/p5-phone.js, or the published 1.15.4 to compare (default src)
       mode = fullscreen | embedded     lockGestures() mode (default fullscreen)
+      p5   = 2 | 1                     p5.js 2.2.3, or p5.js 1.11.10 for the button check (default 2)
 
     Tap to enable the camera, then:
       PASS: the camera fills the screen and "p5.js warnings" stays at 0.
@@ -23,6 +24,10 @@
             you type appears in the field and on "field". The select opens, and the checkbox
             toggles on every tap, two quick taps included.
             (1.15.4: "focused" stays BODY and no keyboard comes up)
+      PASS: every tap on "tap me" adds one to "button", quick taps included, and quick taps
+            on it never zoom the page (check this one on an iPhone).
+            (1.15.4 with p5=1: on a phone it stays at 0; with p5=2: quick taps in fullscreen
+            count every second one)
       The page itself must still not scroll, zoom or pull to refresh when you drag the camera.
   -->
   <script>
@@ -38,7 +43,9 @@
     (function () {
       var lib = new URLSearchParams(location.search).get('lib');
       var urls = [
-        'https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js',
+        new URLSearchParams(location.search).get('p5') === '1'
+          ? 'https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.js'
+          : 'https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js',
         lib === '1.15.4' ? 'https://cdn.jsdelivr.net/npm/p5-phone@1.15.4/dist/p5-phone.js' : 'src/p5-phone.js'
       ];
       urls.forEach(function (u) { document.write('<script src="' + u + '"><\/script>'); });
@@ -55,6 +62,8 @@ let field;
 let menu;
 let box;
 let toggles = 0;
+let button;
+let buttonTaps = 0;
 
 function setup() {
   const canvas = createCanvas(windowWidth, windowHeight);
@@ -77,6 +86,8 @@ function setup() {
   box.style('color', '#fff');
   box.style('font', '16px system-ui, sans-serif');
   box.changed(() => toggles++);
+  button = createButton('tap me');
+  button.mousePressed(() => buttonTaps++);
   placeControls();
 }
 
@@ -87,7 +98,7 @@ function draw() {
   const active = document.activeElement;
   noStroke();
   fill(0, 170);
-  rect(0, 0, width, 190);
+  rect(0, 0, width, 210);
   fill(255);
   textSize(16);
   textAlign(LEFT, TOP);
@@ -98,6 +109,7 @@ function draw() {
     'focused: ' + (active ? active.tagName : 'none'),
     'field: "' + field.value() + '"   select: ' + menu.value(),
     'checkbox: ' + (box.checked() ? 'on' : 'off') + ', toggled ' + toggles + ' times',
+    'button: tapped ' + buttonTaps + ' times',
   ].join('\n'), 16, 16, width - 32);
 }
 
@@ -112,6 +124,8 @@ function placeControls() {
   field.size(Math.min(320, width - 32), 32);
   menu.position(16, y + 48);
   box.position(130, y + 52);
+  button.position(16, y + 96);
+  button.size(120, 36);
 }
 
 function windowResized() {

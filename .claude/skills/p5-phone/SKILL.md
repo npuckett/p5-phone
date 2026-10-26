@@ -605,10 +605,10 @@ lockGestures(options?)
 
 Use bare `lockGestures()` for full-screen mobile sketches. Use `lockGestures({ mode: 'embedded', element: canvas })` for a canvas embedded in a scrollable, multi-section page — it scopes gesture blocking to that canvas so the rest of the page still scrolls. `unlockGestures()` restores the saved handlers, listeners, and styles. `window.gesturesLocked` reflects the current state.
 
-Form controls work under either mode: `createInput()`, `createSelect()`, `createCheckbox()`, `createSlider()`, textareas, `contenteditable` elements and labels take taps, clicks, focus and typing. The sketch's own `mousePressed()` can keep `return false`. So a sketch with a text field still calls plain `lockGestures()`; it does not need embedded mode for that. Up to p5-phone 1.15.4, `lockGestures()` cancelled presses on form controls in both modes and a text field never took focus. In a sketch pinned to 1.15.4 or earlier, keep each field's presses away from p5:
+Form controls and buttons work under either mode: `createInput()`, `createSelect()`, `createCheckbox()`, `createSlider()`, textareas, `contenteditable` elements and labels take taps, clicks, focus and typing, and a `createButton()` gets every tap, quick repeated taps included. The sketch's own `mousePressed()` can keep `return false`. So a sketch with a text field or a button still calls plain `lockGestures()`; it does not need embedded mode for that. Up to p5-phone 1.15.4, `lockGestures()` cancelled presses on form controls in both modes and a text field never took focus. Up to 1.16.0, under p5.js 1.x a tap on a `createButton()` did nothing (under 2.x quick taps counted only every second one). In a sketch pinned to an older version, keep each field's or button's presses away from p5:
 
 ```javascript
-// p5-phone 1.15.4 and earlier only
+// fields: p5-phone 1.15.4 and earlier; buttons: 1.16.0 and earlier
 for (const type of ['pointerdown', 'mousedown', 'touchstart', 'touchend']) {
   field.elt.addEventListener(type, (e) => e.stopPropagation());
 }
